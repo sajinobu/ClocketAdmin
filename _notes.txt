@@ -1,0 +1,2 @@
+- pages except dashboard:
+    - no hover indicator, active indicator
