@@ -1,2 +1,40 @@
-- pages except dashboard:
-    - no hover indicator, active indicator
+Header:
+    - light/dark mode toggle
+    - hover on date pill
+    - change logo and title
+
+Sidebar:
+    - Hover and Active effect on every page
+
+Dashboard Page:
+    - Hover effect on stat cards
+    - Live data from firebase
+    - Infinite Carousel (maybe) for Live Feed
+    - Live feed cards leads to current location on map
+    - Filter modal for table
+    - Pagination for table (10 employee max)
+    - Clock in time for table
+    - Rows leads to own profile page (w/ sched, maybe)
+
+Management Page:
+    - Update color palette
+    - Filter modal
+    - Add New Employee Page:
+        - Add Admin for system role
+    - Create Team Page:
+        - Back button
+
+Reports Page:
+    - Realtime data from firebase
+    - Improve UI
+
+Locations Page:
+    - Improve UI
+    - Add Google Maps API
+    - Ewan ko
+
+Schedule:
+    - idk
+
+Login:
+    - Wala pa
