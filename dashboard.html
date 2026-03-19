@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clocket | Dashboard</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/dashboard.css">
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +19,17 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', 
+              darker: '#000533',
+              dark: '#000b66',
+              primary: '#001aff', 
+              secondary: '#007bff', 
+              accent: '#00d1ff',
+              accentLight: '#57e8ff',
+              grayLight: '#f1f1f1',
+              grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -28,7 +40,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
@@ -37,7 +49,7 @@
 
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
           <h1 class="text-2xl font-bold text-brand-darkest">Employee Dashboard</h1>
           <p class="text-sm text-gray-500">Track attendance and manage your team</p>
@@ -46,45 +58,46 @@
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
+            
+            <div class="stat-card">
               <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-cyan-50 text-cyan-500">
+                <div class="stat-icon-wrapper stat-icon-brand">
                   <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-50 text-green-600">+12%</span>
+                <span class="badge bg-green-50 text-green-600">+12%</span>
               </div>
               <p class="text-3xl font-bold text-brand-darkest">247</p>
               <p class="text-sm mt-1 text-gray-500">Total Employees</p>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
+            <div class="stat-card">
               <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600">
+                <div class="stat-icon-wrapper bg-green-50 text-green-600">
                   <i data-lucide="check-circle" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-medium px-2 py-1 rounded-full bg-green-50 text-green-600">Active</span>
+                <span class="badge bg-green-50 text-green-600">Active</span>
               </div>
               <p class="text-3xl font-bold text-brand-darkest">189</p>
               <p class="text-sm mt-1 text-gray-500">Clocked In Today</p>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
+            <div class="stat-card">
               <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-50 text-yellow-600">
+                <div class="stat-icon-wrapper bg-yellow-50 text-yellow-600">
                   <i data-lucide="clock" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-medium px-2 py-1 rounded-full bg-yellow-50 text-yellow-600">Pending</span>
+                <span class="badge bg-yellow-50 text-yellow-600">Pending</span>
               </div>
               <p class="text-3xl font-bold text-brand-darkest">23</p>
               <p class="text-sm mt-1 text-gray-500">Late Arrivals</p>
             </div>
 
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
+            <div class="stat-card">
               <div class="flex items-center justify-between mb-4">
-                <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-red-50 text-red-600">
+                <div class="stat-icon-wrapper bg-red-50 text-red-600">
                   <i data-lucide="alert-circle" class="w-6 h-6"></i>
                 </div>
-                <span class="text-xs font-medium px-2 py-1 rounded-full bg-red-50 text-red-600">-3%</span>
+                <span class="badge bg-red-50 text-red-600">-3%</span>
               </div>
               <p class="text-3xl font-bold text-brand-darkest">35</p>
               <p class="text-sm mt-1 text-gray-500">On Leave</p>
@@ -92,100 +105,108 @@
           </div>
 
           <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                  <div class="live-dot w-2.5 h-2.5 rounded-full bg-brand-accent"></div> Live Feed
+
+            <div class="widget-panel">
+              <div class="widget-header">
+                <h3 class="widget-title">
+                  <div class="live-dot"></div> Live Feed
                 </h3>
                 <span class="text-xs text-gray-500">Recent check-ins</span>
               </div>
 
-              <div class="p-4 space-y-4 flex-1">
-                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">SJ</div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Sarah Johnson</p>
-                    <p class="text-[11px] text-gray-500">9:02 AM • HQ Office</p>
+              <div class="p-4 space-y-2 flex-1">
+                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
+                  <div class="flex items-center gap-4">
+                    <div class="avatar-circle avatar-brand">SJ</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Sarah Johnson</p>
+                      <p class="text-[11px] text-gray-500">9:02 AM • HQ Office</p>
+                    </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
                 </a>
 
-                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">MC</div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Mike Chen</p>
-                    <p class="text-[11px] text-yellow-600 font-medium text-xs">9:05 AM • 5m Late</p>
+                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
+                  <div class="flex items-center gap-4">
+                    <div class="avatar-circle avatar-brand">MC</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Mike Chen</p>
+                      <p class="text-[11px] text-yellow-600 font-medium text-xs">9:05 AM • 5m Late</p>
+                    </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
                 </a>
 
-                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">EW</div>
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Emma Wilson</p>
-                    <p class="text-[11px] text-gray-500">9:08 AM • Site B</p>
+                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
+                  <div class="flex items-center gap-4">
+                    <div class="avatar-circle avatar-brand">EW</div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Emma Wilson</p>
+                      <p class="text-[11px] text-gray-500">9:08 AM • Site B</p>
+                    </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
                 </a>
               </div>
 
-              <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 text-center">
-                <a href="attendance.html" class="text-xs font-bold text-brand-secondary hover:text-brand-primary uppercase tracking-widest transition-colors">
-                    View Full Attendance <i data-lucide="arrow-right" class="inline w-3 h-3 ml-1"></i>
-                </a>
-              </div>
+              <button id="view-more-feed-btn" class="btn-text">
+                View Full Activity <i data-lucide="arrow-right" class="inline w-4 h-4"></i>
+              </button>
             </div>
 
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <h3 class="font-bold text-gray-800 flex items-center gap-2">
-                  <i data-lucide="clipboard-list" class="w-5 h-5 text-teal-600"></i> Pending Approvals
+            <div class="widget-panel">
+              <div class="widget-header">
+                <h3 class="widget-title">
+                  <i data-lucide="clipboard-list" class="w-5 h-5 text-brand-primary"></i> Pending Approvals
                 </h3>
-                <span id="pending-badge" class="bg-teal-100 text-teal-700 text-xs font-bold px-2 py-1 rounded-full transition-all duration-300">3 New</span>
+                <span id="pending-badge" class="badge badge-brand transition-all duration-300">3 New</span>
               </div>
-              
-              <div id="approval-list" class="divide-y divide-gray-100 flex-1 relative">
-                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+
+              <div id="approval-list" class="divide-y divide-brand-gray-light flex-1 relative">
+                
+                <div class="approval-item dashboard-row group">
                   <div>
                     <p class="text-sm font-medium text-gray-800">Mike Chen</p>
                     <p class="text-xs text-gray-500">PTO Request (Oct 28-30)</p>
                   </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                    <button class="view-request-btn btn-outline"
                       data-emp="Mike Chen" data-initials="MC" data-dept="Design" data-title="PTO Request" data-desc="Family event out of state." data-file="PTO_Form.pdf">
-                      View Request
+                      Review
                     </button>
                   </div>
                 </div>
 
-                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                <div class="approval-item dashboard-row group">
                   <div>
                     <p class="text-sm font-medium text-gray-800">Robert Kim</p>
                     <p class="text-xs text-gray-500">Missed Punch (Yesterday)</p>
                   </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                    <button class="view-request-btn btn-outline"
                       data-emp="Robert Kim" data-initials="RK" data-dept="Sales" data-title="Missed Punch" data-desc="Phone died at client site." data-file="Visit_Log.png">
-                      View Request
+                      Review
                     </button>
                   </div>
                 </div>
 
-                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                <div class="approval-item dashboard-row group">
                   <div>
                     <p class="text-sm font-medium text-gray-800">Emma Wilson</p>
                     <p class="text-xs text-gray-500">Overtime Approval (2h)</p>
                   </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
+                    <button class="view-request-btn btn-outline"
                       data-emp="Emma Wilson" data-initials="EW" data-dept="Operations" data-title="Overtime" data-desc="Finalizing monthly audit." data-file="Schedule.pdf">
-                      View Request
+                      Review
                     </button>
                   </div>
                 </div>
+
               </div>
-              <a href="requests.html" class="block text-center text-sm text-brand-secondary py-3 border-t border-gray-100 hover:bg-gray-50 transition-colors font-medium">View All Requests</a>
+              <button id="view-all-requests-btn" class="btn-text">
+                View All Requests <i data-lucide="arrow-right" class="inline w-4 h-4"></i>
+              </button>
             </div>
           </section>
 
@@ -194,8 +215,192 @@
     </div>
   </div>
 
+  <div id="feed-modal" class="hidden modal-overlay z-[60]">
+    <div class="modal-box max-w-md">
+      <div class="modal-header">
+        <h3 class="widget-title">
+          <div class="live-dot"></div> Activity Stream
+        </h3>
+        <button id="close-feed-modal" class="text-gray-400 hover:text-brand-primary transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="relative border-l-2 border-brand-gray-light ml-3 space-y-8 pb-4">
+          <div class="relative pl-6">
+            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
+            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-gray-500">JUST NOW</p></div>
+            <div class="bg-brand-grayBg rounded-lg p-3 border border-brand-gray-light">
+              <p class="text-sm text-gray-800"><span class="font-bold">Lisa Martinez</span> went on break.</p>
+            </div>
+          </div>
+          <div class="relative pl-6">
+            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-brand-primary ring-4 ring-white"></div>
+            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-gray-500">9:12 AM</p></div>
+            <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
+              <p class="text-sm text-gray-800"><span class="font-bold">James Davis</span> clocked in.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-brand-gray-light bg-brand-grayBg">
+        <a href="attendance.html" class="btn-primary w-full block">View Full Attendance</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="all-requests-modal" class="hidden modal-overlay z-[80]">
+    <div class="modal-box max-w-2xl">
+
+      <div class="modal-header">
+        <div>
+          <h3 class="font-bold text-brand-darkest text-lg">Request Management</h3>
+          <p class="text-xs text-gray-500 font-medium">All pending and historical requests</p>
+        </div>
+        <button id="close-all-reqs" class="text-gray-400 hover:text-brand-primary transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="px-6 py-3 bg-white border-b border-brand-gray-light">
+        <div class="relative">
+          <input type="text" id="req-search-input" placeholder="Search employee or request type..."
+            class="w-full pl-10 pr-4 py-2 bg-brand-grayBg border border-brand-gray-light rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 border-b border-brand-gray-light flex gap-2 overflow-x-auto no-scrollbar">
+        <button class="btn-filter active req-filter-btn">All</button>
+        <button class="btn-filter req-filter-btn">Pending</button>
+        <button class="btn-filter req-filter-btn">Approved</button>
+        <button class="btn-filter req-filter-btn">Denied</button>
+      </div>
+
+      <div class="modal-body p-2">
+        <div class="divide-y divide-brand-gray-light" id="full-requests-list">
+
+          <div class="approval-item dashboard-row group rounded-xl">
+            <div class="flex items-center gap-4">
+              <div class="avatar-circle avatar-brand">MC</div>
+              <div>
+                <p class="text-sm font-bold text-gray-800">Mike Chen</p>
+                <p class="text-xs text-gray-500">PTO Request • Oct 28</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="badge bg-yellow-50 text-yellow-600 border-yellow-100">Pending</span>
+              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="view-request-btn btn-outline"
+                  data-emp="Mike Chen" data-initials="MC" data-dept="Design" data-title="PTO Request" data-desc="Family event out of state." data-file="PTO_Form.pdf">
+                  Review
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-row rounded-xl group opacity-80">
+            <div class="flex items-center gap-4">
+              <div class="avatar-circle avatar-brand">SJ</div>
+              <div>
+                <p class="text-sm font-bold text-gray-800">Sarah Johnson</p>
+                <p class="text-xs text-gray-500">Overtime • Oct 24</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="badge bg-green-50 text-green-600 border-green-100">Approved</span>
+              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
+            </div>
+          </div>
+
+          <div class="dashboard-row rounded-xl group opacity-80">
+            <div class="flex items-center gap-4">
+              <div class="avatar-circle avatar-brand">RK</div>
+              <div>
+                <p class="text-sm font-bold text-gray-800">Robert Kim</p>
+                <p class="text-xs text-gray-500">Schedule Change • Oct 22</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="badge bg-red-50 text-red-600 border-red-100">Denied</span>
+              <i data-lucide="x-circle" class="w-4 h-4 text-red-400"></i>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+      <div class="px-6 py-4 bg-brand-grayBg border-t border-brand-gray-light text-center">
+        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Showing last 30 days of activity</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="request-modal" class="hidden modal-overlay z-[100]">
+    <div class="modal-box max-w-lg">
+      
+      <div class="modal-header">
+        <h3 class="widget-title">
+          <i data-lucide="file-text" class="w-5 h-5 text-brand-primary"></i> 
+          <span id="req-modal-title">Review Request</span>
+        </h3>
+        <button id="close-req-modal" class="text-gray-400 hover:text-brand-primary transition-colors">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="modal-body space-y-6">
+        <div class="flex items-center gap-3">
+          <div class="avatar-circle avatar-brand w-12 h-12 text-lg shadow-sm" id="req-modal-avatar">--</div>
+          <div>
+            <p class="font-bold text-brand-darkest text-lg" id="req-modal-emp">Employee Name</p>
+            <p class="text-sm text-gray-500" id="req-modal-dept">Department</p>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Request Details</p>
+          <p class="text-sm text-gray-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed" id="req-modal-desc">
+            Description goes here...
+          </p>
+        </div>
+
+        <div>
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Attachments</p>
+          <div class="flex items-center gap-3 p-3 border border-brand-gray-light rounded-xl cursor-pointer hover:bg-brand-grayBg transition-colors group">
+            <div class="w-10 h-10 bg-brand-gray-light text-gray-500 rounded-lg flex items-center justify-center group-hover:bg-brand-primary group-hover:text-white transition-colors">
+              <i data-lucide="paperclip" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-800" id="req-modal-file">filename.pdf</p>
+              <p class="text-xs text-gray-500">Click to view</p>
+            </div>
+            <i data-lucide="download" class="w-4 h-4 text-gray-400 group-hover:text-brand-primary"></i>
+          </div>
+        </div>
+
+        <div id="deny-reason-container" class="hidden animate-fade-in">
+          <label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Reason for Denial <span class="text-red-500">*</span></label>
+          <textarea id="deny-reason-text" rows="3" class="w-full px-3 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50/30 placeholder-red-300 transition-colors" placeholder="Please explain why this request is being denied. This will be sent to the employee."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div id="req-default-actions" class="flex gap-3 w-full sm:w-auto">
+          <button id="btn-init-deny" class="btn-outline border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 px-6 py-2.5 font-bold">Deny</button>
+          <button id="btn-approve" class="btn-primary px-6 py-2.5">Approve Request</button>
+        </div>
+        <div id="req-confirm-deny-actions" class="hidden flex gap-3 w-full sm:w-auto animate-fade-in">
+          <button id="btn-cancel-deny" class="btn-outline border-gray-200 text-gray-600 px-6 py-2.5 hover:text-gray-800 font-bold">Cancel</button>
+          <button id="btn-confirm-deny" class="btn-primary bg-red-600 hover:bg-red-700 px-6 py-2.5 flex items-center gap-2">
+            <i data-lucide="send" class="w-4 h-4"></i> Confirm Denial
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/layout.js"></script>
   <script src="scripts/dashboard.js"></script>
 </body>
-
 </html>

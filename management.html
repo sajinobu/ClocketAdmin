@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Management - TimeTrack Portal</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/management.css">
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,7 +19,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -28,7 +34,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
@@ -37,185 +43,152 @@
 
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">Management</h1>
-          <p class="text-sm text-gray-500">Manage employees and teams</p>
+          <h1 class="page-title">Management</h1>
+          <p class="page-subtitle">Manage employees and teams</p>
         </div>
 
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
           <div class="space-y-6">
 
-            <div class="flex items-center gap-2 border-b border-gray-200 mb-6">
-              <button
-                class="management-tab px-6 py-3 border-b-2 border-teal-600 text-teal-600 font-medium text-sm active"
-                data-tab="employees">Employees</button>
-              <button
-                class="management-tab px-6 py-3 border-b-2 border-transparent text-gray-600 font-medium text-sm hover:text-gray-800"
-                data-tab="teams">Teams</button>
+            <div class="tabs-container">
+              <button class="management-tab active" data-tab="employees">Employees</button>
+              <button class="management-tab" data-tab="teams">Teams</button>
             </div>
 
             <div id="employees-tab" class="management-tab-content">
-              <div class="mb-4 flex items-center justify-between gap-4">
-                <a href="add-employee.html?from=management"
-                  class="add-employee-btn inline-block px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-medium hover:bg-brand-darker transition-colors whitespace-nowrap">Add
-                  Employee</a>
+              
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <a href="add-employee.html?from=management" class="btn-primary">
+                    Add Employee
+                </a>
 
                 <div class="flex items-center gap-2 flex-1 justify-end">
-                  <div class="relative w-64">
-                    <input type="text" placeholder="Search employees..."
-                      class="employees-search pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-full"
-                      style="background-color: #ffffff;">
-                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <div class="input-group" style="max-width: 16rem;">
+                    <i data-lucide="search" class="input-icon"></i>
+                    <input type="text" placeholder="Search employees..." class="input-field employees-search">
                   </div>
-                  <button id="open-filter-modal"
-                    class="p-2 border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 hover:text-brand-primary transition-all relative">
+                  <button id="open-filter-modal" class="btn-icon">
                     <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-                    <span id="filter-badge"
-                      class="hidden absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full border-2 border-white"></span>
+                    <span id="filter-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full border-2 border-white"></span>
                   </button>
                 </div>
               </div>
 
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
-                <div class="table-wrapper overflow-visible">
-                  <table class="w-full min-w-full">
+              <div class="table-panel">
+                <div class="overflow-visible">
+                  <table class="data-table">
                     <thead>
-                      <tr class="bg-gray-50 border-b border-gray-100">
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Name</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Department</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Email</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Status</th>
-                        <th class="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Actions</th>
+                      <tr class="table-head-row">
+                        <th class="table-th">Name</th>
+                        <th class="table-th">Department</th>
+                        <th class="table-th">Email</th>
+                        <th class="table-th">Status</th>
+                        <th class="table-th text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="employee-table-body" class="divide-y divide-gray-100">
+                    <tbody id="employee-table-body">
 
-                      <tr class="table-row hover:bg-gray-50">
-                        <td class="px-6 py-4">
+                      <tr class="data-row">
+                        <td class="table-td">
                           <div class="flex items-center gap-3">
-                            <div
-                              class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">
-                              SJ</div>
-                            <p class="font-medium text-gray-800">Sarah Johnson</p>
+                            <div class="avatar-sm">SJ</div>
+                            <p class="font-bold text-brand-darkest">Sarah Johnson</p>
                           </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">Engineering</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">sarah.j@company.com</td>
-                        <td class="px-6 py-4"><span
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">Active</span>
+                        <td class="table-td text-sm text-gray-600">Engineering</td>
+                        <td class="table-td text-sm text-gray-600">sarah.j@company.com</td>
+                        <td class="table-td">
+                            <span class="status-badge status-active">Active</span>
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="table-td text-right">
                           <div class="relative inline-block text-left">
-                            <button
-                              class="action-btn p-1 text-gray-400 hover:text-teal-600 focus:outline-none rounded-md"><i
-                                data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div
-                              class="action-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-1">
-                              <a href="employee-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="user" class="w-4 h-4"></i> View Profile</a>
-                              <a href="employee-edit-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="pencil" class="w-4 h-4"></i> Modify Profile</a>
-                              <div class="border-t border-gray-100 my-1"></div>
-                             <button class="delete-employee-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2" data-name="Sarah Johnson">
-    <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-</button>
+                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                            <div class="action-menu hidden">
+                              <a href="employee-profile.html?from=management" class="menu-item">
+                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                              </a>
+                              <a href="employee-edit-profile.html?from=management" class="menu-item">
+                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
+                              </a>
+                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Sarah Johnson">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                              </button>
                             </div>
                           </div>
                         </td>
                       </tr>
 
-                      <tr class="table-row hover:bg-gray-50">
-                        <td class="px-6 py-4">
+                      <tr class="data-row">
+                        <td class="table-td">
                           <div class="flex items-center gap-3">
-                            <div
-                              class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                              MC</div>
-                            <p class="font-medium text-gray-800">Mike Chen</p>
+                            <div class="avatar-sm">MC</div>
+                            <p class="font-bold text-brand-darkest">Mike Chen</p>
                           </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">Design</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">mike.c@company.com</td>
-                        <td class="px-6 py-4"><span
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">Active</span>
+                        <td class="table-td text-sm text-gray-600">Design</td>
+                        <td class="table-td text-sm text-gray-600">mike.c@company.com</td>
+                        <td class="table-td">
+                            <span class="status-badge status-active">Active</span>
                         </td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="table-td text-right">
                           <div class="relative inline-block text-left">
-                            <button
-                              class="action-btn p-1 text-gray-400 hover:text-teal-600 focus:outline-none rounded-md"><i
-                                data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div
-                              class="action-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-1">
-                              <a href="employee-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="user" class="w-4 h-4"></i> View Profile</a>
-                              <a href="employee-edit-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="edit" class="w-4 h-4"></i> Modify Profile</a>
-                              <div class="border-t border-gray-100 my-1"></div>
-                              <button
-                                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><i
-                                  data-lucide="trash-2" class="w-4 h-4"></i> Delete</button>
+                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                            <div class="action-menu hidden">
+                              <a href="employee-profile.html?from=management" class="menu-item">
+                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                              </a>
+                              <a href="employee-edit-profile.html?from=management" class="menu-item">
+                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
+                              </a>
+                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Mike Chen">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                              </button>
                             </div>
                           </div>
                         </td>
                       </tr>
 
-                      <tr class="table-row hover:bg-gray-50">
-                        <td class="px-6 py-4">
+                      <tr class="data-row">
+                        <td class="table-td">
                           <div class="flex items-center gap-3">
-                            <div
-                              class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-sm font-semibold">
-                              EW</div>
-                            <p class="font-medium text-gray-800">Emma Wilson</p>
+                            <div class="avatar-sm">EW</div>
+                            <p class="font-bold text-brand-darkest">Emma Wilson</p>
                           </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">Operations</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">emma.w@company.com</td>
-                        <td class="px-6 py-4"><span
-                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700">On
-                            Break</span></td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="table-td text-sm text-gray-600">Operations</td>
+                        <td class="table-td text-sm text-gray-600">emma.w@company.com</td>
+                        <td class="table-td">
+                            <span class="status-badge status-break">On Break</span>
+                        </td>
+                        <td class="table-td text-right">
                           <div class="relative inline-block text-left">
-                            <button
-                              class="action-btn p-1 text-gray-400 hover:text-teal-600 focus:outline-none rounded-md"><i
-                                data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div
-                              class="action-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-1">
-                              <a href="employee-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="user" class="w-4 h-4"></i> View Profile</a>
-                              <a href="employee-edit-profile.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i
-                                  data-lucide="edit" class="w-4 h-4"></i> Modify Profile</a>
-                              <div class="border-t border-gray-100 my-1"></div>
-                              <button
-                                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><i
-                                  data-lucide="trash-2" class="w-4 h-4"></i> Delete</button>
+                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                            <div class="action-menu hidden">
+                              <a href="employee-profile.html?from=management" class="menu-item">
+                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                              </a>
+                              <a href="employee-edit-profile.html?from=management" class="menu-item">
+                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
+                              </a>
+                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Emma Wilson">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                              </button>
                             </div>
                           </div>
                         </td>
                       </tr>
 
                       <tr id="no-results-row" class="hidden">
-                        <td colspan="5" class="px-6 py-12 text-center">
+                        <td colspan="5" class="table-td text-center py-12">
                           <div class="flex flex-col items-center justify-center">
-                            <div
-                              class="w-12 h-12 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-3">
+                            <div class="w-12 h-12 bg-brand-grayBg text-gray-400 rounded-full flex items-center justify-center mb-3">
                               <i data-lucide="search-x" class="w-6 h-6"></i>
                             </div>
-                            <p class="text-sm font-medium text-gray-800">No employees found</p>
+                            <p class="text-sm font-bold text-brand-darkest">No employees found</p>
                             <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or search terms.</p>
-                            <button id="clear-all-filters"
-                              class="mt-4 text-sm text-brand-primary font-semibold hover:underline">Clear all
-                              filters</button>
+                            <button id="clear-all-filters" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear all filters</button>
                           </div>
                         </td>
                       </tr>
@@ -226,21 +199,18 @@
             </div>
 
             <div id="teams-tab" class="management-tab-content hidden">
-              <div class="mb-4 flex items-center justify-between gap-4">
-                <a href="create-team.html?from=management"
-                  class="create-team-btn inline-block px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-medium hover:bg-brand-darker transition-colors whitespace-nowrap">Create
-                  Team</a>
+              
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <a href="create-team.html?from=management" class="btn-primary">
+                    Create Team
+                </a>
 
                 <div class="flex items-center gap-2 flex-1 justify-end">
-                  <div class="relative w-64">
-                    <input type="text" id="teams-search-input" placeholder="Search teams..."
-                      class="teams-search pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary w-full"
-                      style="background-color: #ffffff;">
-                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                  <div class="input-group" style="max-width: 16rem;">
+                    <i data-lucide="search" class="input-icon"></i>
+                    <input type="text" id="teams-search-input" placeholder="Search teams..." class="input-field teams-search">
                   </div>
-
-                  <select id="team-dept-filter"
-                    class="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white text-gray-600">
+                  <select id="team-dept-filter" class="select-field">
                     <option value="">All Departments</option>
                     <option value="Engineering">Engineering</option>
                     <option value="Design">Design</option>
@@ -251,57 +221,43 @@
                 </div>
               </div>
 
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
-                <div class="table-wrapper overflow-visible">
-                  <table class="w-full min-w-full">
+              <div class="table-panel">
+                <div class="overflow-visible">
+                  <table class="data-table">
                     <thead>
-                      <tr class="bg-gray-50 border-b border-gray-100">
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Team Name</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Department</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Team Leader</th>
-                        <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Members</th>
-                        <th class="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Actions</th>
+                      <tr class="table-head-row">
+                        <th class="table-th">Team Name</th>
+                        <th class="table-th">Department</th>
+                        <th class="table-th">Team Leader</th>
+                        <th class="table-th">Members</th>
+                        <th class="table-th text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody id="teams-table-body" class="divide-y divide-gray-100">
-                      <tr class="table-row hover:bg-gray-50">
-                        <td class="px-6 py-4">
-                          <p class="font-medium text-gray-800">Engineering Team A</p>
+                    <tbody id="teams-table-body">
+                      
+                      <tr class="data-row">
+                        <td class="table-td">
+                          <p class="font-bold text-brand-darkest">Engineering Team A</p>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">Engineering</td>
-                        <td class="px-6 py-4">
+                        <td class="table-td text-sm text-gray-600">Engineering</td>
+                        <td class="table-td">
                           <div class="flex items-center gap-2">
-                            <div
-                              class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold">
-                              SJ</div>
-                            <p class="text-sm text-gray-800">Sarah Johnson</p>
+                            <div class="avatar-sm" style="width: 2rem; height: 2rem; font-size: 0.75rem;">SJ</div>
+                            <p class="text-sm font-medium text-gray-800">Sarah Johnson</p>
                           </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">8 members</td>
-                        <td class="px-6 py-4 text-right">
+                        <td class="table-td text-sm text-gray-600">8 members</td>
+                        <td class="table-td text-right">
                           <div class="relative inline-block text-left">
-                            <button
-                              class="action-btn p-1 text-gray-400 hover:text-teal-600 focus:outline-none rounded-md"><i
-                                data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div
-                              class="action-menu hidden absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50 py-1">
-                              <a href="team-details.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                            <div class="action-menu hidden">
+                              <a href="team-details.html?from=management" class="menu-item">
                                 <i data-lucide="users" class="w-4 h-4"></i> View Team
                               </a>
-                              <a href="team-edit.html?from=management"
-                                class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                              <a href="team-edit.html?from=management" class="menu-item">
                                 <i data-lucide="pencil" class="w-4 h-4"></i> Edit Team
                               </a>
-                              <div class="border-t border-gray-100 my-1"></div>
-                              <button
-                                class="disband-btn w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                data-name="Engineering Team A">
+                              <button class="menu-item menu-item-danger disband-btn" data-name="Engineering Team A">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i> Disband
                               </button>
                             </div>
@@ -310,16 +266,13 @@
                       </tr>
 
                       <tr id="no-teams-row" class="hidden">
-                        <td colspan="5" class="px-6 py-12 text-center">
+                        <td colspan="5" class="table-td text-center py-12">
                           <div class="flex flex-col items-center justify-center">
-                            <div
-                              class="w-12 h-12 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mb-3">
+                            <div class="w-12 h-12 bg-brand-grayBg text-gray-400 rounded-full flex items-center justify-center mb-3">
                               <i data-lucide="search-x" class="w-6 h-6"></i>
                             </div>
-                            <p class="text-sm font-medium text-gray-800">No teams found</p>
-                            <button id="clear-team-filters"
-                              class="mt-4 text-sm text-brand-primary font-semibold hover:underline">Clear search and
-                              filters</button>
+                            <p class="text-sm font-bold text-brand-darkest">No teams found</p>
+                            <button id="clear-team-filters" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear search and filters</button>
                           </div>
                         </td>
                       </tr>
@@ -335,22 +288,19 @@
     </div>
   </div>
 
-  <div id="filter-modal"
-    class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-    <div
-      class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-        <h3 class="font-bold text-gray-800">Filter Employees</h3>
-        <button id="close-filter-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+  <div id="filter-modal" class="hidden modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="font-bold text-brand-darkest">Filter Employees</h3>
+        <button id="close-filter-modal" class="text-gray-400 hover:text-brand-primary transition-colors bg-transparent border-none cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="p-6 space-y-5">
+      <div class="modal-body space-y-5">
         <div>
           <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Department</label>
-          <select id="filter-dept"
-            class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white">
+          <select id="filter-dept" class="select-field w-full">
             <option value="">All Departments</option>
             <option value="Engineering">Engineering</option>
             <option value="Design">Design</option>
@@ -361,8 +311,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</label>
-          <select id="filter-status"
-            class="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary bg-white">
+          <select id="filter-status" class="select-field w-full">
             <option value="">All Statuses</option>
             <option value="Active">Active</option>
             <option value="On Break">On Break</option>
@@ -371,34 +320,25 @@
         </div>
       </div>
 
-      <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-        <button id="reset-filters"
-          class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 bg-white rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors">Reset</button>
-        <button id="apply-filters"
-          class="flex-1 px-4 py-2.5 bg-brand-primary text-white rounded-xl text-sm font-bold hover:bg-brand-darker transition-colors shadow-sm">Apply
-          Filters</button>
+      <div class="modal-footer">
+        <button id="reset-filters" class="btn-outline">Reset</button>
+        <button id="apply-filters" class="btn-primary flex-1 justify-center">Apply Filters</button>
       </div>
     </div>
   </div>
 
-  <div id="delete-modal"
-    class="hidden fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4 backdrop-blur-sm">
-    <div
-      class="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-      <div class="p-6 text-center">
-        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+  <div id="delete-modal" class="hidden modal-overlay z-[110]">
+    <div class="modal-box text-center">
+      <div class="modal-body pt-8 pb-6">
+        <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
           <i data-lucide="alert-triangle" class="w-8 h-8"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-800 mb-2">Are you sure?</h3>
-        <p class="text-sm text-gray-500 mb-6">This action cannot be undone. All data associated with this <span
-            id="delete-type">item</span> will be permanently removed.</p>
-
-        <div class="flex gap-3">
-          <button id="cancel-delete"
-            class="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 bg-white rounded-xl text-sm font-bold hover:bg-gray-100 transition-colors">Cancel</button>
-          <button id="confirm-delete"
-            class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-colors shadow-sm">Confirm</button>
-        </div>
+        <h3 class="text-xl font-bold text-brand-darkest mb-2">Are you sure?</h3>
+        <p class="text-sm text-gray-500 mb-2">This action cannot be undone. All data associated with this <span id="delete-type" class="font-bold">item</span> will be permanently removed.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancel-delete" class="btn-outline">Cancel</button>
+        <button id="confirm-delete" class="btn-danger">Confirm</button>
       </div>
     </div>
   </div>
@@ -406,5 +346,4 @@
   <script src="scripts/layout.js"></script>
   <script src="scripts/management.js"></script>
 </body>
-
 </html>

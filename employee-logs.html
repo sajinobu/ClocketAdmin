@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Logs - TimeTrack Portal</title>
+  
+  <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/employee-logs.css">
+  
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
+          },
+          fontFamily: { sans: ['DM Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+  <div class="flex flex-col h-full w-full">
+    
+    <div id="header-placeholder"></div>
+
+    <div class="flex flex-1 overflow-hidden">
+      
+      <div id="sidebar-placeholder"></div>
+
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
+        <div class="px-8 pt-8 pb-3 flex-shrink-0">
+          <div class="page-header-container">
+            <a id="dynamic-back-btn" href="attendance.html" class="btn-back">
+             <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    Sarah Johnson's Log
+                    <span class="badge badge-rounded badge-active">Currently Clocked In</span>
+                </h1>
+                <p class="page-subtitle">Senior Frontend Developer • Engineering Dept</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="px-4 sm:px-6 md:px-8 pt-4 pb-8">
+          <div class="space-y-6">
+            
+            <div class="dark-stat-card">
+                <div class="dark-stat-bg-pattern">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#FFFFFF" d="M47.7,-57.2C59.6,-47.3,66.6,-30.5,70.1,-13.4C73.6,3.6,73.6,20.8,66.1,35.4C58.6,50,43.6,62,26.4,68.2C9.2,74.5,-10.2,75,-27.2,69.1C-44.2,63.2,-58.8,50.9,-67.2,35C-75.6,19.2,-77.8,0,-71.9,-16C-66,-32.1,-52,-45.1,-37.2,-54.2C-22.3,-63.3,-6.7,-68.5,5.8,-69.1C18.3,-69.7,35.8,-67.1,47.7,-57.2Z" transform="translate(100 100)" />
+                    </svg>
+                </div>
+
+                <div class="dark-stat-grid">
+                    <div>
+                        <p class="stat-label">Time This Week</p>
+                        <p class="stat-value">32<span>.5h</span></p>
+                        <p class="stat-subtext">Target: 40.0h</p>
+                    </div>
+                    <div>
+                        <p class="stat-label">Punctuality</p>
+                        <p class="stat-value">98<span>%</span></p>
+                        <p class="stat-subtext text-green-400 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Top 10% of Dept</p>
+                    </div>
+                    <div>
+                        <p class="stat-label">Overtime Balance</p>
+                        <p class="stat-value">4<span>.2h</span></p>
+                        <p class="stat-subtext">Available for payout/PTO</p>
+                    </div>
+                    <div>
+                        <button id="export-log-btn" class="btn-export-dark">
+                            <i data-lucide="download" class="w-5 h-5 text-brand-accent"></i>
+                            <span class="text-sm font-bold">Export Monthly Log</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-panel">
+                <div class="timeline-header">
+                    <h3 class="timeline-title">Today's Timeline</h3>
+                    <span class="timeline-date">March 19, 2026</span>
+                </div>
+
+                <div class="timeline-track">
+                    <div class="timeline-fill" style="width: 65%;"></div>
+                    
+                    <div class="timeline-marker marker-teal group" style="left: 10%;">
+                        <div class="timeline-tooltip">
+                            <div class="tooltip-arrow"></div>
+                            <div class="tooltip-text">Clock In: 8:58 AM</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-marker marker-amber group" style="left: 45%;">
+                        <div class="timeline-tooltip">
+                            <div class="tooltip-arrow"></div>
+                            <div class="tooltip-text">Break: 12:00 PM</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-marker marker-teal group" style="left: 55%;">
+                        <div class="timeline-tooltip">
+                            <div class="tooltip-arrow"></div>
+                            <div class="tooltip-text">Return: 1:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-legend">
+                    <span>8:00 AM</span>
+                    <span>12:00 PM</span>
+                    <span>5:00 PM</span>
+                </div>
+            </div>
+
+            <div class="data-panel">
+                <div class="data-panel-header">
+                    <h3 class="data-panel-title">Attendance Records</h3>
+                    <div class="flex items-center gap-2">
+                        <select class="data-select">
+                            <option>This Week</option>
+                            <option>Last Week</option>
+                            <option>This Month</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th class="log-th">Date</th>
+                                <th class="log-th">Location</th>
+                                <th class="log-th">Clock In</th>
+                                <th class="log-th">Break</th>
+                                <th class="log-th">Resume</th>
+                                <th class="log-th">Clock Out</th>
+                                <th class="log-th">Total Hours</th>
+                                <th class="log-th text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            
+                            <tr class="log-row">
+                                <td class="log-td">
+                                    <p class="font-bold text-gray-800 text-sm">Today</p>
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Mar 19</p>
+                                </td>
+                                <td class="log-td">
+                                    <div class="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-teal-500"></i> HQ Office
+                                    </div>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">08:58 AM</p>
+                                    <p class="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><i data-lucide="scan-face" class="w-3 h-3"></i> Face ID</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">12:00 PM</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">01:00 PM</p>
+                                </td>
+                                <td class="log-td">
+                                    <span class="badge badge-pulse">
+                                        <span class="status-dot"></span> Active
+                                    </span>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-bold text-brand-primary">5.2h</p>
+                                </td>
+                                <td class="log-td text-right">
+                                    <button class="btn-icon"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </td>
+                            </tr>
+
+                            <tr class="log-row">
+                                <td class="log-td">
+                                    <p class="font-bold text-gray-800 text-sm">Yesterday</p>
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Mar 18</p>
+                                </td>
+                                <td class="log-td">
+                                    <div class="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-teal-500"></i> HQ Office
+                                    </div>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">08:55 AM</p>
+                                    <p class="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><i data-lucide="scan-face" class="w-3 h-3"></i> Face ID</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">12:05 PM</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">01:00 PM</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">05:05 PM</p>
+                                    <p class="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><i data-lucide="smartphone" class="w-3 h-3"></i> Mobile</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-bold text-gray-800">8.1h</p>
+                                </td>
+                                <td class="log-td text-right">
+                                    <button class="btn-icon"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </td>
+                            </tr>
+
+                            <tr class="log-row">
+                                <td class="log-td">
+                                    <p class="font-bold text-gray-800 text-sm">Tuesday</p>
+                                    <p class="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Mar 17</p>
+                                </td>
+                                <td class="log-td">
+                                    <div class="flex items-center gap-1.5 text-sm text-gray-600 font-medium">
+                                        <i data-lucide="wifi" class="w-3.5 h-3.5 text-brand-secondary"></i> Remote
+                                    </div>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">09:00 AM</p>
+                                    <p class="text-[10px] text-gray-400 flex items-center gap-1 mt-0.5"><i data-lucide="monitor" class="w-3 h-3"></i> Web Portal</p>
+                                </td>
+                                <td class="log-td">
+                                    <span class="badge badge-missed">Missed</span>
+                                </td>
+                                <td class="log-td">
+                                    <span class="badge badge-missed">Missed</span>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-mono font-medium text-gray-800">05:00 PM</p>
+                                </td>
+                                <td class="log-td">
+                                    <p class="text-sm font-bold text-red-500 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Error</p>
+                                </td>
+                                <td class="log-td text-right">
+                                    <button class="btn-icon text-brand-primary"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script src="scripts/layout.js"></script>
+  <script src="scripts/employee-logs.js"></script>
+</body>
+</html>

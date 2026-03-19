@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clocket | Add Employee</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/add-employee.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +18,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -27,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -36,56 +42,60 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <div class="flex items-center gap-4 mb-1">
-            <a id="dynamic-back-btn" href="management.html" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <div class="page-header-container">
+            <a id="dynamic-back-btn" href="management.html" class="btn-back">
              <i data-lucide="arrow-left" class="w-6 h-6"></i>
             </a>
-            <h1 class="text-2xl font-bold text-brand-darkest">Add New Employee</h1>
+            <h1 class="page-title">Add New Employee</h1>
           </div>
         </div>
         
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+          
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            
+            <div class="form-panel">
               <form id="add-employee-form" class="space-y-6">
+                
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Personal Information</h3>
-                  <div class="grid grid-cols-3 gap-3">
-                    <div>
-                      <label for="first-name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                      <input type="text" id="first-name" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" placeholder="John" style="background-color: #ffffff;">
+                  <h3 class="section-title">Personal Information</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="form-group">
+                      <label for="first-name" class="form-label">First Name</label>
+                      <input type="text" id="first-name" required class="form-input" placeholder="John">
                     </div>
-                    <div>
-                      <label for="middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-                      <input type="text" id="middle-name" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Michael" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="middle-name" class="form-label">Middle Name</label>
+                      <input type="text" id="middle-name" class="form-input" placeholder="Michael">
                     </div>
-                    <div>
-                      <label for="last-name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                      <input type="text" id="last-name" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Doe" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="last-name" class="form-label">Last Name</label>
+                      <input type="text" id="last-name" required class="form-input" placeholder="Doe">
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Contact Information</h3>
-                  <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="john.doe@company.com" style="background-color: #ffffff;">
+                  <h3 class="section-title">Contact Information</h3>
+                  <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" required class="form-input" placeholder="john.doe@company.com">
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Employment Information</h3>
-                  <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                      <label for="employee-id" class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
-                      <input type="text" id="employee-id" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., EMP-001" style="background-color: #ffffff;">
+                  <h3 class="section-title">Employment Information</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                      <label for="employee-id" class="form-label">Employee ID</label>
+                      <input type="text" id="employee-id" required class="form-input" placeholder="e.g., EMP-001">
                     </div>
-                    <div>
-                      <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                      <select id="department" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="department" class="form-label">Department</label>
+                      <select id="department" required class="form-input">
                         <option value="">Select Department</option>
                         <option value="Engineering">Engineering</option>
                         <option value="Design">Design</option>
@@ -95,9 +105,10 @@
                       </select>
                     </div>
                   </div>
-                  <div>
-                    <label for="assigned-team" class="block text-sm font-medium text-gray-700 mb-2">Assigned Team</label>
-                    <select id="assigned-team" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                  
+                  <div class="form-group">
+                    <label for="assigned-team" class="form-label">Assigned Team</label>
+                    <select id="assigned-team" required class="form-input">
                       <option value="">Select Team</option>
                       <option value="Engineering Team A">Engineering Team A</option>
                       <option value="Design Team B">Design Team B</option>
@@ -105,37 +116,43 @@
                     </select>
                   </div>
                 </div>
+
               </form>
             </div>
 
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col">
+            <div class="form-panel">
               <div class="space-y-6 flex-1 flex flex-col">
+                
                 <div class="flex-1">
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">System Role</h3>
+                  <h3 class="section-title">System Role</h3>
+                  
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <input type="radio" name="system-role" value="Employee" checked class="w-4 h-4 accent-teal-600" form="add-employee-form">
+                    <label class="role-card">
+                      <input type="radio" name="system-role" value="Employee" checked class="role-radio" form="add-employee-form">
                       <div>
-                        <span class="text-sm font-medium text-gray-800">Employee</span>
-                        <p class="text-xs text-gray-500">Standard user with limited permissions</p>
+                        <span class="role-title">Employee</span>
+                        <p class="role-desc">Standard user with limited permissions</p>
                       </div>
                     </label>
-                    <label class="flex items-center gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <input type="radio" name="system-role" value="Manager" class="w-4 h-4 accent-teal-600" form="add-employee-form">
+                    
+                    <label class="role-card">
+                      <input type="radio" name="system-role" value="Manager" class="role-radio" form="add-employee-form">
                       <div>
-                        <span class="text-sm font-medium text-gray-800">Manager</span>
-                        <p class="text-xs text-gray-500">Team management and reporting access</p>
+                        <span class="role-title">Manager</span>
+                        <p class="role-desc">Team management and reporting access</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <div class="flex gap-3 pt-6 border-t border-gray-100 mt-auto">
-                  <button type="submit" form="add-employee-form" class="flex-1 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">Add Employee</button>
-                  <a id="dynamic-cancel-btn" href="management.html" class="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center">Cancel</a>
+                <div class="form-actions">
+                  <a id="dynamic-cancel-btn" href="management.html" class="btn-cancel">Cancel</a>
+                  <button type="submit" form="add-employee-form" class="btn-primary">Add Employee</button>
                 </div>
+
               </div>
             </div>
+
           </div>
         </div>
       </main>

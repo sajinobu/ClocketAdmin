@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings - TimeTrack Portal</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/settings.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +18,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -27,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -36,44 +42,54 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">Settings</h1>
-          <p class="text-sm text-gray-500">Configure portal settings</p>
+          <div class="page-header-container">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Configure portal preferences and security</p>
+          </div>
         </div>
         
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
           <div class="space-y-6 max-w-2xl">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <h3 class="text-lg font-bold text-gray-800 mb-6">General Settings</h3>
-              <div class="space-y-6">
-                <div class="flex items-center justify-between">
+            
+            <div class="settings-panel">
+              <h3 class="panel-title">General Settings</h3>
+              
+              <div>
+                <div class="setting-row">
                   <div>
-                    <p class="font-medium text-gray-800">Email Notifications</p>
-                    <p class="text-sm text-gray-500 mt-1">Receive alerts for important events</p>
+                    <p class="setting-label">Email Notifications</p>
+                    <p class="setting-desc">Receive alerts for important events, approvals, and anomalies.</p>
                   </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  <label class="toggle-wrapper">
+                    <input type="checkbox" class="toggle-input" id="toggle-email" checked>
+                    <div class="toggle-bg"></div>
                   </label>
                 </div>
-                <div class="flex items-center justify-between">
+
+                <div class="setting-row">
                   <div>
-                    <p class="font-medium text-gray-800">Two-Factor Authentication</p>
-                    <p class="text-sm text-gray-500 mt-1">Enhance account security</p>
+                    <p class="setting-label">Two-Factor Authentication (2FA)</p>
+                    <p class="setting-desc">Enhance account security by requiring an extra verification step.</p>
                   </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                  <label class="toggle-wrapper">
+                    <input type="checkbox" class="toggle-input" id="toggle-2fa">
+                    <div class="toggle-bg"></div>
                   </label>
                 </div>
               </div>
             </div>
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-              <h3 class="text-lg font-bold text-gray-800 mb-4">Data & Privacy</h3>
-              <p class="text-sm text-gray-600 mb-4">Manage how your data is used and stored</p>
-              <button class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">Download My Data</button>
+
+            <div class="settings-panel">
+              <h3 class="panel-title">Data & Privacy</h3>
+              <p class="panel-desc">Manage how your portal data is used, stored, and exported for compliance.</p>
+              <button id="download-data-btn" class="btn-outline">
+                <i data-lucide="download" class="w-4 h-4"></i> Download My Data
+              </button>
             </div>
+
           </div>
         </div>
       </main>

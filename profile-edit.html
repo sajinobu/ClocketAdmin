@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Profile - TimeTrack Portal</title>
+  
+  <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/profile-edit.css">
+  
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
+          },
+          fontFamily: { sans: ['DM Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+  <div class="flex flex-col h-full w-full">
+    
+    <div id="header-placeholder"></div>
+
+    <div class="flex flex-1 overflow-hidden">
+      
+      <div id="sidebar-placeholder"></div>
+
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
+        <div class="px-8 pt-8 pb-3 flex-shrink-0">
+          <div class="page-header-container">
+            <a href="profile.html" class="btn-back">
+             <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            </a>
+            <h1 class="page-title">Edit Profile</h1>
+          </div>
+        </div>
+        
+        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+          <div class="space-y-6">
+            
+            <div class="profile-hero-card">
+              <div class="profile-hero-content">
+                <div class="avatar-wrapper">
+                  <div class="profile-hero-avatar">AM</div>
+                  <button class="btn-camera" title="Change Avatar">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <div>
+                  <h2 class="profile-hero-name">Admin Manager</h2>
+                  <p class="profile-hero-role">System Administrator</p>
+                </div>
+              </div>
+            </div>
+
+            <form id="admin-edit-form">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                <div class="form-panel">
+                  <h3 class="panel-title">Account Details</h3>
+                  
+                  <div class="form-group">
+                    <label for="admin-name" class="form-label">Full Name</label>
+                    <input type="text" id="admin-name" value="Admin Manager" required class="form-input">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="admin-email" class="form-label">Email Address</label>
+                    <input type="email" id="admin-email" value="admin@company.com" required class="form-input">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="admin-phone" class="form-label">Phone Number</label>
+                    <input type="tel" id="admin-phone" value="+1 (555) 123-4567" class="form-input">
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4 mt-2">
+                    <div class="form-group">
+                      <label class="form-label">Employee ID</label>
+                      <input type="text" value="ADM-001" disabled class="form-input">
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label">Role</label>
+                      <input type="text" value="System Administrator" disabled class="form-input">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="permissions-panel">
+                  <h3 class="panel-title">Active Permissions</h3>
+                  <p class="text-xs text-gray-500 mb-4">Core administrative permissions cannot be revoked from this account.</p>
+                  
+                  <div class="flex-1">
+                    <label class="checkbox-group">
+                      <input type="checkbox" checked disabled class="checkbox-input">
+                      <span class="checkbox-label">Full access to all employee records</span>
+                    </label>
+                    <label class="checkbox-group">
+                      <input type="checkbox" checked disabled class="checkbox-input">
+                      <span class="checkbox-label">Permission to manage users and roles</span>
+                    </label>
+                    <label class="checkbox-group">
+                      <input type="checkbox" checked disabled class="checkbox-input">
+                      <span class="checkbox-label">Access to system settings and configuration</span>
+                    </label>
+                    <label class="checkbox-group">
+                      <input type="checkbox" checked disabled class="checkbox-input">
+                      <span class="checkbox-label">Generate and export reports</span>
+                    </label>
+                    <label class="checkbox-group">
+                      <input type="checkbox" checked disabled class="checkbox-input">
+                      <span class="checkbox-label">Audit log access and system monitoring</span>
+                    </label>
+                  </div>
+
+                  <div class="form-actions">
+                    <a href="profile.html" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script src="scripts/layout.js"></script>
+  <script src="scripts/profile-edit.js"></script>
+</body>
+</html>

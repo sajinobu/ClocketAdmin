@@ -1,136 +1,146 @@
 <!doctype html>
 <html lang="en" class="h-full">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Locations - TimeTrack Portal</title>
-  <link rel="stylesheet" href="styles/styles.css">
+  <title>Live Tracking - TimeTrack Portal</title>
   
+  <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/live-tracking.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
       }
     }
   </script>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
-    
+
     <div id="header-placeholder"></div>
 
     <div class="flex flex-1 overflow-hidden">
-      
+
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-hidden bg-gray-50 flex flex-col">
-        <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">Live Tracking</h1>
-          <p class="text-sm text-gray-500">Monitoring 247 active sessions across 3 sites</p>
-        </div>
+      <main class="flex-1 overflow-hidden bg-brand-grayBg flex flex-col">
         
-        <div class="px-8 py-4 flex gap-4 overflow-x-auto no-scrollbar">
-            <div class="flex-shrink-0 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
-                <span class="text-sm font-medium text-gray-700">143 at HQ Office</span>
-            </div>
-            <div class="flex-shrink-0 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">67 Remote</span>
-            </div>
-            <div class="flex-shrink-0 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <span class="text-sm font-medium text-gray-700">37 Field Sites</span>
-            </div>
+        <div class="px-8 pt-8 pb-3 flex-shrink-0">
+          <h1 class="page-title">Live Tracking</h1>
+          <p class="page-subtitle">Monitoring 247 active sessions across 3 sites</p>
         </div>
 
-        <div class="flex-1 flex overflow-hidden px-8 pb-8 gap-6">
+        <div class="px-8 py-4 flex gap-4 overflow-x-auto no-scrollbar flex-shrink-0">
+          <div class="stat-pill">
+            <div class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></div>
+            <span>143 at HQ Office</span>
+          </div>
+          <div class="stat-pill">
+            <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span>67 Remote</span>
+          </div>
+          <div class="stat-pill">
+            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+            <span>37 Field Sites</span>
+          </div>
+        </div>
+
+        <div class="tracking-container">
+
+          <div class="map-panel">
+            <div id="map" class="w-full h-full z-0"></div>
             
-            <div class="flex-[3] bg-slate-200 rounded-3xl border border-gray-200 shadow-inner relative overflow-hidden group">
-                <div class="absolute inset-0 opacity-40 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-repeat"></div>
-                
-                <div class="map-pin absolute transition-all duration-500 cursor-pointer" style="left: 30%; top: 40%;" data-user="Sarah Johnson">
-                    <div class="relative">
-                        <div class="absolute -inset-4 bg-teal-500/20 rounded-full animate-ping"></div>
-                        <div class="w-10 h-10 rounded-full border-4 border-white shadow-xl overflow-hidden bg-brand-primary relative z-10">
-                            <div class="w-full h-full flex items-center justify-center text-white text-xs font-bold">SJ</div>
-                        </div>
-                        <div class="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Sarah Johnson</div>
-                    </div>
-                </div>
+            <div class="map-controls">
+              <button id="map-zoom-in" class="btn-map">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+              </button>
+              <button id="map-zoom-out" class="btn-map">
+                <i data-lucide="minus" class="w-5 h-5"></i>
+              </button>
+              <button id="map-recenter" class="btn-map btn-map-primary" title="Find My Location">
+                <i data-lucide="navigation" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
 
-                <div class="map-pin absolute transition-all duration-500 cursor-pointer" style="left: 55%; top: 25%;" data-user="Mike Chen">
-                    <div class="relative">
-                        <div class="w-10 h-10 rounded-full border-4 border-white shadow-xl overflow-hidden bg-purple-500 relative z-10">
-                            <div class="w-full h-full flex items-center justify-center text-white text-xs font-bold">MC</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="absolute right-6 bottom-6 flex flex-col gap-2">
-                    <button class="p-3 bg-white rounded-xl shadow-lg hover:bg-gray-50 text-gray-600"><i data-lucide="plus" class="w-5 h-5"></i></button>
-                    <button class="p-3 bg-white rounded-xl shadow-lg hover:bg-gray-50 text-gray-600"><i data-lucide="minus" class="w-5 h-5"></i></button>
-                    <button class="p-3 bg-brand-primary rounded-xl shadow-lg text-white"><i data-lucide="navigation" class="w-5 h-5"></i></button>
-                </div>
+          <div class="sidebar-panel">
+            
+            <div class="sidebar-header">
+              <h3 class="font-bold text-brand-darkest">Active Staff</h3>
+              <div class="search-wrapper">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" id="staff-search" placeholder="Search name or site..." class="search-input">
+              </div>
             </div>
 
-            <div class="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden min-w-[320px]">
-                <div class="p-6 border-b border-gray-100">
-                    <h3 class="font-bold text-gray-800 mb-4">Active Staff</h3>
-                    <div class="relative">
-                        <input type="text" id="staff-search" placeholder="Search name or site..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-brand-primary">
-                        <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                    </div>
+            <div class="staff-list" id="staff-list">
+              
+              <div class="staff-card group" data-name="Sarah Johnson">
+                <div class="avatar-circle bg-blue-100 text-blue-600">SJ</div>
+                <div class="flex-1 min-w-0">
+                  <p class="staff-card-name">Sarah Johnson</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="w-1.5 h-1.5 bg-teal-500 rounded-full flex-shrink-0"></span>
+                    <span class="text-[11px] text-gray-500 font-medium truncate">HQ Office • Floor 1</span>
+                  </div>
                 </div>
-                
-                <div class="flex-1 overflow-auto divide-y divide-gray-50" id="staff-list">
-                    <div class="staff-card p-4 hover:bg-blue-50 cursor-pointer transition-colors group" data-name="Sarah Johnson">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">SJ</div>
-                            <div class="flex-1">
-                                <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Sarah Johnson</p>
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
-                                    <span class="text-[11px] text-gray-500 font-medium">HQ Office • Floor 1</span>
-                                </div>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
-                        </div>
-                    </div>
+                <i data-lucide="chevron-right" class="staff-card-arrow"></i>
+              </div>
 
-                    <div class="staff-card p-4 hover:bg-blue-50 cursor-pointer transition-colors group" data-name="Mike Chen">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">MC</div>
-                            <div class="flex-1">
-                                <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Mike Chen</p>
-                                <div class="flex items-center gap-1.5">
-                                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
-                                    <span class="text-[11px] text-gray-500 font-medium">Remote • Austin, TX</span>
-                                </div>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
-                        </div>
-                    </div>
+              <div class="staff-card group" data-name="Mike Chen">
+                <div class="avatar-circle bg-purple-100 text-purple-600">MC</div>
+                <div class="flex-1 min-w-0">
+                  <p class="staff-card-name">Mike Chen</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></span>
+                    <span class="text-[11px] text-gray-500 font-medium truncate">Remote • Austin, TX</span>
+                  </div>
                 </div>
+                <i data-lucide="chevron-right" class="staff-card-arrow"></i>
+              </div>
+
+              <div class="staff-card group" data-name="Emma Wilson">
+                <div class="avatar-circle bg-teal-100 text-teal-600">EW</div>
+                <div class="flex-1 min-w-0">
+                  <p class="staff-card-name">Emma Wilson</p>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></span>
+                    <span class="text-[11px] text-gray-500 font-medium truncate">Site B • Warehouse</span>
+                  </div>
+                </div>
+                <i data-lucide="chevron-right" class="staff-card-arrow"></i>
+              </div>
+
             </div>
+          </div>
         </div>
+
       </main>
     </div>
   </div>
-  
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="scripts/layout.js"></script>
   <script src="scripts/live-tracking.js"></script>
 </body>

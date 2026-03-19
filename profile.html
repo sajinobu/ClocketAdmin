@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Profile - TimeTrack Portal</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/profile.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +18,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -27,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -36,93 +42,110 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">My Profile</h1>
-          <p class="text-sm text-gray-500">View and manage your profile information</p>
+          <div class="page-header-container">
+            <div>
+              <h1 class="page-title">My Profile</h1>
+              <p class="page-subtitle">View and manage your profile information</p>
+            </div>
+            <div class="header-actions">
+              <button id="reset-password-btn" class="btn-outline">
+                <i data-lucide="key" class="w-4 h-4"></i> Reset Password
+              </button>
+              <a href="profile-edit.html" class="btn-primary">
+                <i data-lucide="pencil" class="w-4 h-4"></i> Edit Details
+              </a>
+            </div>
+          </div>
         </div>
         
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
           <div class="space-y-6">
-            <div class="bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl p-8 text-white shadow-sm">
-              <div class="flex items-center gap-6">
-                <div class="w-24 h-24 rounded-full bg-white bg-opacity-20 flex items-center justify-center text-4xl font-bold">AM</div>
+            
+            <div class="profile-hero-card">
+              <div class="profile-hero-content">
+                <div class="profile-hero-avatar">AM</div>
                 <div>
-                  <h2 class="text-3xl font-bold mb-1">Admin Manager</h2>
-                  <p class="text-teal-100 mb-3">System Administrator</p>
-                  <p class="text-sm text-teal-100">admin@company.com</p>
+                  <h2 class="profile-hero-name">Admin Manager</h2>
+                  <p class="profile-hero-role">System Administrator</p>
+                  <p class="profile-hero-email">admin@company.com</p>
                 </div>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <p class="text-sm text-gray-600 mb-2">Employee ID</p>
-                <p class="text-2xl font-bold text-gray-800">ADM-001</p>
+            <div class="metric-grid">
+              <div class="metric-card">
+                <p class="metric-label">Employee ID</p>
+                <p class="metric-value">ADM-001</p>
               </div>
-              <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <p class="text-sm text-gray-600 mb-2">Department</p>
-                <p class="text-2xl font-bold text-gray-800">Management</p>
+              <div class="metric-card">
+                <p class="metric-label">Department</p>
+                <p class="metric-value">Management</p>
               </div>
-              <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <p class="text-sm text-gray-600 mb-2">Status</p>
-                <p class="text-2xl font-bold text-green-600">Active</p>
+              <div class="metric-card">
+                <p class="metric-label">Status</p>
+                <p class="metric-value text-success">Active</p>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 class="font-bold text-gray-800 mb-4">Account Details</h3>
-                <div class="space-y-4">
-                  <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                    <span class="text-sm text-gray-600">Full Name</span>
-                    <span class="font-medium text-gray-800">Admin Manager</span>
+            <div class="details-grid">
+              
+              <div class="detail-panel">
+                <h3 class="panel-title">Account Details</h3>
+                <div class="account-list">
+                  <div class="account-row">
+                    <span class="account-label">Full Name</span>
+                    <span class="account-value">Admin Manager</span>
                   </div>
-                  <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                    <span class="text-sm text-gray-600">Email Address</span>
-                    <span class="font-medium text-gray-800">admin@company.com</span>
+                  <div class="account-row">
+                    <span class="account-label">Email Address</span>
+                    <span class="account-value">admin@company.com</span>
                   </div>
-                  <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                    <span class="text-sm text-gray-600">Phone</span>
-                    <span class="font-medium text-gray-800">+1 (555) 123-4567</span>
+                  <div class="account-row">
+                    <span class="account-label">Phone</span>
+                    <span class="account-value">+1 (555) 123-4567</span>
                   </div>
-                  <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                    <span class="text-sm text-gray-600">Join Date</span>
-                    <span class="font-medium text-gray-800">January 15, 2023</span>
+                  <div class="account-row">
+                    <span class="account-label">Join Date</span>
+                    <span class="account-value">January 15, 2023</span>
                   </div>
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm text-gray-600">Role</span>
-                    <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">System Administrator</span>
+                  <div class="account-row">
+                    <span class="account-label">Role</span>
+                    <span class="badge-role">System Administrator</span>
                   </div>
                 </div>
               </div>
 
-              <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
-                <h3 class="font-bold text-gray-800 mb-3">Permissions</h3>
-                <ul class="space-y-3 text-sm text-gray-700">
-                  <li class="flex items-start gap-3">
-                    <div class="mt-1 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+              <div class="permissions-panel">
+                <h3 class="panel-title">Permissions</h3>
+                <ul class="permissions-list">
+                  <li class="permission-item">
+                    <div class="permission-dot"></div>
                     <span>Full access to all employee records</span>
                   </li>
-                  <li class="flex items-start gap-3">
-                    <div class="mt-1 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                  <li class="permission-item">
+                    <div class="permission-dot"></div>
                     <span>Permission to manage users and roles</span>
                   </li>
-                  <li class="flex items-start gap-3">
-                    <div class="mt-1 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                  <li class="permission-item">
+                    <div class="permission-dot"></div>
                     <span>Access to system settings and configuration</span>
                   </li>
-                  <li class="flex items-start gap-3">
-                    <div class="mt-1 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                  <li class="permission-item">
+                    <div class="permission-dot"></div>
                     <span>Generate and export reports</span>
                   </li>
-                  <li class="flex items-start gap-3">
-                    <div class="mt-1 w-2 h-2 bg-blue-600 rounded-full flex-shrink-0"></div>
+                  <li class="permission-item">
+                    <div class="permission-dot"></div>
                     <span>Audit log access and system monitoring</span>
                   </li>
                 </ul>
               </div>
+
             </div>
+
           </div>
         </div>
       </main>

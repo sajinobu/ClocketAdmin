@@ -10,7 +10,7 @@ async function loadLayout() {
         const sidebarHtml = await sidebarResponse.text();
         document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
 
-        // Now that the HTML is on the page, set up the scripts
+        // Set up the scripts now that HTML is injected
         initializeLayout();
 
     } catch (error) {
@@ -20,23 +20,24 @@ async function loadLayout() {
 
 function initializeLayout() {
     // 1. Draw Icons
-    lucide.createIcons();
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 
     // 2. Set current date
-    const dateEl = document.getElementById('theme-toggle');
+    const dateEl = document.getElementById('header-date');
     if (dateEl) {
         const now = new Date();
         const options = { weekday: 'short', month: 'short', day: 'numeric' };
-        dateEl.innerHTML = `<span class="text-sm font-medium text-gray-700">${now.toLocaleDateString('en-US', options)}</span>`;
+        dateEl.textContent = now.toLocaleDateString('en-US', options);
     }
 
     // 3. Highlight the active link in the sidebar
     const currentPath = window.location.pathname.split('/').pop() || 'dashboard.html';
-    const sidebarLinks = document.querySelectorAll('.sidebar-item');
+    const sidebarLinks = document.querySelectorAll('.nav-link'); // Updated to semantic class
     
     sidebarLinks.forEach(link => {
         const linkHref = link.getAttribute('href');
-        // If the current URL matches the link, make it active
         if (currentPath === linkHref) {
             link.classList.add('active');
         } else {
@@ -47,7 +48,7 @@ function initializeLayout() {
     // 4. Mobile Menu Toggle
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.querySelector('aside');
+    const sidebar = document.getElementById('app-sidebar');
 
     if (mobileMenuBtn && sidebarOverlay && sidebar) {
         mobileMenuBtn.addEventListener('click', () => {
@@ -78,7 +79,7 @@ function initializeLayout() {
         });
     }
 
-    // 6. Logout Logic
+    // 6. Logout Logic (Redirects to new index.html)
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {

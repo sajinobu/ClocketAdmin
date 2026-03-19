@@ -42,3 +42,7 @@ Schedule:
 
 Login:
     - Wala pa
+
+
+palette:
+

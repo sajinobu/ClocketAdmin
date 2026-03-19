@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // --- Dynamic Routing Logic ---
+    // --- 1. Dynamic Routing Logic ---
     let fromPage = 'management'; // Defaults to management
     
-    // Slight delay to wait for layout.js to inject the sidebar
     setTimeout(() => {
         // Read URL parameter
         const urlParams = new URLSearchParams(window.location.search);
@@ -26,8 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 100);
 
-    // --- Form Submission Logic ---
+    // --- 2. Form Submission Logic ---
     const form = document.getElementById('add-employee-form');
+    
     if (form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -35,38 +35,44 @@ document.addEventListener('DOMContentLoaded', () => {
             const firstName = document.getElementById('first-name').value;
             const lastName = document.getElementById('last-name').value;
             const employeeId = document.getElementById('employee-id').value;
-            const systemRole = document.querySelector('input[name="system-role"]:checked').value;
             
-            // Create and show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl shadow-lg z-[80] flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
-            
-            successMsg.innerHTML = `
-                <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <div>
-                    <strong class="block text-gray-800">Success!</strong> 
-                    <span class="text-sm">${firstName} ${lastName} (${employeeId}) has been added.</span>
-                </div>
-            `;
-            
-            document.body.appendChild(successMsg);
-            
-            // Animate toast in
-            requestAnimationFrame(() => {
-                successMsg.style.transform = "translateY(0)";
-                successMsg.style.opacity = "1";
-            });
+            // Replaced the default alert with our custom dark brand toast
+            showSuccessToast(`${firstName} ${lastName} (${employeeId}) has been successfully added to the system.`);
             
             // Wait, fade out, and dynamically route back to the parent page
             setTimeout(() => {
-                successMsg.style.transform = "translateY(-20px)";
-                successMsg.style.opacity = "0";
-                
-                setTimeout(() => {
-                    window.location.href = `${fromPage}.html`;
-                }, 300);
-                
-            }, 2000);
+                window.location.href = `${fromPage}.html`;
+            }, 2500); // Gives the user time to read the toast before redirecting
         });
+    }
+
+    // --- 3. Custom Brand Toast Utility ---
+    function showSuccessToast(message) {
+        const toast = document.createElement('div');
+        
+        // Styled with the brand-darkest palette
+        toast.className = `fixed bottom-6 right-6 bg-[#000523] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[100] transition-all duration-500 transform translate-y-20 opacity-0`;
+        toast.style.cssText = "display: flex; align-items: center; justify-content: center; min-width: 320px;";
+
+        toast.innerHTML = `
+            <div class="w-10 h-10 bg-[rgba(87,232,255,0.1)] text-[#57e8ff] rounded-xl flex items-center justify-center flex-shrink-0">
+                <i data-lucide="user-plus" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm font-bold text-white">Employee Added</p>
+                <p class="text-xs text-gray-300 mt-0.5">${message}</p>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        
+        if (window.lucide) lucide.createIcons();
+
+        // Animate In
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-20', 'opacity-0');
+        });
+
+        // No animate out needed, because the page will redirect!
     }
 });

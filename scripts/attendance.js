@@ -1,81 +1,118 @@
 document.addEventListener('DOMContentLoaded', () => {
     
+    // ==========================================
+    // 1. PHOTO VERIFICATION MODAL LOGIC
+    // ==========================================
     const photoModal = document.getElementById('photo-modal');
     const viewPhotoBtns = document.querySelectorAll('.view-photo-btn');
-    const closeBtns = [document.getElementById('close-modal-btn'), document.getElementById('close-modal-btn-2')];
+    const closeBtns = [
+        document.getElementById('close-modal-btn'), 
+        document.getElementById('close-modal-btn-2')
+    ];
     const modalEmpName = document.getElementById('modal-emp-name');
 
     // Open Modal and inject the correct employee's name
-    viewPhotoBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const employeeName = btn.getAttribute('data-name');
-            modalEmpName.textContent = employeeName;
-            
-            photoModal.classList.remove('hidden');
+    if (viewPhotoBtns.length > 0 && photoModal) {
+        viewPhotoBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const employeeName = btn.getAttribute('data-name');
+                if (modalEmpName) {
+                    modalEmpName.textContent = employeeName;
+                }
+                photoModal.classList.remove('hidden');
+            });
         });
-    });
+    }
 
     // Close Modal Logic
     function closeModal() {
-        photoModal.classList.add('hidden');
+        if (photoModal) {
+            photoModal.classList.add('hidden');
+        }
     }
 
     closeBtns.forEach(btn => {
-        if(btn) btn.addEventListener('click', closeModal);
+        if (btn) btn.addEventListener('click', closeModal);
     });
 
     // Close modal when clicking outside the white box
-    photoModal.addEventListener('click', (e) => {
-        if (e.target === photoModal) {
-            closeModal();
-        }
-    });
-
-    // Set Date input to today's date dynamically
-    const dateInput = document.getElementById('attendance-date');
-    if(dateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
+    if (photoModal) {
+        photoModal.addEventListener('click', (e) => {
+            if (e.target === photoModal) {
+                closeModal();
+            }
+        });
     }
 
-    // --- NEW: Search and Filter Logic ---
+    // ==========================================
+    // 2. SET DATE INPUT TO TODAY (LOCAL TIME)
+    // ==========================================
+    const dateInput = document.getElementById('attendance-date');
+    if (dateInput) {
+        // Get local date properly adjusted for timezone offset
+        const today = new Date();
+        const offset = today.getTimezoneOffset() * 60000;
+        const localDate = new Date(today.getTime() - offset).toISOString().split('T')[0];
+        
+        dateInput.value = localDate;
+    }
+
+    // ==========================================
+    // 3. SEARCH AND FILTER LOGIC
+    // ==========================================
     const searchInput = document.getElementById('search-input');
     const statusFilter = document.getElementById('status-filter');
-    const tableRows = document.querySelectorAll('tbody tr');
+    const tableRows = document.querySelectorAll('.attendance-row');
 
     function filterAttendanceTable() {
-        const searchTerm = searchInput.value.toLowerCase();
+        if (!searchInput || !statusFilter) return;
+
+        const searchTerm = searchInput.value.toLowerCase().trim();
         const statusValue = statusFilter.value;
 
         tableRows.forEach(row => {
-            // Find the Name and Status cells within the row
-            const nameNode = row.querySelector('td:nth-child(1) p.font-medium');
-            const statusNode = row.querySelector('td:nth-child(6) span');
+            // Find the Name and Status cells matching the new HTML structure
+            const nameNode = row.querySelector('.table-td:nth-child(1) p.font-bold');
+            const statusNode = row.querySelector('.table-td:nth-child(6) .status-badge');
             
             if (!nameNode || !statusNode) return; // Safety fallback
             
             const name = nameNode.textContent.toLowerCase();
             
-            // Format the text inside the span to match our <option> values 
-            // e.g., "On Time" becomes "on-time"
-            const statusText = statusNode.textContent.toLowerCase().replace(/\s+/g, '-'); 
+            // Format the text inside the badge to match our <option> values 
+            // e.g., "On Time" -> "on-time", "Missing Punch" -> "missing-punch"
+            let statusText = statusNode.textContent.toLowerCase().replace(/\s+/g, '-'); 
+            
+            // Handle edge case where select option is "missing" but badge might say "missing-punch"
+            if (statusText === 'missing-punch') {
+                statusText = 'missing';
+            }
 
             // Check if row matches search AND filter
             const matchesSearch = name.includes(searchTerm);
-            const matchesStatus = statusValue === 'all' || statusText === statusValue;
+            const matchesStatus = statusValue === 'all' || statusText.includes(statusValue);
 
-            // Show or hide row
+            // Show or hide row overriding standard CSS
             if (matchesSearch && matchesStatus) {
-                row.style.display = '';
+                row.style.display = ''; 
             } else {
                 row.style.display = 'none';
             }
         });
     }
 
-    // Attach the event listeners
-    if (searchInput && statusFilter) {
-        searchInput.addEventListener('keyup', filterAttendanceTable);
+    // Attach the event listeners ('input' is used instead of 'keyup' to support copy/pasting)
+    if (searchInput) {
+        searchInput.addEventListener('input', filterAttendanceTable);
+    }
+    if (statusFilter) {
         statusFilter.addEventListener('change', filterAttendanceTable);
+    }
+
+    // ==========================================
+    // 4. INITIALIZE ICONS
+    // ==========================================
+    if (window.lucide) {
+        lucide.createIcons();
     }
 });

@@ -2,18 +2,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Tab Logic ---
     const tabs = document.querySelectorAll('.management-tab');
     const contents = document.querySelectorAll('.management-tab-content');
+    
     function switchTab(tabName) {
         tabs.forEach(t => {
-            t.classList.toggle('border-teal-600', t.getAttribute('data-tab') === tabName);
-            t.classList.toggle('text-teal-600', t.getAttribute('data-tab') === tabName);
-            t.classList.toggle('border-transparent', t.getAttribute('data-tab') !== tabName);
-            t.classList.toggle('text-gray-600', t.getAttribute('data-tab') !== tabName);
+            if (t.getAttribute('data-tab') === tabName) {
+                t.classList.add('active');
+            } else {
+                t.classList.remove('active');
+            }
         });
-        contents.forEach(content => content.classList.toggle('hidden', content.id !== `${tabName}-tab`));
+        contents.forEach(content => {
+            content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
+        });
     }
+    
     tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.getAttribute('data-tab'))));
 
-    // --- 2. Advanced Filtering Logic ---
+    // --- 2. Advanced Filtering Logic (Employees) ---
     const empSearch = document.querySelector('.employees-search');
     const filterModal = document.getElementById('filter-modal');
     const filterBadge = document.getElementById('filter-badge');
@@ -31,40 +36,44 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyFinalFilters() {
         const searchText = empSearch.value.toLowerCase().trim();
         const deptValue = filterDept.value;
-        const statusValue = filterStatus.value;
+        const statusValue = filterStatus.value.toLowerCase(); // Ensure lowercase matching
         
-        // Grab rows from the specific employee table
-        const rows = document.querySelectorAll('#employee-table-body .table-row');
+        // Grab only the data rows, excluding the "no results" row
+        const rows = document.querySelectorAll('#employee-table-body .data-row:not(#no-results-row)');
         let visibleCount = 0;
 
         rows.forEach(row => {
-            // Extraction
-            const name = row.querySelector('p.font-medium')?.textContent.toLowerCase() || '';
-            const email = row.querySelectorAll('td')[2]?.textContent.toLowerCase() || '';
-            const rowDept = row.querySelectorAll('td')[1]?.textContent.trim();
-            const rowStatus = row.querySelector('td:nth-child(4) span')?.textContent.trim();
+            // Extraction based on the semantic table-td layout
+            const name = row.querySelector('.font-bold')?.textContent.toLowerCase() || '';
+            const email = row.querySelectorAll('.table-td')[2]?.textContent.toLowerCase() || '';
+            const rowDept = row.querySelectorAll('.table-td')[1]?.textContent.trim();
+            const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim();
 
             // Comparison
             const matchesSearch = name.includes(searchText) || email.includes(searchText);
             const matchesDept = deptValue === "" || rowDept === deptValue;
             const matchesStatus = statusValue === "" || (rowStatus && rowStatus.includes(statusValue));
 
+            // Fix: Override CSS display property directly
             if (matchesSearch && matchesDept && matchesStatus) {
-                row.classList.remove('hidden');
+                row.style.display = '';
                 visibleCount++;
             } else {
-                row.classList.add('hidden');
+                row.style.display = 'none';
             }
         });
 
         // Toggle UI states
         filterBadge.classList.toggle('hidden', deptValue === "" && statusValue === "");
-        noResults.classList.toggle('hidden', visibleCount > 0);
+        if (noResults) {
+            noResults.style.display = visibleCount > 0 ? 'none' : '';
+            noResults.classList.remove('hidden'); // Ensure CSS doesn't fight the style prop
+        }
         
         if (window.lucide) lucide.createIcons();
     }
 
-    // Event Listeners
+    // Event Listeners for Filters
     btnOpenModal.addEventListener('click', () => filterModal.classList.remove('hidden'));
     btnCloseModal.addEventListener('click', () => filterModal.classList.add('hidden'));
     
@@ -85,15 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFinalFilters();
     });
 
-    // Real-time search
     empSearch.addEventListener('input', applyFinalFilters);
 
-    // Close modal on background click
     filterModal.addEventListener('click', (e) => {
         if (e.target === filterModal) filterModal.classList.add('hidden');
     });
 
-    // --- 3. Action Menu Logic ---
+    // --- 3. Action Menu Logic (Dropdowns) ---
     document.addEventListener('click', (e) => {
         const isActionBtn = e.target.closest('.action-btn');
         const allMenus = document.querySelectorAll('.action-menu');
@@ -108,48 +115,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- 3. Teams Filtering Logic (Search + Dept Dropdown) ---
+    // --- 4. Teams Filtering Logic ---
     const teamsSearchInput = document.getElementById('teams-search-input');
     const teamDeptFilter = document.getElementById('team-dept-filter');
     const noTeamsRow = document.getElementById('no-teams-row');
     const clearTeamFiltersBtn = document.getElementById('clear-team-filters');
 
     function applyTeamFilters() {
+        if (!teamsSearchInput || !teamDeptFilter) return;
+
         const searchText = teamsSearchInput.value.toLowerCase().trim();
         const deptValue = teamDeptFilter.value;
         
-        const rows = document.querySelectorAll('#teams-table-body .table-row');
+        const rows = document.querySelectorAll('#teams-table-body .data-row:not(#no-teams-row)');
         let visibleCount = 0;
 
         rows.forEach(row => {
-            const teamName = row.querySelector('p.font-medium')?.textContent.toLowerCase() || '';
-            const rowDept = row.querySelectorAll('td')[1]?.textContent.trim();
-            const teamLead = row.querySelectorAll('td')[2]?.textContent.toLowerCase() || '';
+            const teamName = row.querySelector('.font-bold')?.textContent.toLowerCase() || '';
+            const rowDept = row.querySelectorAll('.table-td')[1]?.textContent.trim();
+            const teamLead = row.querySelectorAll('.table-td')[2]?.textContent.toLowerCase() || '';
 
             const matchesSearch = teamName.includes(searchText) || teamLead.includes(searchText);
             const matchesDept = deptValue === "" || rowDept === deptValue;
 
             if (matchesSearch && matchesDept) {
-                row.classList.remove('hidden');
+                row.style.display = '';
                 visibleCount++;
             } else {
-                row.classList.add('hidden');
+                row.style.display = 'none';
             }
         });
 
-        // Show/Hide the "No results" row
-        noTeamsRow.classList.toggle('hidden', visibleCount > 0);
+        if (noTeamsRow) {
+            noTeamsRow.style.display = visibleCount > 0 ? 'none' : '';
+            noTeamsRow.classList.remove('hidden');
+        }
         
         if (window.lucide) lucide.createIcons();
     }
 
-    // Listeners for Teams
     if (teamsSearchInput && teamDeptFilter) {
         teamsSearchInput.addEventListener('input', applyTeamFilters);
         teamDeptFilter.addEventListener('change', applyTeamFilters);
     }
 
-    // Clear Button for Teams
     if (clearTeamFiltersBtn) {
         clearTeamFiltersBtn.addEventListener('click', () => {
             teamsSearchInput.value = "";
@@ -158,8 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- 4. Disband Team / Delete Employee Logic ---
-    // --- 4. Disband Team / Delete Employee Logic ---
+    // --- 5. Disband Team / Delete Employee Logic ---
     const deleteModal = document.getElementById('delete-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete');
     const cancelDeleteBtn = document.getElementById('cancel-delete');
@@ -167,58 +175,53 @@ document.addEventListener('DOMContentLoaded', () => {
     let itemToDelete = null; 
     let deleteName = "";     
 
-    // Open Modal for BOTH Teams and Employees
     document.addEventListener('click', (e) => {
         const disbandBtn = e.target.closest('.disband-btn');
-        const deleteEmpBtn = e.target.closest('.delete-employee-btn'); // Targeted Employee Button
+        const deleteEmpBtn = e.target.closest('.delete-employee-btn');
         
         if (disbandBtn || deleteEmpBtn) {
             const activeBtn = disbandBtn || deleteEmpBtn;
             itemToDelete = activeBtn.closest('tr');
             deleteName = activeBtn.getAttribute('data-name');
             
-            // Update modal text dynamically
             document.getElementById('delete-type').textContent = disbandBtn ? "team" : "employee";
-            
             deleteModal.classList.remove('hidden');
         }
     });
 
-    // Close Modal
     cancelDeleteBtn.addEventListener('click', () => {
         deleteModal.classList.add('hidden');
         itemToDelete = null;
     });
 
-    // Confirm Delete Action (Handles the animation for both tabs)
     confirmDeleteBtn.addEventListener('click', () => {
         if (!itemToDelete) return;
 
         const row = itemToDelete;
         const name = deleteName;
 
-        // 1. Fade and slide animation
+        // Animations for visual feedback
         row.style.transition = 'all 0.4s ease';
         row.style.transform = 'translateX(30px)';
         row.style.opacity = '0';
 
         setTimeout(() => {
-            // 2. Collapse height smoothly
             row.style.height = row.offsetHeight + 'px';
-            row.offsetHeight; // Force reflow
+            row.offsetHeight; 
             row.style.height = '0px';
-            row.style.paddingTop = '0px';
-            row.style.paddingBottom = '0px';
-            row.style.border = 'none';
+            row.querySelectorAll('td').forEach(td => {
+                td.style.paddingTop = '0px';
+                td.style.paddingBottom = '0px';
+                td.style.border = 'none';
+            });
 
             setTimeout(() => {
                 row.remove();
                 
-                // 3. Re-run filters to check if "No Results" message should appear
+                // Re-run filters to show "Empty State" message if it was the last row
                 applyFinalFilters(); 
                 applyTeamFilters();
                 
-                // 4. Show the dark toast
                 showManagementToast(`Successfully removed "${name}"`);
             }, 300);
         }, 300);
@@ -226,12 +229,13 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteModal.classList.add('hidden');
     });
 
-    // --- Toast Utility for Management ---
+    // --- Toast Utility ---
     function showManagementToast(message) {
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-6 right-6 bg-brand-darkest text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3`;
-        toast.style.cssText = "z-index: 9999; transform: translateY(20px); opacity: 0; transition: all 0.3s ease;";
-        toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-teal-400"></i> <span class="text-sm font-medium">${message}</span>`;
+        // Styled using standard Tailwind classes mapped to your palette
+        toast.className = `fixed bottom-6 right-6 bg-[#000523] text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-[9999]`;
+        toast.style.cssText = "transform: translateY(20px); opacity: 0; transition: all 0.3s ease;";
+        toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-[#57e8ff]"></i> <span class="text-sm font-medium">${message}</span>`;
         
         document.body.appendChild(toast);
         if(window.lucide) lucide.createIcons();

@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Edit Employee - TimeTrack Portal</title>
+  
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/employee-edit-profile.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +18,11 @@
       theme: {
         extend: {
           colors: {
-            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+            brand: { 
+              darkest: '#000523', darker: '#000533', dark: '#000b66',
+              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
+              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+            }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
         }
@@ -27,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -36,77 +42,78 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-gray-50">
+      <main class="flex-1 overflow-auto bg-brand-grayBg">
+        
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <div class="flex items-center gap-4 mb-1">
-            <a href="employee-profile.html" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <div class="page-header-container">
+            <a id="dynamic-back-btn" href="employee-profile.html" class="btn-back">
              <i data-lucide="arrow-left" class="w-6 h-6"></i>
             </a>
-            <h1 class="text-2xl font-bold text-brand-darkest">Edit Employee Details</h1>
+            <h1 class="page-title">Edit Employee Details</h1>
           </div>
         </div>
         
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
+            <div class="form-panel">
               
-              <div class="flex items-center gap-6 mb-8 pb-8 border-b border-gray-100">
-                <div class="relative">
-                  <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold shadow-sm">SJ</div>
-                  <button class="absolute bottom-0 right-0 bg-white border border-gray-200 p-1.5 rounded-full text-gray-600 hover:text-brand-secondary shadow-sm transition-colors">
+              <div class="avatar-edit-section">
+                <div class="avatar-wrapper">
+                  <div class="avatar-circle">SJ</div>
+                  <button class="btn-camera">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                   </button>
                 </div>
                 <div>
-                  <h2 class="text-xl font-bold text-gray-800">Sarah Johnson</h2>
-                  <p class="text-sm text-gray-500">EMP-001</p>
+                  <h2 class="employee-name">Sarah Johnson</h2>
+                  <p class="employee-id-text">EMP-001</p>
                 </div>
               </div>
 
               <form id="edit-employee-form" class="space-y-6">
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Personal Information</h3>
-                  <div class="grid grid-cols-3 gap-3">
-                    <div>
-                      <label for="edit-first-name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                      <input type="text" id="edit-first-name" value="Sarah" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" style="background-color: #ffffff;">
+                  <h3 class="section-title">Personal Information</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="form-group">
+                      <label for="edit-first-name" class="form-label">First Name</label>
+                      <input type="text" id="edit-first-name" value="Sarah" required class="form-input">
                     </div>
-                    <div>
-                      <label for="edit-middle-name" class="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-                      <input type="text" id="edit-middle-name" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Optional" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-middle-name" class="form-label">Middle Name</label>
+                      <input type="text" id="edit-middle-name" placeholder="Optional" class="form-input">
                     </div>
-                    <div>
-                      <label for="edit-last-name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                      <input type="text" id="edit-last-name" value="Johnson" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-primary" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-last-name" class="form-label">Last Name</label>
+                      <input type="text" id="edit-last-name" value="Johnson" required class="form-input">
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Contact Information</h3>
+                  <h3 class="section-title">Contact Information</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label for="edit-email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                      <input type="email" id="edit-email" value="sarah.j@company.com" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-email" class="form-label">Email Address</label>
+                      <input type="email" id="edit-email" value="sarah.j@company.com" required class="form-input">
                     </div>
-                    <div>
-                      <label for="edit-phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                      <input type="tel" id="edit-phone" value="+1 (555) 987-6543" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-phone" class="form-label">Phone Number</label>
+                      <input type="tel" id="edit-phone" value="+1 (555) 987-6543" class="form-input">
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Employment Information</h3>
-                  <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div>
-                      <label for="edit-employee-id" class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
-                      <input type="text" id="edit-employee-id" value="EMP-001" disabled class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed">
+                  <h3 class="section-title">Employment Information</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                      <label for="edit-employee-id" class="form-label">Employee ID</label>
+                      <input type="text" id="edit-employee-id" value="EMP-001" disabled class="form-input">
                     </div>
-                    <div>
-                      <label for="edit-department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                      <select id="edit-department" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-department" class="form-label">Department</label>
+                      <select id="edit-department" required class="form-input">
                         <option value="Engineering" selected>Engineering</option>
                         <option value="Design">Design</option>
                         <option value="Operations">Operations</option>
@@ -115,14 +122,15 @@
                       </select>
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 gap-3">
-                    <div>
-                      <label for="edit-job-title" class="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
-                      <input type="text" id="edit-job-title" value="Senior Frontend Developer" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                      <label for="edit-job-title" class="form-label">Job Title</label>
+                      <input type="text" id="edit-job-title" value="Senior Frontend Developer" required class="form-input">
                     </div>
-                    <div>
-                      <label for="edit-assigned-team" class="block text-sm font-medium text-gray-700 mb-2">Assigned Team</label>
-                      <select id="edit-assigned-team" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
+                    <div class="form-group">
+                      <label for="edit-assigned-team" class="form-label">Assigned Team</label>
+                      <select id="edit-assigned-team" required class="form-input">
                         <option value="Engineering Team A" selected>Engineering Team A</option>
                         <option value="Design Team B">Design Team B</option>
                         <option value="Operations Team A">Operations Team A</option>
@@ -133,41 +141,43 @@
               </form>
             </div>
 
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col">
+            <div class="form-panel">
               <div class="space-y-6 flex-1 flex flex-col">
                 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">System Role</h3>
+                  <h3 class="section-title">System Role</h3>
                   <div class="space-y-3">
-                    <label class="flex items-center gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <input type="radio" name="system-role" value="Employee" checked class="w-4 h-4 accent-teal-600" form="edit-employee-form">
+                    <label class="role-card">
+                      <input type="radio" name="system-role" value="Employee" checked class="role-radio" form="edit-employee-form">
                       <div>
-                        <span class="text-sm font-medium text-gray-800">Employee</span>
-                        <p class="text-xs text-gray-500">Standard user with limited permissions</p>
+                        <span class="role-title">Employee</span>
+                        <p class="role-desc">Standard user with limited permissions</p>
                       </div>
                     </label>
-                    <label class="flex items-center gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                      <input type="radio" name="system-role" value="Manager" class="w-4 h-4 accent-teal-600" form="edit-employee-form">
+                    <label class="role-card">
+                      <input type="radio" name="system-role" value="Manager" class="role-radio" form="edit-employee-form">
                       <div>
-                        <span class="text-sm font-medium text-gray-800">Manager</span>
-                        <p class="text-xs text-gray-500">Team management and reporting access</p>
+                        <span class="role-title">Manager</span>
+                        <p class="role-desc">Team management and reporting access</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Account Status</h3>
-                  <select id="edit-status" form="edit-employee-form" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
-                    <option value="Active" selected>Active</option>
-                    <option value="On Leave">On Leave</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
+                  <h3 class="section-title">Account Status</h3>
+                  <div class="form-group">
+                    <select id="edit-status" form="edit-employee-form" class="form-input">
+                      <option value="Active" selected>Active</option>
+                      <option value="On Leave">On Leave</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div class="flex gap-3 pt-6 border-t border-gray-100 mt-auto">
-                  <button type="submit" form="edit-employee-form" class="flex-1 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">Save Changes</button>
-                  <a href="employee-profile.html" class="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center">Cancel</a>
+                <div class="form-actions">
+                  <a id="dynamic-cancel-btn" href="employee-profile.html" class="btn-cancel">Cancel</a>
+                  <button type="submit" form="edit-employee-form" class="btn-primary">Save Changes</button>
                 </div>
               </div>
             </div>

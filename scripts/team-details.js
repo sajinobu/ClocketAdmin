@@ -16,12 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (backBtn) backBtn.href = returnUrl;
 
         // 3. Sidebar Persistence
-        // Since Team Details is a sub-page of "Management", 
-        // we keep the Management sidebar item active.
+        // Since Team Details is a sub-page of "Management", keep Management active
         document.querySelectorAll('.sidebar-item').forEach(item => {
             item.classList.remove('active');
             
-            // Check if the link href starts with the fromPage name
             if (item.getAttribute('href').startsWith(fromPage)) {
                 item.classList.add('active');
             }
@@ -30,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("Team Details view initialized.");
 
-    // --- NEW: Member Search Logic ---
+    // --- Member Search Logic ---
     const memberSearch = document.getElementById('member-search');
     const memberRows = document.querySelectorAll('.member-row');
     const noMembersRow = document.getElementById('no-members-row');
@@ -41,20 +39,22 @@ document.addEventListener('DOMContentLoaded', () => {
             let visibleCount = 0;
 
             memberRows.forEach(row => {
-                const name = row.querySelector('p.font-medium')?.textContent.toLowerCase() || '';
-                const role = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                // Ensure we target the correct new class structure (.member-name)
+                const name = row.querySelector('.member-name')?.textContent.toLowerCase() || '';
+                const role = row.querySelector('.table-td:nth-child(2)')?.textContent.toLowerCase() || '';
 
+                // FIX: Override CSS classes with inline display properties
                 if (name.includes(searchTerm) || role.includes(searchTerm)) {
-                    row.classList.remove('hidden');
+                    row.style.display = ''; // Shows the row
                     visibleCount++;
                 } else {
-                    row.classList.add('hidden');
+                    row.style.display = 'none'; // Hides the row securely
                 }
             });
 
             // Toggle "No Results" message
             if (noMembersRow) {
-                noMembersRow.classList.toggle('hidden', visibleCount > 0);
+                noMembersRow.style.display = visibleCount > 0 ? 'none' : '';
             }
         });
     }
