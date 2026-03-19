@@ -1,104 +1,131 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initialize Lucide Icons
-    lucide.createIcons();
-  
-    // 2. Display current date in header
-    const dateEl = document.getElementById('theme-toggle');
-    const now = new Date();
-    const options = { weekday: 'short', month: 'short', day: 'numeric' };
-    dateEl.innerHTML = `<span class="text-sm font-medium text-gray-700">${now.toLocaleDateString('en-US', options)}</span>`;
-  
-    // 3. Mobile Sidebar Toggle
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.querySelector('aside');
-  
-    mobileMenuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('mobile-open');
-      sidebarOverlay.classList.toggle('active');
-    });
-  
-    sidebarOverlay.addEventListener('click', () => {
-      sidebar.classList.remove('mobile-open');
-      sidebarOverlay.classList.remove('active');
-    });
-  
-    // 4. Profile Dropdown Menu Toggle
-    const profileBtn = document.getElementById('profile-btn');
-    const profileDropdown = document.getElementById('profile-dropdown');
-  
-    profileBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      profileDropdown.classList.toggle('hidden');
-    });
-  
-    document.addEventListener('click', (e) => {
-      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
-        profileDropdown.classList.add('hidden');
-      }
-    });
-  
-    // 5. Logout logic (Demo)
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            // Usually you would redirect to index.html (login screen)
-            window.location.href = 'index.html'; 
-        });
+    // --- Modal Logic (Live Feed) ---
+    const viewMoreBtn = document.getElementById('view-more-feed-btn');
+    const feedModal = document.getElementById('feed-modal');
+    const closeFeedModalBtn = document.getElementById('close-feed-modal');
+
+    if (viewMoreBtn && feedModal) {
+        viewMoreBtn.addEventListener('click', () => feedModal.classList.remove('hidden'));
+        closeFeedModalBtn.addEventListener('click', () => feedModal.classList.add('hidden'));
+        feedModal.addEventListener('click', (e) => { if (e.target === feedModal) feedModal.classList.add('hidden'); });
     }
-  
-    // 6. Table Search Functionality
-    const searchToggleBtn = document.getElementById('search-toggle-mobile');
-    const searchFieldMobile = document.querySelector('.search-field-mobile');
-    const searchInputMobile = document.getElementById('search-input-mobile');
-    const searchInputDesktop = document.getElementById('search-input-desktop');
-  
-    // Toggle mobile search input
-    if (searchToggleBtn && searchFieldMobile) {
-      searchToggleBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        searchFieldMobile.classList.toggle('hidden');
-        if (!searchFieldMobile.classList.contains('hidden')) {
-          setTimeout(() => searchInputMobile.focus(), 50);
+
+    // --- Pending Approvals & Modal Logic ---
+    const viewReqBtns = document.querySelectorAll('.view-request-btn');
+    const pendingBadge = document.getElementById('pending-badge');
+    const approvalList = document.getElementById('approval-list');
+    const reqModal = document.getElementById('request-modal');
+    const closeReqBtn = document.getElementById('close-req-modal');
+    
+    const reqDefaultActions = document.getElementById('req-default-actions');
+    const reqConfirmDenyActions = document.getElementById('req-confirm-deny-actions');
+    const denyReasonContainer = document.getElementById('deny-reason-container');
+    const denyReasonText = document.getElementById('deny-reason-text');
+    
+    const btnInitDeny = document.getElementById('btn-init-deny');
+    const btnCancelDeny = document.getElementById('btn-cancel-deny');
+    const btnApprove = document.getElementById('btn-approve');
+    const btnConfirmDeny = document.getElementById('btn-confirm-deny');
+
+    let currentApprovalItem = null;
+    let currentEmpName = "";
+
+    viewReqBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentApprovalItem = btn.closest('.approval-item');
+            currentEmpName = btn.getAttribute('data-emp');
+            
+            document.getElementById('req-modal-title').textContent = btn.getAttribute('data-title');
+            document.getElementById('req-modal-avatar').textContent = btn.getAttribute('data-initials');
+            document.getElementById('req-modal-emp').textContent = currentEmpName;
+            document.getElementById('req-modal-dept').textContent = btn.getAttribute('data-dept');
+            document.getElementById('req-modal-desc').textContent = btn.getAttribute('data-desc');
+            document.getElementById('req-modal-file').textContent = btn.getAttribute('data-file');
+
+            denyReasonContainer.classList.add('hidden');
+            reqConfirmDenyActions.classList.add('hidden');
+            reqDefaultActions.classList.remove('hidden');
+            denyReasonText.value = '';
+            reqModal.classList.remove('hidden');
+        });
+    });
+
+    function closeReqModal() {
+        reqModal.classList.add('hidden');
+        currentApprovalItem = null;
+    }
+    closeReqBtn.addEventListener('click', closeReqModal);
+
+    btnInitDeny.addEventListener('click', () => {
+        reqDefaultActions.classList.add('hidden');
+        reqConfirmDenyActions.classList.remove('hidden');
+        denyReasonContainer.classList.remove('hidden');
+        denyReasonText.focus();
+    });
+
+    btnCancelDeny.addEventListener('click', () => {
+        reqConfirmDenyActions.classList.add('hidden');
+        denyReasonContainer.classList.add('hidden');
+        reqDefaultActions.classList.remove('hidden');
+    });
+
+    function processAction(actionType) {
+        if (!currentApprovalItem) return;
+        const itemToAnimate = currentApprovalItem;
+        const empNameForToast = currentEmpName;
+
+        itemToAnimate.style.transition = 'all 0.3s ease';
+        itemToAnimate.style.transform = 'translateX(30px)';
+        itemToAnimate.style.opacity = '0';
+
+        setTimeout(() => {
+            itemToAnimate.style.height = itemToAnimate.offsetHeight + 'px';
+            itemToAnimate.offsetHeight; 
+            itemToAnimate.style.transition = 'all 0.3s ease';
+            itemToAnimate.style.height = '0px';
+            itemToAnimate.style.padding = '0px';
+            itemToAnimate.style.border = 'none';
+
+            setTimeout(() => {
+                itemToAnimate.remove();
+                updateBadgeCount();
+                showToast(actionType === 'approve' ? `Approved ${empNameForToast}` : `Denied ${empNameForToast}`, actionType === 'approve');
+            }, 300);
+        }, 300);
+
+        closeReqModal();
+    }
+
+    btnApprove.addEventListener('click', () => processAction('approve'));
+    btnConfirmDeny.addEventListener('click', () => {
+        if (denyReasonText.value.trim() === "") {
+            denyReasonText.classList.add('ring-2', 'ring-red-500');
+            return;
         }
-      });
+        processAction('deny');
+    });
+
+    function showToast(message, isApprove) {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-6 right-6 bg-white border border-gray-200 px-4 py-3 rounded-xl shadow-xl flex items-center gap-3`;
+        toast.style.cssText = "z-index: 9999; transform: translateY(20px); opacity: 0; transition: all 0.3s ease;";
+        const icon = isApprove ? `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>` : `<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+        toast.innerHTML = `${icon} <span class="text-sm font-medium text-gray-800">${message}</span>`;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => { toast.style.transform = "translateY(0)"; toast.style.opacity = "1"; });
+        setTimeout(() => {
+            toast.style.transform = "translateY(20px)"; toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
-  
-    // Sync inputs and perform search
-    function syncSearchInputs() {
-      if (searchInputMobile) {
-        searchInputMobile.addEventListener('keyup', (e) => {
-          if (searchInputDesktop) searchInputDesktop.value = e.target.value;
-          performSearch(e.target.value);
-        });
-      }
-      if (searchInputDesktop) {
-        searchInputDesktop.addEventListener('keyup', (e) => {
-          if (searchInputMobile) searchInputMobile.value = e.target.value;
-          performSearch(e.target.value);
-        });
-      }
-    }
-  
-    function performSearch(searchTerm) {
-      searchTerm = searchTerm.toLowerCase();
-      const tbody = document.querySelector('#employee-table tbody');
-      if (!tbody) return;
-      
-      const rows = tbody.querySelectorAll('tr');
-      rows.forEach(row => {
-        const nameEl = row.querySelector('.search-name');
-        const emailEl = row.querySelector('.search-email');
-        const name = nameEl ? nameEl.textContent.toLowerCase() : '';
-        const email = emailEl ? emailEl.textContent.toLowerCase() : '';
-        
-        if (name.includes(searchTerm) || email.includes(searchTerm)) {
-          row.style.display = '';
+
+    function updateBadgeCount() {
+        const remainingItems = document.querySelectorAll('.approval-item').length;
+        if (remainingItems > 0) {
+            pendingBadge.textContent = `${remainingItems} New`;
         } else {
-          row.style.display = 'none';
+            pendingBadge.style.display = 'none';
+            approvalList.innerHTML = `<div class="p-8 text-center"><p class="text-sm font-bold text-gray-800">All caught up!</p></div>`;
         }
-      });
     }
-  
-    syncSearchInputs();
-  });
+});

@@ -1,43 +1,32 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Standard Setup
-    lucide.createIcons();
-  
-    const dateEl = document.getElementById('theme-toggle');
-    const now = new Date();
-    const options = { weekday: 'short', month: 'short', day: 'numeric' };
-    dateEl.innerHTML = `<span class="text-sm font-medium text-gray-700">${now.toLocaleDateString('en-US', options)}</span>`;
-  
-    // Mobile Sidebar Toggle
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const sidebarOverlay = document.getElementById('sidebar-overlay');
-    const sidebar = document.querySelector('aside');
-  
-    mobileMenuBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('mobile-open');
-      sidebarOverlay.classList.toggle('active');
-    });
-  
-    sidebarOverlay.addEventListener('click', () => {
-      sidebar.classList.remove('mobile-open');
-      sidebarOverlay.classList.remove('active');
-    });
-  
-    // Profile Dropdown
-    const profileBtn = document.getElementById('profile-btn');
-    const profileDropdown = document.getElementById('profile-dropdown');
-  
-    profileBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      profileDropdown.classList.toggle('hidden');
-    });
-  
-    document.addEventListener('click', (e) => {
-      if (!profileBtn.contains(e.target) && !profileDropdown.contains(e.target)) {
-        profileDropdown.classList.add('hidden');
-      }
-    });
+    
+    // --- Dynamic Routing Logic ---
+    let fromPage = 'management'; // Defaults to management
+    
+    // Slight delay to wait for layout.js to inject the sidebar
+    setTimeout(() => {
+        // Read URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        fromPage = urlParams.get('from') || 'management';
 
-    // Form Submission Logic
+        // Update the Back and Cancel buttons dynamically
+        const backBtn = document.getElementById('dynamic-back-btn');
+        const cancelBtn = document.getElementById('dynamic-cancel-btn');
+        
+        if (backBtn) backBtn.href = `${fromPage}.html`;
+        if (cancelBtn) cancelBtn.href = `${fromPage}.html`;
+
+        // Highlight the correct sidebar item based on where we came from
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        const activeSidebarLink = document.querySelector(`.sidebar-item[href="${fromPage}.html"]`);
+        if (activeSidebarLink) {
+            activeSidebarLink.classList.add('active');
+        }
+    }, 100);
+
+    // --- Form Submission Logic ---
     const form = document.getElementById('add-employee-form');
     if (form) {
         form.addEventListener('submit', (e) => {
@@ -48,15 +37,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const employeeId = document.getElementById('employee-id').value;
             const systemRole = document.querySelector('input[name="system-role"]:checked').value;
             
-            // Show success message
+            // Create and show success message
             const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg shadow-lg z-50';
-            successMsg.innerHTML = `<strong>Success!</strong> ${firstName} ${lastName} (${employeeId}) has been added as an employee with ${systemRole} role.`;
+            successMsg.className = 'fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl shadow-lg z-[80] flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
+            
+            successMsg.innerHTML = `
+                <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div>
+                    <strong class="block text-gray-800">Success!</strong> 
+                    <span class="text-sm">${firstName} ${lastName} (${employeeId}) has been added.</span>
+                </div>
+            `;
+            
             document.body.appendChild(successMsg);
             
-            // Redirect back to management page after a short delay
+            // Animate toast in
+            requestAnimationFrame(() => {
+                successMsg.style.transform = "translateY(0)";
+                successMsg.style.opacity = "1";
+            });
+            
+            // Wait, fade out, and dynamically route back to the parent page
             setTimeout(() => {
-                window.location.href = 'management.html';
+                successMsg.style.transform = "translateY(-20px)";
+                successMsg.style.opacity = "0";
+                
+                setTimeout(() => {
+                    window.location.href = `${fromPage}.html`;
+                }, 300);
+                
             }, 2000);
         });
     }

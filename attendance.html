@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Logs - TimeTrack Portal</title>
+  <link rel="stylesheet" href="styles/styles.css">
+  
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { darkest: '#000523', primary: '#001aff', secondary: '#007bff', accent: '#00d1ff' }
+          },
+          fontFamily: { sans: ['DM Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
+  <div class="flex flex-col h-full w-full">
+    
+    <div id="header-placeholder"></div>
+
+    <div class="flex flex-1 overflow-hidden">
+      
+      <div id="sidebar-placeholder"></div>
+
+      <main class="flex-1 overflow-auto bg-gray-50 relative">
+        
+        <div id="photo-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800">Clock-In Photo Verification</h3>
+                    <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="p-6 bg-gray-100 flex justify-center items-center">
+                    <div class="w-full h-64 bg-gray-300 rounded-lg flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-400">
+                        <div class="text-center">
+                            <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                            <p>Selfie captured at 8:58 AM</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-800" id="modal-emp-name">Sarah Johnson</p>
+                        <p class="text-xs text-gray-500">HQ Office • Matched via Face ID</p>
+                    </div>
+                    <button id="close-modal-btn-2" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="px-8 pt-8 pb-3 flex-shrink-0">
+          <h1 class="text-2xl font-bold text-brand-darkest">Daily Attendance Logs</h1>
+          <p class="text-sm text-gray-500">Review employee clock-ins, photos, and time entries</p>
+        </div>
+        
+        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+          <div class="space-y-6">
+            
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="relative flex-1 sm:flex-none">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+                        </div>
+                        <input type="date" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-full" id="attendance-date" value="2026-03-19">
+                    </div>
+                    <select id="status-filter" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="all">All Statuses</option>
+                        <option value="on-time">On Time</option>
+                        <option value="late">Late</option>
+                        <option value="missing">Missing Punch</option>
+                    </select>
+                </div>
+                
+                <div class="relative w-full sm:w-64">
+                  <input type="text" id="search-input" placeholder="Search logs..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                  <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div class="table-wrapper overflow-x-auto">
+                <table class="w-full min-w-full">
+                  <thead>
+                    <tr class="bg-gray-50 border-b border-gray-100">
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Photo</th>
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Clock In</th>
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Clock Out</th>
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th class="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold">SJ</div>
+                          <div>
+                            <p class="font-medium text-gray-800 text-sm">Sarah Johnson</p>
+                            <p class="text-xs text-gray-500">Engineering</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <button class="view-photo-btn w-10 h-10 rounded bg-gray-200 border border-gray-300 flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity" data-name="Sarah Johnson">
+                            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                      </td>
+                      <td class="px-6 py-4">
+                        <p class="text-sm font-medium text-gray-800">8:58 AM</p>
+                      </td>
+                      <td class="px-6 py-4">
+                        <p class="text-sm text-gray-500">--</p>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-gray-600">HQ Office</td>
+                      <td class="px-6 py-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700">On Time</span></td>
+                      <td class="px-6 py-4 text-right">
+                        <a href="employee-profile.html?from=attendance" class="text-brand-secondary hover:text-brand-primary text-sm font-medium transition-colors">View Log</a>
+                      </td>
+                    </tr>
+
+                    <tr class="hover:bg-gray-50 transition-colors">
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-semibold">MC</div>
+                          <div>
+                            <p class="font-medium text-gray-800 text-sm">Mike Chen</p>
+                            <p class="text-xs text-gray-500">Design</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <button class="view-photo-btn w-10 h-10 rounded bg-gray-200 border border-gray-300 flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity" data-name="Mike Chen">
+                            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                      </td>
+                      <td class="px-6 py-4">
+                        <p class="text-sm font-medium text-gray-800">9:15 AM</p>
+                        <p class="text-xs text-red-500">15m late</p>
+                      </td>
+                      <td class="px-6 py-4">
+                        <p class="text-sm text-gray-500">--</p>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-gray-600">Remote - Austin</td>
+                      <td class="px-6 py-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700">Late</span></td>
+                      <td class="px-6 py-4 text-right">
+                        <a href="employee-profile.html?from=attendance" class="text-brand-secondary hover:text-brand-primary text-sm font-medium transition-colors">View Log</a>
+                      </td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  
+  <script src="scripts/layout.js"></script>
+  <script src="scripts/attendance.js"></script>
+</body>
+</html>

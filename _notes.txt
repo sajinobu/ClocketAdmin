@@ -12,14 +12,13 @@ Sidebar:
     - Hover and Active effect on every page
 
 Dashboard Page:
-    - Hover effect on stat cards
     - Live data from firebase
     - Infinite Carousel (maybe) for Live Feed
-    - Live feed cards leads to current location on map
-    - Filter modal for table
-    - Pagination for table (10 employee max)
-    - Clock in time for table
-    - Rows leads to own profile page (w/ sched, maybe)
+    - Live feed cards leads to current location on map (currently goes to profile)
+        - currenlty not working
+    - Add functions to:
+        - Needs Attention Section
+        - Today's Absences Section
 
 Management Page:
     - Update color palette
@@ -29,17 +28,17 @@ Management Page:
     - Create Team Page:
         - Back button
 
-Reports Page:
-    - Realtime data from firebase
-    - Improve UI
-
 Locations Page:
     - Improve UI
     - Add Google Maps API
     - Ewan ko
 
+Reports Page:
+    - Realtime data from firebase
+    - Improve UI
+
 Schedule:
-    - idk
+    - REMOVED
 
 Login:
     - Wala pa

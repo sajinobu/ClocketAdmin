@@ -1,16 +1,17 @@
 <!doctype html>
 <html lang="en" class="h-full">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - TimeTrack Portal</title>
+  <title>Clocket | Dashboard</title>
   <link rel="stylesheet" href="styles/styles.css">
-  
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+
   <script>
     tailwind.config = {
       theme: {
@@ -23,85 +24,29 @@
       }
     }
   </script>
-  
+
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
 <body class="h-full bg-gray-50 font-sans text-gray-700 overflow-auto">
   <div class="flex flex-col h-full w-full">
-    
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <header class="bg-white border-b border-gray-200 px-4 md:px-8 py-5 flex-shrink-0">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <button id="mobile-menu-btn" class="mobile-menu-btn p-2 hover:bg-gray-100 rounded-lg transition-colors mr-2 lg:hidden">
-            <i data-lucide="menu" class="w-6 h-6"></i>
-          </button>
-          <div class="w-10 h-10 bg-brand-secondary rounded-xl flex items-center justify-center text-white">
-            <i data-lucide="clock" class="w-6 h-6"></i>
-          </div>
-          <span class="text-lg font-bold text-brand-darkest">TimeTrack</span>
-        </div>
-        <button id="theme-toggle" class="px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-700"></button>
-      </div>
-    </header>
+    <div id="header-placeholder"></div>
 
     <div class="flex flex-1 overflow-hidden">
-      
-      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-y-auto">
-        <nav class="py-4">
-          <div class="px-4 mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Main</span></div>
-          
-          <a href="dashboard.html" class="sidebar-item active w-full text-left flex items-center gap-3 px-6 py-3 font-medium">
-            <i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span>
-          </a> 
-          <a href="management.html" class="sidebar-item w-full text-left flex items-center gap-3 px-6 py-3">
-            <i data-lucide="users" class="w-5 h-5"></i><span>Management</span>
-          </a> 
-          <a href="reports.html" class="sidebar-item w-full text-left flex items-center gap-3 px-6 py-3">
-            <i data-lucide="file-text" class="w-5 h-5"></i><span>Reports</span>
-          </a> 
-          <a href="locations.html" class="sidebar-item w-full text-left flex items-center gap-3 px-6 py-3">
-            <i data-lucide="map-pin" class="w-5 h-5"></i><span>Locations</span>
-          </a> 
-          <a href="schedule.html" class="sidebar-item w-full text-left flex items-center gap-3 px-6 py-3">
-            <i data-lucide="calendar" class="w-5 h-5"></i><span>Schedule</span>
-          </a>
-          
-          <div class="px-4 mt-6 mb-2"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Settings</span></div>
-          <a href="settings.html" class="sidebar-item w-full text-left flex items-center gap-3 px-6 py-3">
-            <i data-lucide="settings" class="w-5 h-5"></i><span>Settings</span>
-          </a>
-        </nav>
-        
-        <div class="p-4 border-t border-gray-100 mt-auto relative">
-          <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer group" id="profile-btn">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white font-semibold">AM</div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-800 truncate">Admin Manager</p>
-              <p class="text-xs text-gray-500">admin@company.com</p>
-            </div>
-            <i data-lucide="more-vertical" class="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-          </div>
-          
-          <div class="hidden absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 z-50" id="profile-dropdown">
-            <a href="profile.html" class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">Profile</a> 
-            <button class="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50" id="logout-btn">Sign Out</button>
-          </div>
-        </div>
-      </aside>
+
+      <div id="sidebar-placeholder"></div>
 
       <main class="flex-1 overflow-auto bg-gray-50">
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
           <h1 class="text-2xl font-bold text-brand-darkest">Employee Dashboard</h1>
           <p class="text-sm text-gray-500">Track attendance and manage your team</p>
         </div>
-        
+
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
-          
+
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
               <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-cyan-50 text-cyan-500">
                   <i data-lucide="users" class="w-6 h-6"></i>
@@ -111,8 +56,8 @@
               <p class="text-3xl font-bold text-brand-darkest">247</p>
               <p class="text-sm mt-1 text-gray-500">Total Employees</p>
             </div>
-            
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
               <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50 text-green-600">
                   <i data-lucide="check-circle" class="w-6 h-6"></i>
@@ -122,8 +67,8 @@
               <p class="text-3xl font-bold text-brand-darkest">189</p>
               <p class="text-sm mt-1 text-gray-500">Clocked In Today</p>
             </div>
-            
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
               <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-yellow-50 text-yellow-600">
                   <i data-lucide="clock" class="w-6 h-6"></i>
@@ -133,8 +78,8 @@
               <p class="text-3xl font-bold text-brand-darkest">23</p>
               <p class="text-sm mt-1 text-gray-500">Late Arrivals</p>
             </div>
-            
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md duration-200">
               <div class="flex items-center justify-between mb-4">
                 <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-red-50 text-red-600">
                   <i data-lucide="alert-circle" class="w-6 h-6"></i>
@@ -146,97 +91,101 @@
             </div>
           </div>
 
-          <section class="mb-8">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="live-dot w-3 h-3 rounded-full bg-brand-accent"></div>
-              <h2 class="text-xl font-bold text-brand-darkest">Live Feed</h2>
-              <span class="text-sm text-gray-500">— Recent check-ins</span>
-            </div>
+          <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div class="feed-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xl font-bold ring-4 ring-green-100">SJ</div>
-                <h3 class="font-semibold text-gray-800 text-sm">Sarah Johnson</h3>
-                <p class="text-xs text-gray-500 mt-1">9:02 AM</p>
-                <div class="flex items-center justify-center gap-1 mt-2 text-xs text-teal-600">
-                  <i data-lucide="check-circle-2" class="w-3 h-3"></i> HQ Office
-                </div>
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                  <div class="live-dot w-2.5 h-2.5 rounded-full bg-brand-accent"></div> Live Feed
+                </h3>
+                <span class="text-xs text-gray-500">Recent check-ins</span>
               </div>
-              <div class="feed-card bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
-                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xl font-bold ring-4 ring-green-100">MC</div>
-                <h3 class="font-semibold text-gray-800 text-sm">Mike Chen</h3>
-                <p class="text-xs text-gray-500 mt-1">9:05 AM</p>
-                <div class="flex items-center justify-center gap-1 mt-2 text-xs text-teal-600">
-                  <i data-lucide="check-circle-2" class="w-3 h-3"></i> Remote - Austin
-                </div>
-              </div>
-              </div>
-          </section>
 
-          <section>
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-brand-darkest">Management Overview</h2>
-              <div class="flex items-center gap-3">
-                <div class="hidden md:block relative w-64">
-                  <input type="text" placeholder="Search employees..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" id="search-input-desktop">
-                  <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+              <div class="p-4 space-y-4 flex-1">
+                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">SJ</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Sarah Johnson</p>
+                    <p class="text-[11px] text-gray-500">9:02 AM • HQ Office</p>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                </a>
+
+                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">MC</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Mike Chen</p>
+                    <p class="text-[11px] text-yellow-600 font-medium text-xs">9:05 AM • 5m Late</p>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                </a>
+
+                <a href="employee-profile.html?from=dashboard" class="flex items-center gap-4 p-3 rounded-xl border border-gray-50 hover:border-brand-primary/30 hover:bg-blue-50/30 transition-all group">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center text-white text-xs font-bold shadow-sm">EW</div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gray-800 truncate group-hover:text-brand-primary transition-colors">Emma Wilson</p>
+                    <p class="text-[11px] text-gray-500">9:08 AM • Site B</p>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 group-hover:text-brand-primary"></i>
+                </a>
+              </div>
+
+              <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 text-center">
+                <a href="attendance.html" class="text-xs font-bold text-brand-secondary hover:text-brand-primary uppercase tracking-widest transition-colors">
+                    View Full Attendance <i data-lucide="arrow-right" class="inline w-3 h-3 ml-1"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+              <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                  <i data-lucide="clipboard-list" class="w-5 h-5 text-teal-600"></i> Pending Approvals
+                </h3>
+                <span id="pending-badge" class="bg-teal-100 text-teal-700 text-xs font-bold px-2 py-1 rounded-full transition-all duration-300">3 New</span>
+              </div>
+              
+              <div id="approval-list" class="divide-y divide-gray-100 flex-1 relative">
+                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                  <div>
+                    <p class="text-sm font-medium text-gray-800">Mike Chen</p>
+                    <p class="text-xs text-gray-500">PTO Request (Oct 28-30)</p>
+                  </div>
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                      data-emp="Mike Chen" data-initials="MC" data-dept="Design" data-title="PTO Request" data-desc="Family event out of state." data-file="PTO_Form.pdf">
+                      View Request
+                    </button>
+                  </div>
                 </div>
-                <button class="search-toggle-btn md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors" id="search-toggle-mobile">
-                  <i data-lucide="search" class="w-5 h-5 text-gray-600"></i>
-                </button>
+
+                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                  <div>
+                    <p class="text-sm font-medium text-gray-800">Robert Kim</p>
+                    <p class="text-xs text-gray-500">Missed Punch (Yesterday)</p>
+                  </div>
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                      data-emp="Robert Kim" data-initials="RK" data-dept="Sales" data-title="Missed Punch" data-desc="Phone died at client site." data-file="Visit_Log.png">
+                      View Request
+                    </button>
+                  </div>
+                </div>
+
+                <div class="approval-item p-4 hover:bg-gray-50 transition-colors flex items-center justify-between group">
+                  <div>
+                    <p class="text-sm font-medium text-gray-800">Emma Wilson</p>
+                    <p class="text-xs text-gray-500">Overtime Approval (2h)</p>
+                  </div>
+                  <div class="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="view-request-btn px-3 py-1.5 bg-white border border-gray-200 text-brand-secondary text-xs font-medium rounded-lg hover:bg-gray-50 hover:text-brand-primary transition-colors shadow-sm"
+                      data-emp="Emma Wilson" data-initials="EW" data-dept="Operations" data-title="Overtime" data-desc="Finalizing monthly audit." data-file="Schedule.pdf">
+                      View Request
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            <div class="search-field-mobile hidden mb-4 bg-white rounded-lg p-3 border border-gray-200">
-              <div class="relative">
-                <input type="text" placeholder="Search employees..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" id="search-input-mobile">
-                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-              </div>
-            </div>
-            
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div class="table-wrapper">
-                <table class="w-full" id="employee-table">
-                  <thead>
-                    <tr class="bg-gray-50 border-b border-gray-100">
-                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Employee</th>
-                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
-                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                      <th class="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Hours</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100">
-                    <tr class="table-row">
-                      <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold">SJ</div>
-                          <div>
-                            <p class="font-medium text-gray-800 search-name">Sarah Johnson</p>
-                            <p class="text-xs text-gray-500 search-email">sarah.j@company.com</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-6 py-4 text-sm text-gray-600">Engineering</td>
-                      <td class="px-6 py-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700"> Active </span></td>
-                      <td class="px-6 py-4 text-sm font-medium text-gray-800">6h 42m</td>
-                    </tr>
-                    <tr class="table-row">
-                      <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">MC</div>
-                          <div>
-                            <p class="font-medium text-gray-800 search-name">Mike Chen</p>
-                            <p class="text-xs text-gray-500 search-email">mike.c@company.com</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="px-6 py-4 text-sm text-gray-600">Design</td>
-                      <td class="px-6 py-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700"> Active </span></td>
-                      <td class="px-6 py-4 text-sm font-medium text-gray-800">6h 39m</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <a href="requests.html" class="block text-center text-sm text-brand-secondary py-3 border-t border-gray-100 hover:bg-gray-50 transition-colors font-medium">View All Requests</a>
             </div>
           </section>
 
@@ -244,7 +193,9 @@
       </main>
     </div>
   </div>
-  
+
+  <script src="scripts/layout.js"></script>
   <script src="scripts/dashboard.js"></script>
 </body>
+
 </html>

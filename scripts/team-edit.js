@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         fromPage = urlParams.get('from') || 'management';
 
-        // Construct the return URL
-        // If coming from management, ensure we go back to the teams tab
+        // Construct return path
         returnUrl = fromPage === 'management' ? 'management.html?tab=teams' : `${fromPage}.html`;
 
         const backBtn = document.getElementById('dynamic-back-btn');
@@ -18,46 +17,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (backBtn) backBtn.href = returnUrl;
         if (cancelBtn) cancelBtn.href = returnUrl;
 
-        // Keep sidebar highlight on the parent page
+        // Sync Sidebar highlighting
         document.querySelectorAll('.sidebar-item').forEach(item => {
             item.classList.remove('active');
+            if (item.getAttribute('href').startsWith(fromPage)) {
+                item.classList.add('active');
+            }
         });
-        const activeSidebarLink = document.querySelector(`.sidebar-item[href^="${fromPage}.html"]`);
-        if (activeSidebarLink) {
-            activeSidebarLink.classList.add('active');
-        }
     }, 100);
 
     // --- Form Submission Logic ---
-    const form = document.getElementById('create-team-form');
+    const form = document.getElementById('edit-team-form');
     if (form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             
             const teamName = document.getElementById('team-name').value;
-            const teamLead = document.getElementById('team-lead').value;
             
-            // Show success message (using the new toast UI)
+            // Show success toast
             const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-xl shadow-lg z-[80] flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
+            successMsg.className = 'fixed top-4 right-4 bg-white border border-gray-100 text-gray-800 px-6 py-4 rounded-xl shadow-2xl z-[80] flex items-center gap-3 transition-all duration-300 transform translate-y-[-20px] opacity-0';
             
             successMsg.innerHTML = `
-                <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="w-8 h-8 bg-green-50 text-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
                 <div>
-                    <strong class="block text-gray-800">Success!</strong> 
-                    <span class="text-sm">"${teamName}" team created with ${teamLead} as lead.</span>
+                    <strong class="block">Changes Saved!</strong> 
+                    <span class="text-sm text-gray-500">"${teamName}" has been updated.</span>
                 </div>
             `;
             
             document.body.appendChild(successMsg);
             
-            // Animate toast in
             requestAnimationFrame(() => {
                 successMsg.style.transform = "translateY(0)";
                 successMsg.style.opacity = "1";
             });
             
-            // Redirect back after delay
+            // Redirect back to origin
             setTimeout(() => {
                 successMsg.style.transform = "translateY(-20px)";
                 successMsg.style.opacity = "0";
@@ -66,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = returnUrl;
                 }, 300);
                 
-            }, 2000);
+            }, 1500);
         });
     }
 });

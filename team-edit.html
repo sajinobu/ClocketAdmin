@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clocket | Create Team</title>
+  <title>Edit Team - TimeTrack Portal</title>
   <link rel="stylesheet" href="styles/styles.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -42,24 +42,25 @@
             <a id="dynamic-back-btn" href="management.html?tab=teams" class="text-gray-400 hover:text-gray-600 transition-colors">
              <i data-lucide="arrow-left" class="w-6 h-6"></i>
             </a>
-            <h1 class="text-2xl font-bold text-brand-darkest">Create New Team</h1>
+            <h1 class="text-2xl font-bold text-brand-darkest">Edit Team Details</h1>
           </div>
         </div>
         
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-              <form id="create-team-form" class="space-y-6">
+              <form id="edit-team-form" class="space-y-6">
                 <div>
                   <h3 class="text-lg font-bold text-gray-800 mb-4">Team Information</h3>
                   <div class="space-y-4">
                     <div>
                       <label for="team-name" class="block text-sm font-medium text-gray-700 mb-2">Team Name</label>
-                      <input type="text" id="team-name" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., Engineering Team A" style="background-color: #ffffff;">
+                      <input type="text" id="team-name" value="Engineering Team A" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
                     </div>
                     <div>
                       <label for="team-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                      <textarea id="team-description" rows="4" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="Brief description of the team" style="background-color: #ffffff;"></textarea>
+                      <textarea id="team-description" rows="4" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">Core infrastructure development and frontend performance optimization. Currently managing cloud migration.</textarea>
                     </div>
                   </div>
                 </div>
@@ -70,8 +71,7 @@
                     <div>
                       <label for="team-department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
                       <select id="team-department" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
-                        <option value="">Select Department</option>
-                        <option value="Engineering">Engineering</option>
+                        <option value="Engineering" selected>Engineering</option>
                         <option value="Design">Design</option>
                         <option value="Operations">Operations</option>
                       </select>
@@ -79,8 +79,7 @@
                     <div>
                       <label for="team-lead" class="block text-sm font-medium text-gray-700 mb-2">Team Lead</label>
                       <select id="team-lead" required class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
-                        <option value="">Select Team Lead</option>
-                        <option value="Sarah Johnson">Sarah Johnson</option>
+                        <option value="Sarah Johnson" selected>Sarah Johnson</option>
                         <option value="Mike Chen">Mike Chen</option>
                         <option value="Emma Wilson">Emma Wilson</option>
                       </select>
@@ -93,25 +92,27 @@
             <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex flex-col">
               <div class="space-y-6 flex-1 flex flex-col">
                 <div class="flex-1">
-                  <h3 class="text-lg font-bold text-gray-800 mb-4">Team Size</h3>
+                  <h3 class="text-lg font-bold text-gray-800 mb-4">Team Settings</h3>
                   <div>
-                    <label for="team-size" class="block text-sm font-medium text-gray-700 mb-2">Expected Number of Members</label>
-                    <input type="number" id="team-size" min="1" max="100" required form="create-team-form" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="e.g., 8" style="background-color: #ffffff;">
+                    <label for="team-size" class="block text-sm font-medium text-gray-700 mb-2">Max Capacity</label>
+                    <input type="number" id="team-size" value="8" min="1" max="100" required form="edit-team-form" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500" style="background-color: #ffffff;">
                   </div>
 
                   <div class="mt-8 pt-8 border-t border-gray-100">
-                    <h3 class="text-sm font-bold text-gray-700 mb-4">Quick Reference</h3>
-                    <div class="space-y-3">
-                      <div class="p-3 bg-blue-50 rounded-lg">
-                        <p class="text-xs font-medium text-blue-900">Teams are organizational units</p>
-                        <p class="text-xs text-blue-700 mt-1">Assign team members to manage work more efficiently</p>
-                      </div>
+                    <h3 class="text-sm font-bold text-gray-700 mb-4">Administrative Notes</h3>
+                    <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                        <div class="flex gap-3">
+                            <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0"></i>
+                            <p class="text-xs text-amber-800 leading-relaxed">
+                                Changing the department will update the reporting structure for all 8 team members immediately.
+                            </p>
+                        </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex gap-3 pt-6 border-t border-gray-100 mt-auto">
-                  <button type="submit" form="create-team-form" class="flex-1 px-6 py-3 bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors">Create Team</button>
+                  <button type="submit" form="edit-team-form" class="flex-1 px-6 py-3 bg-brand-primary text-white rounded-lg font-medium hover:bg-brand-darker transition-colors shadow-sm">Save Changes</button>
                   <a id="dynamic-cancel-btn" href="management.html?tab=teams" class="px-6 py-3 border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-center">Cancel</a>
                 </div>
               </div>
@@ -123,6 +124,6 @@
   </div>
   
   <script src="scripts/layout.js"></script>
-  <script src="scripts/create-team.js"></script>
+  <script src="scripts/team-edit.js"></script>
 </body>
 </html>
