@@ -1,34 +1,37 @@
 <!doctype html>
 <html lang="en" class="h-full">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clocket | Dashboard</title>
+  <title>Dashboard - Clocket</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/dashboard.css">
 
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', 
-              darker: '#000533',
-              dark: '#000b66',
-              primary: '#001aff', 
-              secondary: '#007bff', 
-              accent: '#00d1ff',
-              accentLight: '#57e8ff',
-              grayLight: '#f1f1f1',
-              grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -36,71 +39,74 @@
       }
     }
   </script>
-
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full font-sans overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
 
     <div class="flex flex-1 overflow-hidden">
-
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg transition-colors duration-300">
+        
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">Employee Dashboard</h1>
-          <p class="text-sm text-gray-500">Track attendance and manage your team</p>
+          <div class="page-header-container">
+            <div>
+              <h1 class="page-title">Employee Dashboard</h1>
+              <p class="page-subtitle">Track attendance and manage your team</p>
+            </div>
+          </div>
         </div>
 
-        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+        <div class="px-4 sm:px-6 md:px-8 pt-4 pb-8">
 
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             
             <div class="stat-card">
-              <div class="flex items-center justify-between mb-4">
+              <div class="stat-header">
                 <div class="stat-icon-wrapper stat-icon-brand">
                   <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
-                <span class="badge bg-green-50 text-green-600">+12%</span>
+                <span class="badge badge-success"><i data-lucide="trending-up" class="w-3 h-3"></i> 12%</span>
               </div>
-              <p class="text-3xl font-bold text-brand-darkest">247</p>
-              <p class="text-sm mt-1 text-gray-500">Total Employees</p>
+              <p class="stat-value">247</p>
+              <p class="stat-label">Total Employees</p>
             </div>
 
             <div class="stat-card">
-              <div class="flex items-center justify-between mb-4">
-                <div class="stat-icon-wrapper bg-green-50 text-green-600">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper stat-icon-success">
                   <i data-lucide="check-circle" class="w-6 h-6"></i>
                 </div>
-                <span class="badge bg-green-50 text-green-600">Active</span>
+                <span class="badge badge-success">Active</span>
               </div>
-              <p class="text-3xl font-bold text-brand-darkest">189</p>
-              <p class="text-sm mt-1 text-gray-500">Clocked In Today</p>
+              <p class="stat-value">189</p>
+              <p class="stat-label">Clocked In Today</p>
             </div>
 
             <div class="stat-card">
-              <div class="flex items-center justify-between mb-4">
-                <div class="stat-icon-wrapper bg-yellow-50 text-yellow-600">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper stat-icon-warning">
                   <i data-lucide="clock" class="w-6 h-6"></i>
                 </div>
-                <span class="badge bg-yellow-50 text-yellow-600">Pending</span>
+                <span class="badge badge-warning">Pending</span>
               </div>
-              <p class="text-3xl font-bold text-brand-darkest">23</p>
-              <p class="text-sm mt-1 text-gray-500">Late Arrivals</p>
+              <p class="stat-value">23</p>
+              <p class="stat-label">Late Arrivals</p>
             </div>
 
             <div class="stat-card">
-              <div class="flex items-center justify-between mb-4">
-                <div class="stat-icon-wrapper bg-red-50 text-red-600">
+              <div class="stat-header">
+                <div class="stat-icon-wrapper stat-icon-danger">
                   <i data-lucide="alert-circle" class="w-6 h-6"></i>
                 </div>
-                <span class="badge bg-red-50 text-red-600">-3%</span>
+                <span class="badge badge-danger"><i data-lucide="trending-down" class="w-3 h-3"></i> 3%</span>
               </div>
-              <p class="text-3xl font-bold text-brand-darkest">35</p>
-              <p class="text-sm mt-1 text-gray-500">On Leave</p>
+              <p class="stat-value">35</p>
+              <p class="stat-label">On Leave</p>
             </div>
           </div>
 
@@ -109,105 +115,103 @@
             <div class="widget-panel">
               <div class="widget-header">
                 <h3 class="widget-title">
-                  <div class="live-dot"></div> Live Feed
+                  <div class="live-dot"></div> Live Activity Feed
                 </h3>
-                <span class="text-xs text-gray-500">Recent check-ins</span>
+                <a href="live-tracking.html" class="text-xs font-bold text-brand-primary hover:text-brand-dark transition-colors">Open Map <i data-lucide="arrow-up-right" class="inline w-3 h-3"></i></a>
               </div>
 
-              <div class="p-4 space-y-2 flex-1">
-                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
-                  <div class="flex items-center gap-4">
+              <div class="dashboard-list">
+                <a href="live-tracking.html" class="dashboard-row bordered group">
+                  <div class="row-info">
                     <div class="avatar-circle avatar-brand">SJ</div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Sarah Johnson</p>
-                      <p class="text-[11px] text-gray-500">9:02 AM • HQ Office</p>
+                    <div>
+                      <p class="row-title">Sarah Johnson</p>
+                      <p class="row-subtitle">9:02 AM • Clocked In at HQ Office</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
+                  <i data-lucide="map-pin" class="w-4 h-4 text-brand-secondary group-hover:text-brand-primary transition-colors"></i>
                 </a>
 
-                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
-                  <div class="flex items-center gap-4">
+                <a href="live-tracking.html" class="dashboard-row bordered group">
+                  <div class="row-info">
                     <div class="avatar-circle avatar-brand">MC</div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Mike Chen</p>
-                      <p class="text-[11px] text-yellow-600 font-medium text-xs">9:05 AM • 5m Late</p>
+                    <div>
+                      <p class="row-title">Mike Chen</p>
+                      <p class="row-subtitle text-yellow-600 dark:text-yellow-500 font-medium">9:05 AM • Clocked In (5m Late)</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
+                  <i data-lucide="clock" class="w-4 h-4 text-brand-secondary group-hover:text-brand-primary transition-colors"></i>
                 </a>
 
-                <a href="live-tracking.html" class="dashboard-row dashboard-row-bordered group">
-                  <div class="flex items-center gap-4">
-                    <div class="avatar-circle avatar-brand">EW</div>
-                    <div class="flex-1 min-w-0">
-                      <p class="text-sm font-bold text-gray-800 group-hover:text-brand-primary transition-colors">Emma Wilson</p>
-                      <p class="text-[11px] text-gray-500">9:08 AM • Site B</p>
+                <a href="live-tracking.html" class="dashboard-row bordered group">
+                  <div class="row-info">
+                    <div class="avatar-circle bg-red-100 text-red-600 border border-red-200 dark:bg-red-900/30 dark:border-red-800">
+                      <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <p class="row-title text-red-600 dark:text-red-400">Location Alert</p>
+                      <p class="row-subtitle">8:50 AM • RK punched out outside geofence</p>
                     </div>
                   </div>
-                  <i data-lucide="chevron-right" class="w-4 h-4 text-brand-accent group-hover:text-brand-primary transition-colors"></i>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:text-red-500 transition-colors"></i>
                 </a>
               </div>
 
               <button id="view-more-feed-btn" class="btn-text">
-                View Full Activity <i data-lucide="arrow-right" class="inline w-4 h-4"></i>
+                View Full Timeline <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
             </div>
 
-            <div class="widget-panel">
-              <div class="widget-header">
-                <h3 class="widget-title">
-                  <i data-lucide="clipboard-list" class="w-5 h-5 text-brand-primary"></i> Pending Approvals
-                </h3>
-                <span id="pending-badge" class="badge badge-brand transition-all duration-300">3 New</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              <div class="shortcut-card">
+                <div class="shortcut-icon">
+                  <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+                <h4 class="shortcut-title">Employees</h4>
+                <p class="shortcut-desc">Manage your 247 active staff members.</p>
+                <div class="shortcut-actions">
+                  <a href="add-employee.html?from=dashboard" class="btn-primary flex-1 text-xs py-2">Add New</a>
+                  <a href="management.html?tab=employees&from=dashboard" class="btn-outline flex-1 text-center py-2">Manage</a>
+                </div>
               </div>
 
-              <div id="approval-list" class="divide-y divide-brand-gray-light flex-1 relative">
-                
-                <div class="approval-item dashboard-row group">
-                  <div>
-                    <p class="text-sm font-medium text-gray-800">Mike Chen</p>
-                    <p class="text-xs text-gray-500">PTO Request (Oct 28-30)</p>
-                  </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                    <button class="view-request-btn btn-outline"
-                      data-emp="Mike Chen" data-initials="MC" data-dept="Design" data-title="PTO Request" data-desc="Family event out of state." data-file="PTO_Form.pdf">
-                      Review
-                    </button>
-                  </div>
+              <div class="shortcut-card">
+                <div class="shortcut-icon">
+                  <i data-lucide="network" class="w-5 h-5"></i>
                 </div>
-
-                <div class="approval-item dashboard-row group">
-                  <div>
-                    <p class="text-sm font-medium text-gray-800">Robert Kim</p>
-                    <p class="text-xs text-gray-500">Missed Punch (Yesterday)</p>
-                  </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                    <button class="view-request-btn btn-outline"
-                      data-emp="Robert Kim" data-initials="RK" data-dept="Sales" data-title="Missed Punch" data-desc="Phone died at client site." data-file="Visit_Log.png">
-                      Review
-                    </button>
-                  </div>
+                <h4 class="shortcut-title">Teams</h4>
+                <p class="shortcut-desc">Organize workflows across 12 teams.</p>
+                <div class="shortcut-actions">
+                  <a href="create-team.html?from=dashboard" class="btn-primary flex-1 text-xs py-2">Create</a>
+                  <a href="management.html?tab=teams&from=dashboard" class="btn-outline flex-1 text-center py-2">Manage</a>
                 </div>
-
-                <div class="approval-item dashboard-row group">
-                  <div>
-                    <p class="text-sm font-medium text-gray-800">Emma Wilson</p>
-                    <p class="text-xs text-gray-500">Overtime Approval (2h)</p>
-                  </div>
-                  <div class="opacity-0 group-hover:opacity-100 transition-opacity flex items-center">
-                    <button class="view-request-btn btn-outline"
-                      data-emp="Emma Wilson" data-initials="EW" data-dept="Operations" data-title="Overtime" data-desc="Finalizing monthly audit." data-file="Schedule.pdf">
-                      Review
-                    </button>
-                  </div>
-                </div>
-
               </div>
-              <button id="view-all-requests-btn" class="btn-text">
-                View All Requests <i data-lucide="arrow-right" class="inline w-4 h-4"></i>
-              </button>
+
+              <div class="shortcut-card">
+                <div class="shortcut-icon bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
+                  <i data-lucide="pie-chart" class="w-5 h-5"></i>
+                </div>
+                <h4 class="shortcut-title">Analytics</h4>
+                <p class="shortcut-desc">Weekly attendance report is ready.</p>
+                <div class="shortcut-actions">
+                  <a href="analytics.html" class="btn-outline w-full text-center py-2">View Reports</a>
+                </div>
+              </div>
+
+              <div class="shortcut-card">
+                <div class="shortcut-icon bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                  <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                </div>
+                <h4 class="shortcut-title">Attendance</h4>
+                <p class="shortcut-desc">Review individual check-in logs.</p>
+                <div class="shortcut-actions">
+                  <a href="attendance.html" class="btn-outline w-full text-center py-2">View Logs</a>
+                </div>
+              </div>
+
             </div>
+
           </section>
 
         </div>
@@ -215,187 +219,43 @@
     </div>
   </div>
 
-  <div id="feed-modal" class="hidden modal-overlay z-[60]">
-    <div class="modal-box max-w-md">
+  <div id="feed-modal" class="modal-overlay hidden">
+    <div class="modal-box bg-brand-surface border border-brand-grayLight" style="max-width: 28rem;">
       <div class="modal-header">
-        <h3 class="widget-title">
-          <div class="live-dot"></div> Activity Stream
-        </h3>
-        <button id="close-feed-modal" class="text-gray-400 hover:text-brand-primary transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+        <h3 class="widget-title"><div class="live-dot"></div> Activity Stream</h3>
+        <button id="close-feed-modal" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
-
       <div class="modal-body">
-        <div class="relative border-l-2 border-brand-gray-light ml-3 space-y-8 pb-4">
+        <div class="relative border-l-2 border-brand-grayLight ml-3 space-y-8 pb-4">
+          
           <div class="relative pl-6">
-            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-white"></div>
-            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-gray-500">JUST NOW</p></div>
-            <div class="bg-brand-grayBg rounded-lg p-3 border border-brand-gray-light">
-              <p class="text-sm text-gray-800"><span class="font-bold">Lisa Martinez</span> went on break.</p>
-            </div>
-          </div>
-          <div class="relative pl-6">
-            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-brand-primary ring-4 ring-white"></div>
-            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-gray-500">9:12 AM</p></div>
-            <div class="bg-blue-50 rounded-lg p-3 border border-blue-100">
-              <p class="text-sm text-gray-800"><span class="font-bold">James Davis</span> clocked in.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="px-6 py-4 border-t border-brand-gray-light bg-brand-grayBg">
-        <a href="attendance.html" class="btn-primary w-full block">View Full Attendance</a>
-      </div>
-    </div>
-  </div>
-
-  <div id="all-requests-modal" class="hidden modal-overlay z-[80]">
-    <div class="modal-box max-w-2xl">
-
-      <div class="modal-header">
-        <div>
-          <h3 class="font-bold text-brand-darkest text-lg">Request Management</h3>
-          <p class="text-xs text-gray-500 font-medium">All pending and historical requests</p>
-        </div>
-        <button id="close-all-reqs" class="text-gray-400 hover:text-brand-primary transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="px-6 py-3 bg-white border-b border-brand-gray-light">
-        <div class="relative">
-          <input type="text" id="req-search-input" placeholder="Search employee or request type..."
-            class="w-full pl-10 pr-4 py-2 bg-brand-grayBg border border-brand-gray-light rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary transition-all">
-          <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-        </div>
-      </div>
-
-      <div class="px-6 py-3 border-b border-brand-gray-light flex gap-2 overflow-x-auto no-scrollbar">
-        <button class="btn-filter active req-filter-btn">All</button>
-        <button class="btn-filter req-filter-btn">Pending</button>
-        <button class="btn-filter req-filter-btn">Approved</button>
-        <button class="btn-filter req-filter-btn">Denied</button>
-      </div>
-
-      <div class="modal-body p-2">
-        <div class="divide-y divide-brand-gray-light" id="full-requests-list">
-
-          <div class="approval-item dashboard-row group rounded-xl">
-            <div class="flex items-center gap-4">
-              <div class="avatar-circle avatar-brand">MC</div>
-              <div>
-                <p class="text-sm font-bold text-gray-800">Mike Chen</p>
-                <p class="text-xs text-gray-500">PTO Request • Oct 28</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <span class="badge bg-yellow-50 text-yellow-600 border-yellow-100">Pending</span>
-              <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-                <button class="view-request-btn btn-outline"
-                  data-emp="Mike Chen" data-initials="MC" data-dept="Design" data-title="PTO Request" data-desc="Family event out of state." data-file="PTO_Form.pdf">
-                  Review
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="dashboard-row rounded-xl group opacity-80">
-            <div class="flex items-center gap-4">
-              <div class="avatar-circle avatar-brand">SJ</div>
-              <div>
-                <p class="text-sm font-bold text-gray-800">Sarah Johnson</p>
-                <p class="text-xs text-gray-500">Overtime • Oct 24</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="badge bg-green-50 text-green-600 border-green-100">Approved</span>
-              <i data-lucide="check" class="w-4 h-4 text-green-500"></i>
-            </div>
-          </div>
-
-          <div class="dashboard-row rounded-xl group opacity-80">
-            <div class="flex items-center gap-4">
-              <div class="avatar-circle avatar-brand">RK</div>
-              <div>
-                <p class="text-sm font-bold text-gray-800">Robert Kim</p>
-                <p class="text-xs text-gray-500">Schedule Change • Oct 22</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="badge bg-red-50 text-red-600 border-red-100">Denied</span>
-              <i data-lucide="x-circle" class="w-4 h-4 text-red-400"></i>
+            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-brand-primary ring-4 ring-brand-surface transition-colors"></div>
+            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-brand-primary">JUST NOW</p></div>
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-100 dark:border-blue-800">
+              <p class="text-sm text-brand-darkest"><span class="font-bold">Emma Wilson</span> checked into <span class="font-medium text-brand-primary">Client Site A</span>.</p>
             </div>
           </div>
           
-        </div>
-      </div>
-      <div class="px-6 py-4 bg-brand-grayBg border-t border-brand-gray-light text-center">
-        <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Showing last 30 days of activity</p>
-      </div>
-    </div>
-  </div>
-
-  <div id="request-modal" class="hidden modal-overlay z-[100]">
-    <div class="modal-box max-w-lg">
-      
-      <div class="modal-header">
-        <h3 class="widget-title">
-          <i data-lucide="file-text" class="w-5 h-5 text-brand-primary"></i> 
-          <span id="req-modal-title">Review Request</span>
-        </h3>
-        <button id="close-req-modal" class="text-gray-400 hover:text-brand-primary transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="modal-body space-y-6">
-        <div class="flex items-center gap-3">
-          <div class="avatar-circle avatar-brand w-12 h-12 text-lg shadow-sm" id="req-modal-avatar">--</div>
-          <div>
-            <p class="font-bold text-brand-darkest text-lg" id="req-modal-emp">Employee Name</p>
-            <p class="text-sm text-gray-500" id="req-modal-dept">Department</p>
-          </div>
-        </div>
-
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Request Details</p>
-          <p class="text-sm text-gray-700 bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 leading-relaxed" id="req-modal-desc">
-            Description goes here...
-          </p>
-        </div>
-
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Attachments</p>
-          <div class="flex items-center gap-3 p-3 border border-brand-gray-light rounded-xl cursor-pointer hover:bg-brand-grayBg transition-colors group">
-            <div class="w-10 h-10 bg-brand-gray-light text-gray-500 rounded-lg flex items-center justify-center group-hover:bg-brand-primary group-hover:text-white transition-colors">
-              <i data-lucide="paperclip" class="w-5 h-5"></i>
+          <div class="relative pl-6">
+            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-gray-300 ring-4 ring-brand-surface transition-colors"></div>
+            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-gray-500">9:05 AM</p></div>
+            <div class="bg-brand-grayBg rounded-lg p-3 border border-brand-grayLight transition-colors">
+              <p class="text-sm text-brand-darkest"><span class="font-bold">Robert Kim</span> started lunch break.</p>
             </div>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-gray-800" id="req-modal-file">filename.pdf</p>
-              <p class="text-xs text-gray-500">Click to view</p>
-            </div>
-            <i data-lucide="download" class="w-4 h-4 text-gray-400 group-hover:text-brand-primary"></i>
           </div>
-        </div>
 
-        <div id="deny-reason-container" class="hidden animate-fade-in">
-          <label class="block text-xs font-bold text-red-500 uppercase tracking-wider mb-2">Reason for Denial <span class="text-red-500">*</span></label>
-          <textarea id="deny-reason-text" rows="3" class="w-full px-3 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-red-50/30 placeholder-red-300 transition-colors" placeholder="Please explain why this request is being denied. This will be sent to the employee."></textarea>
+          <div class="relative pl-6">
+            <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-red-400 ring-4 ring-brand-surface transition-colors"></div>
+            <div class="flex items-center gap-3 mb-1"><p class="text-xs font-bold text-red-500">8:50 AM</p></div>
+            <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-100 dark:border-red-800">
+              <p class="text-sm text-red-800 dark:text-red-400"><span class="font-bold">Location Warning:</span> Mike Chen clocked out 2.5km away from the designated HQ zone.</p>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      <div class="modal-footer">
-        <div id="req-default-actions" class="flex gap-3 w-full sm:w-auto">
-          <button id="btn-init-deny" class="btn-outline border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 px-6 py-2.5 font-bold">Deny</button>
-          <button id="btn-approve" class="btn-primary px-6 py-2.5">Approve Request</button>
-        </div>
-        <div id="req-confirm-deny-actions" class="hidden flex gap-3 w-full sm:w-auto animate-fade-in">
-          <button id="btn-cancel-deny" class="btn-outline border-gray-200 text-gray-600 px-6 py-2.5 hover:text-gray-800 font-bold">Cancel</button>
-          <button id="btn-confirm-deny" class="btn-primary bg-red-600 hover:bg-red-700 px-6 py-2.5 flex items-center gap-2">
-            <i data-lucide="send" class="w-4 h-4"></i> Confirm Denial
-          </button>
-        </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <a href="live-tracking.html" class="btn-primary w-full">Open Live Tracking Map</a>
       </div>
     </div>
   </div>

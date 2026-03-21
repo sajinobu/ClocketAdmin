@@ -7,22 +7,31 @@
   <title>Analytics - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/analytics.css">
 
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -34,7 +43,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
@@ -43,12 +52,12 @@
 
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
 
         <div class="px-8 pt-8 pb-3 flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
           <div>
-            <h1 class="page-title">Analytics & Insights</h1>
-            <p class="page-subtitle">Real-time attendance intelligence for March 2026</p>
+            <h1 class="page-title text-2xl font-bold text-brand-darkest transition-colors">Analytics & Insights</h1>
+            <p class="page-subtitle text-sm text-brand-dark transition-colors">Real-time attendance intelligence for March 2026</p>
           </div>
 
           <div class="flex items-center gap-3">
@@ -76,7 +85,7 @@
                   <p class="kpi-title">Avg Check-in</p>
                   <p class="kpi-value">8:47 AM</p>
                 </div>
-                <p class="text-xs text-green-600 mt-3 flex items-center gap-1 font-bold">
+                <p class="text-xs text-green-500 mt-3 flex items-center gap-1 font-bold transition-colors">
                   <i data-lucide="trending-up" class="w-3 h-3"></i> 5m earlier
                 </p>
               </div>
@@ -90,8 +99,8 @@
                   <p class="kpi-title">On-Time Rate</p>
                   <p class="kpi-value">94.2%</p>
                 </div>
-                <div class="w-full bg-gray-100 h-1.5 rounded-full mt-3 overflow-hidden">
-                  <div class="bg-blue-500 h-full transition-all duration-1000 animate-width" data-width="94.2%"></div>
+                <div class="w-full bg-brand-grayLight h-1.5 rounded-full mt-3 overflow-hidden transition-colors">
+                  <div class="bg-brand-primary h-full transition-all duration-1000 animate-width" data-width="94.2%"></div>
                 </div>
               </div>
 
@@ -104,7 +113,7 @@
                   <p class="kpi-title">Late Arrivals</p>
                   <p class="kpi-value">15</p>
                 </div>
-                <p class="text-xs text-red-500 mt-3 flex items-center gap-1 font-bold">
+                <p class="text-xs text-red-500 mt-3 flex items-center gap-1 font-bold transition-colors">
                   <i data-lucide="arrow-up" class="w-3 h-3"></i> 20% increase
                 </p>
               </div>
@@ -118,7 +127,7 @@
                   <p class="kpi-title">Avg Productive Hours</p>
                   <p class="kpi-value">8.2h</p>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-3 font-bold uppercase tracking-wider">Stabilized this week</p>
+                <p class="text-[10px] text-brand-dark mt-3 font-bold uppercase tracking-wider transition-colors">Stabilized this week</p>
               </div>
             </div>
 
@@ -127,10 +136,18 @@
               <div class="analytics-panel lg:col-span-2">
                 <div class="panel-header">
                   <h3 class="panel-title">Weekly Trends</h3>
-                  <select class="panel-select">
-                    <option>This Week</option>
-                    <option>Last Week</option>
-                  </select>
+                  
+                  <div class="custom-dropdown" id="trend-dropdown">
+                    <div class="dropdown-trigger">
+                        <span id="trend-text">This Week</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                    </div>
+                    <div class="dropdown-menu" id="trend-menu">
+                        <div class="dropdown-item active" data-value="This Week">This Week</div>
+                        <div class="dropdown-item" data-value="Last Week">Last Week</div>
+                    </div>
+                  </div>
+
                 </div>
                 <div class="flex-1 flex flex-col justify-center">
                   <div class="trend-row">
@@ -154,7 +171,7 @@
                   <div class="trend-row">
                     <div class="trend-header">
                       <span class="trend-label">Wednesday</span>
-                      <span class="trend-value text-amber-500">92%</span>
+                      <span class="trend-value text-amber-500 dark:text-amber-400 transition-colors">92%</span>
                     </div>
                     <div class="progress-track">
                       <div class="progress-fill warning animate-width" data-width="92%"></div>
@@ -177,29 +194,29 @@
                 <div class="flex-1 flex flex-col justify-center">
                   <div class="relative w-28 h-28 mx-auto mb-6">
                     <svg class="w-full h-full" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="40" fill="none" stroke="var(--brand-gray-light)" stroke-width="12" />
-                      <circle cx="50" cy="50" r="40" fill="none" stroke="var(--brand-primary)" stroke-width="12"
+                      <circle cx="50" cy="50" r="40" fill="none" class="stroke-[var(--brand-gray-light)] transition-colors duration-300" stroke-width="12" />
+                      <circle cx="50" cy="50" r="40" fill="none" class="stroke-[var(--brand-primary)] transition-colors duration-300" stroke-width="12"
                         stroke-dasharray="200 251.2" stroke-linecap="round" style="transition: all 1.5s ease;" />
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                      <p class="text-2xl font-black text-brand-darkest">247</p>
-                      <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Active</p>
+                      <p class="text-2xl font-black text-brand-darkest transition-colors">247</p>
+                      <p class="text-[9px] font-bold text-brand-dark uppercase tracking-widest transition-colors">Active</p>
                     </div>
                   </div>
                   <div class="space-y-2">
-                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg">
+                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg transition-colors">
                       <div class="flex items-center gap-2">
                         <span class="w-2 h-2 bg-brand-primary rounded-full"></span>
-                        <span class="text-xs font-bold text-gray-600">On-Site</span>
+                        <span class="text-xs font-bold text-brand-dark transition-colors">On-Site</span>
                       </div>
-                      <span class="text-sm font-bold text-gray-800">189</span>
+                      <span class="text-sm font-bold text-brand-darkest transition-colors">189</span>
                     </div>
-                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg">
+                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg transition-colors">
                       <div class="flex items-center gap-2">
                         <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
-                        <span class="text-xs font-bold text-gray-600">On Break</span>
+                        <span class="text-xs font-bold text-brand-dark transition-colors">On Break</span>
                       </div>
-                      <span class="text-sm font-bold text-gray-800">31</span>
+                      <span class="text-sm font-bold text-brand-darkest transition-colors">31</span>
                     </div>
                   </div>
                 </div>
@@ -209,27 +226,27 @@
                 <h3 class="panel-title mb-6">Arrival Distribution</h3>
                 <div class="distribution-chart">
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-gray-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">18</span>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">18</span>
                     <div class="distribution-bar" style="height: 20%"></div>
                     <p class="distribution-label">7AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-gray-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">45</span>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">45</span>
                     <div class="distribution-bar" style="height: 45%"></div>
                     <p class="distribution-label">8AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-brand-primary mb-1 opacity-0 group-hover:opacity-100 transition-opacity">142</span>
+                    <span class="text-xs font-bold text-brand-primary mb-1 opacity-0 group-hover:opacity-100 transition-all">142</span>
                     <div class="distribution-bar peak" style="height: 95%"></div>
                     <p class="distribution-label text-brand-primary">9AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-gray-400 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">27</span>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">27</span>
                     <div class="distribution-bar" style="height: 30%"></div>
                     <p class="distribution-label">10AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-red-500 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">15</span>
+                    <span class="text-xs font-bold text-red-500 mb-1 opacity-0 group-hover:opacity-100 transition-all">15</span>
                     <div class="distribution-bar late" style="height: 15%"></div>
                     <p class="distribution-label">LATE</p>
                   </div>
@@ -237,7 +254,7 @@
               </div>
 
               <div class="analytics-panel lg:col-span-1 relative">
-                <div class="absolute top-0 right-0 w-12 h-12 bg-yellow-500/5 rounded-bl-full flex items-start justify-end p-2.5">
+                <div class="absolute top-0 right-0 w-12 h-12 bg-[rgba(234,179,8,0.1)] rounded-bl-full flex items-start justify-end p-2.5">
                   <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i>
                 </div>
                 <h3 class="panel-title mb-4">Top Performance</h3>
@@ -245,15 +262,15 @@
                   <div class="list-row">
                     <div class="list-avatar avatar-teal">LS</div>
                     <div class="flex-1">
-                      <p class="text-sm font-bold text-brand-darkest">Lisa Smith</p>
-                      <p class="text-[10px] font-bold text-teal-600 uppercase">100% Punctual</p>
+                      <p class="text-sm font-bold text-brand-darkest transition-colors">Lisa Smith</p>
+                      <p class="text-[10px] font-bold text-teal-600 dark:text-teal-400 transition-colors uppercase">100% Punctual</p>
                     </div>
                   </div>
                   <div class="list-row">
                     <div class="list-avatar avatar-blue">MC</div>
                     <div class="flex-1">
-                      <p class="text-sm font-bold text-brand-darkest">Mike Chen</p>
-                      <p class="text-[10px] font-bold text-brand-secondary uppercase">99.4% Punctual</p>
+                      <p class="text-sm font-bold text-brand-darkest transition-colors">Mike Chen</p>
+                      <p class="text-[10px] font-bold text-brand-secondary uppercase transition-colors">99.4% Punctual</p>
                     </div>
                   </div>
                 </div>

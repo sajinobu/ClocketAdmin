@@ -2,26 +2,59 @@
    GLOBAL LAYOUT & LOGIN STYLES
    ========================================= */
 
-/* :root {
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-} */
+:root {
+  /* LIGHT MODE PALETTE: Crisp, airy, and professional */
+  --brand-darkest: #0f172a;      /* Slate 900 - Deep text */
+  --brand-darker: #1e293b;       /* Slate 800 - Secondary text */
+  --brand-dark: #334155;         /* Slate 700 - Muted text */
+  
+  --brand-primary: #4f46e5;      /* Indigo 600 - Sophisticated main brand color */
+  --brand-secondary: #6366f1;    /* Indigo 500 - Hover states */
+  --brand-accent: #818cf8;       /* Indigo 400 */
+  --brand-accent-light: #e0e7ff; /* Indigo 100 - Soft active backgrounds */
+  
+  --brand-gray-light: #e2e8f0;   /* Slate 200 - Crisp, clean borders */
+  --brand-gray-bg: #f8fafc;      /* Slate 50 - Very soft off-white background */
+  --brand-surface: #ffffff;      /* Pure white cards and headers */
+}
+
+html.dark {
+  /* DARK MODE PALETTE: Premium, deep, and easy on the eyes */
+  --brand-darkest: #f8fafc;      /* Slate 50 - Bright text for readability */
+  --brand-darker: #f1f5f9;       /* Slate 100 - Secondary text */
+  --brand-dark: #cbd5e1;         /* Slate 300 - Muted text */
+  
+  --brand-primary: #6366f1;      /* Indigo 500 - Pops beautifully on dark backgrounds */
+  --brand-secondary: #818cf8;    /* Indigo 400 - Hover states */
+  --brand-accent: #a5b4fc;       /* Indigo 300 */
+  --brand-accent-light: #3730a3; /* Indigo 800 - Deep active background highlights */
+  
+  --brand-gray-light: #334155;   /* Slate 700 - Elegant dark borders */
+  --brand-gray-bg: #0b0f19;      /* Ultra-deep slate - Main app background */
+  --brand-surface: #111827;      /* Slate 900 - Slightly elevated cards and headers */
+}
+
+/* Global Body Style */
+body {
+  background-color: var(--brand-gray-bg);
+  color: var(--brand-darkest);
+  transition: background-color 0.3s ease, color 0.3s ease, opacity 0.2s ease-in-out;
+}
+
+main {
+  /* Important for the SPA fade transition */
+  transition: opacity 0.2s ease-in-out;
+}
 
 /* --- HEADER STYLES --- */
-/*.site-header {
-  background-color: #ffffff;
+.site-header {
+  background-color: var(--brand-surface);
   border-bottom: 1px solid var(--brand-gray-light);
   padding: 1.25rem 1rem;
   flex-shrink: 0;
   width: 100%;
-}*/
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
 
 @media (min-width: 768px) {
   .site-header { padding: 1.25rem 2rem; }
@@ -33,7 +66,7 @@
   justify-content: space-between;
 }
 
-header-left {
+.header-left {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -42,15 +75,18 @@ header-left {
 .mobile-menu-btn {
   padding: 0.5rem;
   border-radius: 0.5rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   background: none;
   border: none;
   cursor: pointer;
   display: block;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.mobile-menu-btn:hover { background-color: var(--brand-gray-bg); }
+.mobile-menu-btn:hover { 
+  background-color: var(--brand-gray-bg); 
+  color: var(--brand-primary);
+}
 
 @media (min-width: 1024px) {
   .mobile-menu-btn { display: none; }
@@ -67,6 +103,7 @@ header-left {
   font-weight: 700;
   font-size: 1.125rem;
   color: var(--brand-darkest);
+  transition: color 0.3s ease;
 }
 
 .header-date {
@@ -75,21 +112,22 @@ header-left {
   border-radius: 9999px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--brand-darkest);
   border: 1px solid var(--brand-gray-light);
+  transition: all 0.3s ease;
 }
 
 /* --- SIDEBAR STYLES --- */
 .app-sidebar {
-  width: 16rem; /* 256px */
-  background-color: #ffffff;
+  width: 16rem; 
+  background-color: var(--brand-surface);
   border-right: 1px solid var(--brand-gray-light);
   display: flex;
   flex-direction: column;
   height: 100%;
   flex-shrink: 0;
   overflow-y: auto;
-  transition: transform 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
 /* Mobile Sidebar Logic */
@@ -109,7 +147,7 @@ header-left {
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 5, 35, 0.5); /* Using brand-darker */
+  background-color: rgba(0, 0, 0, 0.6); 
   z-index: 40;
   opacity: 0;
   pointer-events: none;
@@ -132,7 +170,9 @@ header-left {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #9ca3af;
+  color: var(--brand-dark);
+  opacity: 0.7;
+  transition: color 0.3s ease;
 }
 
 .mt-6 { margin-top: 1.5rem; }
@@ -144,7 +184,7 @@ header-left {
   padding: 0.75rem 1.5rem;
   width: 100%;
   text-decoration: none;
-  color: #4b5563;
+  color: var(--brand-dark); 
   font-weight: 500;
   font-size: 0.875rem;
   transition: all 0.2s ease;
@@ -154,25 +194,37 @@ header-left {
 .nav-icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
-  transition: color 0.2s ease;
+  color: inherit; 
+  opacity: 0.8;
+  transition: color 0.2s ease, opacity 0.2s ease;
 }
 
 .nav-link:hover {
   background-color: var(--brand-gray-bg);
-  color: var(--brand-darkest);
+  color: var(--brand-darkest); 
 }
 
-.nav-link:hover .nav-icon { color: var(--brand-secondary); }
+.nav-link:hover .nav-icon { 
+  color: var(--brand-primary); 
+  opacity: 1;
+}
 
 .nav-link.active {
-  background-color: rgba(0, 26, 255, 0.05); /* Brand Primary 5% */
+  background-color: rgba(79, 70, 229, 0.05); /* Indigo 600 at 5% */
   color: var(--brand-primary);
   border-left-color: var(--brand-primary);
   font-weight: 700;
 }
 
-.nav-link.active .nav-icon { color: var(--brand-primary); }
+/* Dark mode active state */
+html.dark .nav-link.active {
+  background-color: rgba(99, 102, 241, 0.15); /* Indigo 500 at 15% */
+  color: var(--brand-accent); 
+  border-left-color: var(--brand-accent);
+}
+
+.nav-link.active .nav-icon { color: var(--brand-primary); opacity: 1; }
+html.dark .nav-link.active .nav-icon { color: var(--brand-accent); opacity: 1; }
 
 /* --- SIDEBAR PROFILE FOOTER --- */
 .sidebar-footer {
@@ -180,6 +232,7 @@ header-left {
   border-top: 1px solid var(--brand-gray-light);
   margin-top: auto;
   position: relative;
+  transition: border-color 0.3s ease;
 }
 
 .profile-btn {
@@ -189,7 +242,7 @@ header-left {
   padding: 0.5rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
 .profile-btn:hover { background-color: var(--brand-gray-bg); }
@@ -198,11 +251,11 @@ header-left {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-accent-light), var(--brand-secondary));
+  background: linear-gradient(135deg, var(--brand-secondary), var(--brand-primary));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #ffffff; /* Text inside avatar always stays white */
   font-weight: 700;
   font-size: 0.875rem;
   flex-shrink: 0;
@@ -220,22 +273,24 @@ header-left {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.3s ease;
 }
 
 .profile-email {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.3s ease;
 }
 
 .profile-more-icon {
   width: 1.25rem;
   height: 1.25rem;
-  color: #9ca3af;
+  color: var(--brand-dark);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease, color 0.3s ease;
 }
 
 .profile-btn:hover .profile-more-icon { opacity: 1; }
@@ -246,12 +301,13 @@ header-left {
   left: 1rem;
   right: 1rem;
   margin-bottom: 0.5rem;
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--brand-gray-light);
   z-index: 50;
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .profile-dropdown.hidden { display: none; }
@@ -262,15 +318,19 @@ header-left {
   text-align: left;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--brand-darkest);
   text-decoration: none;
   background: none;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.3s ease;
 }
 
-.dropdown-item:hover { background-color: var(--brand-gray-bg); color: var(--brand-primary); }
+.dropdown-item:hover { 
+  background-color: var(--brand-gray-bg); 
+  color: var(--brand-primary); 
+}
+
 .border-bottom { border-bottom: 1px solid var(--brand-gray-light); }
 
 .dropdown-item-danger {
@@ -279,14 +339,17 @@ header-left {
   text-align: left;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #dc2626; /* Semantic Red */
+  color: #ef4444; /* Semantic Red */
   background: none;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
-.dropdown-item-danger:hover { background-color: #fef2f2; color: #b91c1c; }
+.dropdown-item-danger:hover { 
+  background-color: rgba(239, 68, 68, 0.1); 
+  color: #ef4444; 
+}
 
 /* =========================================
    LOGIN PAGE SPECIFIC STYLES
@@ -299,16 +362,18 @@ header-left {
   justify-content: center;
   min-height: 100vh;
   padding: 1rem;
+  transition: background-color 0.3s ease;
 }
 
 .login-card {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   width: 100%;
   max-width: 28rem; /* 448px */
   border-radius: 1.5rem;
   padding: 2.5rem 2rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 5, 35, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--brand-gray-light);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .login-header {
@@ -329,11 +394,13 @@ header-left {
   font-weight: 700;
   color: var(--brand-darkest);
   margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
 }
 
 .login-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--brand-dark);
+  transition: color 0.3s ease;
 }
 
 .login-form-group {
@@ -344,8 +411,9 @@ header-left {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--brand-dark);
   margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
 }
 
 .login-input-wrapper {
@@ -357,9 +425,10 @@ header-left {
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--brand-dark);
   width: 1.25rem;
   height: 1.25rem;
+  transition: color 0.3s ease;
 }
 
 .login-input {
@@ -369,14 +438,19 @@ header-left {
   border-radius: 0.75rem;
   font-size: 0.875rem;
   color: var(--brand-darkest);
-  background-color: #ffffff;
+  background-color: var(--brand-gray-bg);
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .login-input:focus {
+  background-color: var(--brand-surface);
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(0, 26, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.login-input:focus ~ .login-icon {
+  color: var(--brand-primary);
 }
 
 .login-options {
@@ -391,17 +465,22 @@ header-left {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #4b5563;
+  color: var(--brand-dark);
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .login-forgot {
   color: var(--brand-secondary);
   font-weight: 600;
   text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.login-forgot:hover { color: var(--brand-primary); text-decoration: underline; }
+.login-forgot:hover { 
+  color: var(--brand-primary); 
+  text-decoration: underline; 
+}
 
 .login-btn {
   width: 100%;
@@ -413,8 +492,34 @@ header-left {
   font-size: 0.875rem;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  box-shadow: 0 4px 6px -1px rgba(0, 26, 255, 0.2);
+  transition: background-color 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
 }
 
-.login-btn:hover { background-color: var(--brand-dark); }
+.login-btn:hover { 
+  background-color: var(--brand-secondary); 
+}
+
+/* =========================================
+   SPA ANIMATION TRANSITIONS
+   ========================================= */
+
+/* Body transitions for Login <-> Dashboard swaps */
+body {
+  transition: opacity 0.2s ease-in-out, background-color 0.3s ease, color 0.3s ease;
+  opacity: 1;
+}
+
+body.fade-out {
+  opacity: 0;
+}
+
+main.app-main-transition {
+  transition: opacity 0.2s ease-in-out;
+  opacity: 1;
+}
+
+main.fade-out {
+  opacity: 0;
+  transform: translateY(8px); /* Creates the soft slide-down effect */
+}

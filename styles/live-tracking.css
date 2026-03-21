@@ -2,35 +2,10 @@
    LIVE TRACKING SPECIFIC STYLES
    ========================================= */
 
-:root {
-  /* Custom Brand Palette */
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-}
-
-/* --- Layout & Typography --- */
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--brand-darkest);
-}
-
-.page-subtitle {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
 /* --- Quick Stats Strip --- */
 .stat-pill {
   flex-shrink: 0;
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   padding: 0.5rem 1rem;
   border-radius: 0.75rem;
   border: 1px solid var(--brand-gray-light);
@@ -39,8 +14,9 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
+  font-weight: 600;
+  color: var(--brand-darkest);
+  transition: all 0.3s ease;
 }
 
 /* --- Main Tracking Layout --- */
@@ -50,12 +26,7 @@
   overflow: hidden;
   gap: 1.5rem;
   padding: 0 2rem 2rem 2rem;
-}
-
-@media (max-width: 1024px) {
-  .tracking-container {
-    flex-direction: column;
-  }
+  min-height: 0; /* Critical for inner scrolling on desktop */
 }
 
 /* --- Map Panel --- */
@@ -68,6 +39,12 @@
   background-color: var(--brand-gray-bg);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
   min-height: 400px;
+  transition: border-color 0.3s ease;
+}
+
+/* THE MAGIC TRICK: Perfect Leaflet Dark Mode! */
+html.dark .leaflet-tile-pane {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
 
 .map-controls {
@@ -77,15 +54,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 1000; /* Above Leaflet layer */
+  z-index: 1000; 
 }
 
 .btn-map {
   padding: 0.75rem;
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  color: #4b5563;
+  color: var(--brand-darkest);
   border: 1px solid var(--brand-gray-light);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -100,18 +77,19 @@
 .btn-map-primary {
   background-color: var(--brand-primary);
   color: #ffffff;
-  border-color: var(--brand-dark);
+  border-color: var(--brand-primary);
 }
 
 .btn-map-primary:hover {
   background-color: var(--brand-dark);
   color: #ffffff;
+  border-color: var(--brand-dark);
 }
 
 /* --- Sidebar Panel --- */
 .sidebar-panel {
   flex: 1;
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 1.5rem;
   border: 1px solid var(--brand-gray-light);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -119,11 +97,13 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 320px;
+  transition: all 0.3s ease;
 }
 
 .sidebar-header {
   padding: 1.5rem;
   border-bottom: 1px solid var(--brand-gray-light);
+  transition: border-color 0.3s ease;
 }
 
 /* --- Search Input --- */
@@ -145,9 +125,9 @@
 }
 
 .search-input:focus {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(0, 26, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .search-icon {
@@ -157,8 +137,9 @@
   transform: translateY(-50%);
   width: 1rem;
   height: 1rem;
-  color: #9ca3af;
+  color: var(--brand-dark);
   pointer-events: none;
+  transition: color 0.3s ease;
 }
 
 /* --- Staff Cards --- */
@@ -195,20 +176,16 @@
   text-overflow: ellipsis;
 }
 
-.staff-card:hover .staff-card-name {
-  color: var(--brand-primary);
-}
+.staff-card:hover .staff-card-name { color: var(--brand-primary); }
 
 .staff-card-arrow {
   width: 1rem;
   height: 1rem;
-  color: #d1d5db;
+  color: var(--brand-dark);
   transition: color 0.2s ease;
 }
 
-.staff-card:hover .staff-card-arrow {
-  color: var(--brand-primary);
-}
+.staff-card:hover .staff-card-arrow { color: var(--brand-primary); }
 
 /* --- Avatars --- */
 .avatar-circle {
@@ -218,10 +195,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 /* --- Map User Location Animations --- */
@@ -255,16 +232,34 @@
 }
 
 /* Leaflet Popup Customization to match brand */
-.leaflet-popup-content-wrapper {
-  border-radius: 0.5rem;
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background-color: var(--brand-surface) !important;
+  color: var(--brand-darkest) !important;
   border: 1px solid var(--brand-gray-light);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
-.leaflet-popup-content {
-  margin: 10px 12px;
-  line-height: 1.4;
-}
+.leaflet-popup-content { margin: 10px 12px; line-height: 1.4; }
 
 /* Utilities */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* =========================================
+   FIXED: MOBILE RESPONSIVE LAYOUT
+   ========================================= */
+@media (max-width: 1024px) {
+  .tracking-container {
+    flex-direction: column;
+    overflow: visible; /* Important so mobile can scroll */
+  }
+  .map-panel {
+    flex: none;
+    height: 400px;
+    min-height: auto;
+  }
+  .sidebar-panel {
+    flex: none;
+    height: 500px; /* Forces the list to stay visible below the map! */
+  }
+}

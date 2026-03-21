@@ -1,31 +1,73 @@
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // We use a slight delay (100ms) to ensure layout.js has finished injecting the sidebar HTML first
+(() => {
+    // 1. RUN EVERY TIME
+    if (window.lucide) lucide.createIcons();
+
+    // FIXED: Wrap in setTimeout so it waits for layout.js to inject the sidebar on hard refresh!
     setTimeout(() => {
-        // 1. Read the URL to see where the user came from
+        let fromPage = 'management'; 
         const urlParams = new URLSearchParams(window.location.search);
-        const fromPage = urlParams.get('from') || 'management'; // Defaults to management if no parameter exists
-
-        // 2. Dynamically update the Back Button
-        const backBtn = document.getElementById('dynamic-back-btn');
-        if (backBtn) {
-            // e.g., changes href to "attendance.html"
-            backBtn.href = `${fromPage}.html`; 
+        if(urlParams.get('from')) {
+            fromPage = urlParams.get('from');
         }
 
-        // 3. Keep the correct Sidebar Item highlighted
-        // First, remove the 'active' class from all sidebar items just in case
-        document.querySelectorAll('.sidebar-item').forEach(item => {
+        document.querySelectorAll('.sidebar-item, .nav-link').forEach(item => {
             item.classList.remove('active');
+            if (item.getAttribute('href') && item.getAttribute('href').startsWith(fromPage)) {
+                item.classList.add('active');
+            }
         });
-
-        // Find the sidebar link that matches our 'fromPage' and make it active
-        const activeSidebarLink = document.querySelector(`.sidebar-item[href="${fromPage}.html"]`);
-        if (activeSidebarLink) {
-            activeSidebarLink.classList.add('active');
-        }
-
     }, 100);
 
-    console.log("Employee Profile view initialized.");
-});
+    // 2. SPA EVENT GUARD (Run Only Once)
+    if (window.employeeProfileSPAInitialized) return;
+    window.employeeProfileSPAInitialized = true;
+
+    // 3. EVENT DELEGATION LISTENERS
+    document.body.addEventListener('click', (e) => {
+        
+        // --- Dynamic Back Button Routing ---
+        const backBtn = e.target.closest('#dynamic-back-btn');
+        if (backBtn) {
+            e.preventDefault();
+            
+            let currentFrom = 'management'; 
+            const currentParams = new URLSearchParams(window.location.search);
+            if(currentParams.get('from')) {
+                currentFrom = currentParams.get('from');
+            }
+            const returnUrl = `${currentFrom}.html`;
+
+            if (typeof navigateTo === 'function') {
+                navigateTo(returnUrl);
+            } else {
+                window.location.href = returnUrl;
+            }
+        }
+
+        // --- Edit Details Button Intercept ---
+        const editBtn = e.target.closest('a[href^="employee-edit-profile.html"]');
+        if (editBtn) {
+            e.preventDefault();
+            const targetUrl = editBtn.getAttribute('href');
+            if (typeof navigateTo === 'function') {
+                navigateTo(targetUrl);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+        
+        // --- View Full Log Button Intercept ---
+        const logBtn = e.target.closest('a[href^="employee-logs.html"]');
+        if (logBtn) {
+            e.preventDefault();
+            const targetUrl = logBtn.getAttribute('href');
+            if (typeof navigateTo === 'function') {
+                navigateTo(targetUrl);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
+    });
+
+    console.log("Employee Profile SPA module loaded successfully.");
+})();

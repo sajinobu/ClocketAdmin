@@ -5,24 +5,34 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Management - TimeTrack Portal</title>
-  
+
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/management.css">
 
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -34,7 +44,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
@@ -43,10 +53,10 @@
 
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-y-auto overflow-x-hidden bg-brand-grayBg relative transition-colors duration-300">
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
           <h1 class="page-title">Management</h1>
-          <p class="page-subtitle">Manage employees and teams</p>
+          <p class="page-subtitle text-brand-dark">Manage employees and teams</p>
         </div>
 
         <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
@@ -58,26 +68,30 @@
             </div>
 
             <div id="employees-tab" class="management-tab-content">
-              
-              <div class="flex items-center justify-between gap-4 mb-4">
-                <a href="add-employee.html?from=management" class="btn-primary">
-                    Add Employee
-                </a>
 
-                <div class="flex items-center gap-2 flex-1 justify-end">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                  <a href="add-employee.html?from=management" class="btn-primary">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add Employee
+                  </a>
+                </div>
+
+                <div class="flex items-center gap-2 w-full sm:w-auto sm:flex-1 justify-end">
                   <div class="input-group" style="max-width: 16rem;">
                     <i data-lucide="search" class="input-icon"></i>
-                    <input type="text" placeholder="Search employees..." class="input-field employees-search">
+                    <input type="text" id="emp-search-input" placeholder="Search employees..."
+                      class="input-field employees-search">
                   </div>
                   <button id="open-filter-modal" class="btn-icon">
                     <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
-                    <span id="filter-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full border-2 border-white"></span>
+                    <span id="filter-badge"
+                      class="hidden absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full border-2 border-brand-surface"></span>
                   </button>
                 </div>
               </div>
 
               <div class="table-panel">
-                <div class="overflow-visible">
+                <div class="table-wrapper">
                   <table class="data-table">
                     <thead>
                       <tr class="table-head-row">
@@ -94,28 +108,26 @@
                         <td class="table-td">
                           <div class="flex items-center gap-3">
                             <div class="avatar-sm">SJ</div>
-                            <p class="font-bold text-brand-darkest">Sarah Johnson</p>
+                            <p class="font-bold text-brand-darkest transition-colors">Sarah Johnson</p>
                           </div>
                         </td>
-                        <td class="table-td text-sm text-gray-600">Engineering</td>
-                        <td class="table-td text-sm text-gray-600">sarah.j@company.com</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">Engineering</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">sarah.j@company.com</td>
                         <td class="table-td">
-                            <span class="status-badge status-active">Active</span>
+                          <span class="status-badge status-active">Active</span>
                         </td>
-                        <td class="table-td text-right">
-                          <div class="relative inline-block text-left">
-                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div class="action-menu hidden">
-                              <a href="employee-profile.html?from=management" class="menu-item">
-                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                              </a>
-                              <a href="employee-edit-profile.html?from=management" class="menu-item">
-                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
-                              </a>
-                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Sarah Johnson">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                              </button>
-                            </div>
+                        <td class="table-td text-right relative">
+                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                          <div class="action-menu hidden">
+                            <a href="employee-profile.html?from=management" class="menu-item">
+                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                            </a>
+                            <a href="employee-edit-profile.html?from=management" class="menu-item">
+                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
+                            </a>
+                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Sarah Johnson">
+                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -124,28 +136,26 @@
                         <td class="table-td">
                           <div class="flex items-center gap-3">
                             <div class="avatar-sm">MC</div>
-                            <p class="font-bold text-brand-darkest">Mike Chen</p>
+                            <p class="font-bold text-brand-darkest transition-colors">Mike Chen</p>
                           </div>
                         </td>
-                        <td class="table-td text-sm text-gray-600">Design</td>
-                        <td class="table-td text-sm text-gray-600">mike.c@company.com</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">Design</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">mike.c@company.com</td>
                         <td class="table-td">
-                            <span class="status-badge status-active">Active</span>
+                          <span class="status-badge status-active">Active</span>
                         </td>
-                        <td class="table-td text-right">
-                          <div class="relative inline-block text-left">
-                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div class="action-menu hidden">
-                              <a href="employee-profile.html?from=management" class="menu-item">
-                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                              </a>
-                              <a href="employee-edit-profile.html?from=management" class="menu-item">
-                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
-                              </a>
-                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Mike Chen">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                              </button>
-                            </div>
+                        <td class="table-td text-right relative">
+                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                          <div class="action-menu hidden">
+                            <a href="employee-profile.html?from=management" class="menu-item">
+                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                            </a>
+                            <a href="employee-edit-profile.html?from=management" class="menu-item">
+                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
+                            </a>
+                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Mike Chen">
+                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -154,28 +164,26 @@
                         <td class="table-td">
                           <div class="flex items-center gap-3">
                             <div class="avatar-sm">EW</div>
-                            <p class="font-bold text-brand-darkest">Emma Wilson</p>
+                            <p class="font-bold text-brand-darkest transition-colors">Emma Wilson</p>
                           </div>
                         </td>
-                        <td class="table-td text-sm text-gray-600">Operations</td>
-                        <td class="table-td text-sm text-gray-600">emma.w@company.com</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">Operations</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">emma.w@company.com</td>
                         <td class="table-td">
-                            <span class="status-badge status-break">On Break</span>
+                          <span class="status-badge status-break">On Break</span>
                         </td>
-                        <td class="table-td text-right">
-                          <div class="relative inline-block text-left">
-                            <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                            <div class="action-menu hidden">
-                              <a href="employee-profile.html?from=management" class="menu-item">
-                                <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                              </a>
-                              <a href="employee-edit-profile.html?from=management" class="menu-item">
-                                <i data-lucide="pencil" class="w-4 h-4"></i> Modify Profile
-                              </a>
-                              <button class="menu-item menu-item-danger delete-employee-btn" data-name="Emma Wilson">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                              </button>
-                            </div>
+                        <td class="table-td text-right relative">
+                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                          <div class="action-menu hidden">
+                            <a href="employee-profile.html?from=management" class="menu-item">
+                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                            </a>
+                            <a href="employee-edit-profile.html?from=management" class="menu-item">
+                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
+                            </a>
+                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Emma Wilson">
+                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -183,12 +191,12 @@
                       <tr id="no-results-row" class="hidden">
                         <td colspan="5" class="table-td text-center py-12">
                           <div class="flex flex-col items-center justify-center">
-                            <div class="w-12 h-12 bg-brand-grayBg text-gray-400 rounded-full flex items-center justify-center mb-3">
+                            <div class="w-12 h-12 bg-brand-grayBg text-brand-dark rounded-full flex items-center justify-center mb-3">
                               <i data-lucide="search-x" class="w-6 h-6"></i>
                             </div>
-                            <p class="text-sm font-bold text-brand-darkest">No employees found</p>
-                            <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or search terms.</p>
-                            <button id="clear-all-filters" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear all filters</button>
+                            <p class="empty-state-title text-sm font-bold text-brand-darkest">No employees found</p>
+                            <p class="empty-state-subtext text-xs text-brand-dark mt-1">Try adjusting your filters or search terms.</p>
+                            <button id="clear-all-filters" style="display: none;" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear all filters</button>
                           </div>
                         </td>
                       </tr>
@@ -200,29 +208,40 @@
 
             <div id="teams-tab" class="management-tab-content hidden">
               
-              <div class="flex items-center justify-between gap-4 mb-4">
-                <a href="create-team.html?from=management" class="btn-primary">
-                    Create Team
-                </a>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                    <a href="create-team.html?from=management" class="btn-primary">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Team
+                    </a>
+                </div>
 
-                <div class="flex items-center gap-2 flex-1 justify-end">
+                <div class="flex items-center gap-3 w-full sm:w-auto sm:flex-1 justify-end">
                   <div class="input-group" style="max-width: 16rem;">
                     <i data-lucide="search" class="input-icon"></i>
                     <input type="text" id="teams-search-input" placeholder="Search teams..." class="input-field teams-search">
                   </div>
-                  <select id="team-dept-filter" class="select-field">
-                    <option value="">All Departments</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Design">Design</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Sales">Sales</option>
-                    <option value="Marketing">Marketing</option>
-                  </select>
+                  
+                  <div class="custom-dropdown" id="team-dept-dropdown">
+                    <div class="dropdown-trigger">
+                        <i data-lucide="filter" class="w-4 h-4"></i>
+                        <span id="team-dept-text">All Departments</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 ml-auto"></i>
+                    </div>
+                    <div class="dropdown-menu" id="team-dept-menu">
+                        <div class="dropdown-item active" data-value="">All Departments</div>
+                        <div class="dropdown-item" data-value="Engineering">Engineering</div>
+                        <div class="dropdown-item" data-value="Design">Design</div>
+                        <div class="dropdown-item" data-value="Operations">Operations</div>
+                        <div class="dropdown-item" data-value="Sales">Sales</div>
+                        <div class="dropdown-item" data-value="Marketing">Marketing</div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
               <div class="table-panel">
-                <div class="overflow-visible">
+                <div class="table-wrapper">
                   <table class="data-table">
                     <thead>
                       <tr class="table-head-row">
@@ -237,18 +256,17 @@
                       
                       <tr class="data-row">
                         <td class="table-td">
-                          <p class="font-bold text-brand-darkest">Engineering Team A</p>
+                          <p class="font-bold text-brand-darkest transition-colors">Engineering Team A</p>
                         </td>
-                        <td class="table-td text-sm text-gray-600">Engineering</td>
+                        <td class="table-td text-sm text-brand-dark transition-colors">Engineering</td>
                         <td class="table-td">
                           <div class="flex items-center gap-2">
                             <div class="avatar-sm" style="width: 2rem; height: 2rem; font-size: 0.75rem;">SJ</div>
-                            <p class="text-sm font-medium text-gray-800">Sarah Johnson</p>
+                            <p class="text-sm font-medium text-brand-darkest transition-colors">Sarah Johnson</p>
                           </div>
                         </td>
-                        <td class="table-td text-sm text-gray-600">8 members</td>
-                        <td class="table-td text-right">
-                          <div class="relative inline-block text-left">
+                        <td class="table-td text-sm text-brand-dark transition-colors">8 members</td>
+                        <td class="table-td text-right relative">
                             <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
                             <div class="action-menu hidden">
                               <a href="team-details.html?from=management" class="menu-item">
@@ -261,18 +279,18 @@
                                 <i data-lucide="trash-2" class="w-4 h-4"></i> Disband
                               </button>
                             </div>
-                          </div>
                         </td>
                       </tr>
 
                       <tr id="no-teams-row" class="hidden">
                         <td colspan="5" class="table-td text-center py-12">
                           <div class="flex flex-col items-center justify-center">
-                            <div class="w-12 h-12 bg-brand-grayBg text-gray-400 rounded-full flex items-center justify-center mb-3">
+                            <div class="w-12 h-12 bg-brand-grayBg text-brand-dark rounded-full flex items-center justify-center mb-3">
                               <i data-lucide="search-x" class="w-6 h-6"></i>
                             </div>
-                            <p class="text-sm font-bold text-brand-darkest">No teams found</p>
-                            <button id="clear-team-filters" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear search and filters</button>
+                            <p class="empty-state-title text-sm font-bold text-brand-darkest">No teams found</p>
+                            <p class="empty-state-subtext text-xs text-brand-dark mt-1">Try adjusting your filters or search terms.</p>
+                            <button id="clear-team-filters" style="display: none;" class="mt-4 text-sm text-brand-primary font-bold hover:underline bg-transparent border-none cursor-pointer">Clear filters</button>
                           </div>
                         </td>
                       </tr>
@@ -284,62 +302,78 @@
 
           </div>
         </div>
+
+        <div id="filter-modal" class="hidden modal-overlay z-[100]">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3 class="font-bold text-brand-darkest">Filter Employees</h3>
+              <button id="close-filter-modal" class="btn-icon bg-transparent border-none shadow-none text-brand-dark hover:text-brand-primary">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <div class="modal-body space-y-5">
+              
+              <div>
+                <label class="block text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Department</label>
+                <div class="custom-dropdown form-variant w-full">
+                  <div class="dropdown-trigger">
+                    <span id="filter-dept-text">All Departments</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                  </div>
+                  <div class="dropdown-menu">
+                    <div class="dropdown-item active" data-value="">All Departments</div>
+                    <div class="dropdown-item" data-value="Engineering">Engineering</div>
+                    <div class="dropdown-item" data-value="Design">Design</div>
+                    <div class="dropdown-item" data-value="Operations">Operations</div>
+                    <div class="dropdown-item" data-value="Sales">Sales</div>
+                    <div class="dropdown-item" data-value="Marketing">Marketing</div>
+                  </div>
+                </div>
+                <input type="hidden" id="filter-dept" value="">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Status</label>
+                <div class="custom-dropdown form-variant w-full">
+                  <div class="dropdown-trigger">
+                    <span id="filter-status-text">All Statuses</span>
+                    <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                  </div>
+                  <div class="dropdown-menu">
+                    <div class="dropdown-item active" data-value="">All Statuses</div>
+                    <div class="dropdown-item" data-value="Active">Active</div>
+                    <div class="dropdown-item" data-value="On Break">On Break</div>
+                    <div class="dropdown-item" data-value="On Leave">On Leave</div>
+                  </div>
+                </div>
+                <input type="hidden" id="filter-status" value="">
+              </div>
+              
+            </div>
+            <div class="modal-footer">
+              <button id="reset-filters" class="btn-outline flex-1 justify-center">Reset</button>
+              <button id="apply-filters" class="btn-primary flex-1 justify-center">Apply Filters</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="delete-modal" class="hidden modal-overlay z-[110]">
+          <div class="modal-box text-center">
+            <div class="modal-body pt-8 pb-6">
+              <div class="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+              </div>
+              <h3 class="text-xl font-bold text-brand-darkest mb-2">Are you sure?</h3>
+              <p class="text-sm text-brand-dark mb-2">This action cannot be undone. All data associated with this <span id="delete-type" class="font-bold">item</span> will be permanently removed.</p>
+            </div>
+            <div class="modal-footer">
+              <button id="cancel-delete" class="btn-outline flex-1 justify-center">Cancel</button>
+              <button id="confirm-delete" class="btn-primary bg-red-600 hover:bg-red-700 flex-1 justify-center">Confirm</button>
+            </div>
+          </div>
+        </div>
+
       </main>
-    </div>
-  </div>
-
-  <div id="filter-modal" class="hidden modal-overlay">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 class="font-bold text-brand-darkest">Filter Employees</h3>
-        <button id="close-filter-modal" class="text-gray-400 hover:text-brand-primary transition-colors bg-transparent border-none cursor-pointer">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="modal-body space-y-5">
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Department</label>
-          <select id="filter-dept" class="select-field w-full">
-            <option value="">All Departments</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Design">Design</option>
-            <option value="Operations">Operations</option>
-            <option value="Sales">Sales</option>
-            <option value="Marketing">Marketing</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Status</label>
-          <select id="filter-status" class="select-field w-full">
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="On Break">On Break</option>
-            <option value="On Leave">On Leave</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="reset-filters" class="btn-outline">Reset</button>
-        <button id="apply-filters" class="btn-primary flex-1 justify-center">Apply Filters</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="delete-modal" class="hidden modal-overlay z-[110]">
-    <div class="modal-box text-center">
-      <div class="modal-body pt-8 pb-6">
-        <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i data-lucide="alert-triangle" class="w-8 h-8"></i>
-        </div>
-        <h3 class="text-xl font-bold text-brand-darkest mb-2">Are you sure?</h3>
-        <p class="text-sm text-gray-500 mb-2">This action cannot be undone. All data associated with this <span id="delete-type" class="font-bold">item</span> will be permanently removed.</p>
-      </div>
-      <div class="modal-footer">
-        <button id="cancel-delete" class="btn-outline">Cancel</button>
-        <button id="confirm-delete" class="btn-danger">Confirm</button>
-      </div>
     </div>
   </div>
 

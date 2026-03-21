@@ -2,59 +2,16 @@
    ADD EMPLOYEE SPECIFIC STYLES
    ========================================= */
 
-:root {
-  /* Custom Brand Palette */
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-}
-
-/* --- Page Layout & Typography --- */
-.page-header-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.25rem;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--brand-darkest);
-}
-
-/* --- Back Button --- */
-.btn-back {
-  padding: 0.5rem;
-  background-color: transparent;
-  color: #9ca3af;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-back:hover {
-  color: var(--brand-darkest);
-  background-color: var(--brand-gray-light);
-}
-
 /* --- Form Panels --- */
 .form-panel {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 1.5rem;
   border: 1px solid var(--brand-gray-light);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 2rem;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 .section-title {
@@ -62,6 +19,7 @@
   font-weight: 700;
   color: var(--brand-darkest);
   margin-bottom: 1rem;
+  transition: color 0.3s ease;
 }
 
 /* --- Form Inputs --- */
@@ -74,19 +32,19 @@
 .form-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #4b5563;
+  color: var(--brand-dark);
 }
 
 .form-input {
   width: 100%;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1rem;
   border: 1px solid var(--brand-gray-light);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   background-color: var(--brand-gray-bg);
   color: var(--brand-darkest);
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .form-input::placeholder {
@@ -94,9 +52,15 @@
 }
 
 .form-input:focus {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(0, 26, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.form-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--brand-gray-light);
 }
 
 select.form-input {
@@ -109,6 +73,10 @@ select.form-input {
   padding-right: 2.5rem;
 }
 
+select.form-input:disabled {
+  background-image: none;
+}
+
 /* --- System Role Cards (Radio Buttons) --- */
 .role-card {
   display: flex;
@@ -118,17 +86,17 @@ select.form-input {
   border: 1px solid var(--brand-gray-light);
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  background-color: var(--brand-surface);
 }
 
 .role-card:hover {
   background-color: var(--brand-gray-bg);
-  border-color: var(--brand-accent-light);
 }
 
 /* When the radio inside is checked, style the parent card */
 .role-card:has(input[type="radio"]:checked) {
-  background-color: rgba(0, 26, 255, 0.05); /* Brand Primary very light */
+  background-color: rgba(99, 102, 241, 0.1); /* Indigo 500 @ 10% */
   border-color: var(--brand-primary);
 }
 
@@ -148,54 +116,6 @@ select.form-input {
 
 .role-desc {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   margin-top: 0.125rem;
-}
-
-/* --- Form Actions --- */
-.form-actions {
-  display: flex;
-  gap: 0.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--brand-gray-light);
-  margin-top: auto; /* Pushes to bottom if flex-1 used */
-}
-
-.btn-primary {
-  flex: 1;
-  background-color: var(--brand-primary);
-  color: #ffffff;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  transition: background-color 0.2s ease;
-  border: none;
-  cursor: pointer;
-  text-align: center;
-}
-
-.btn-primary:hover {
-  background-color: var(--brand-dark);
-}
-
-.btn-cancel {
-  flex: 1;
-  background-color: #ffffff;
-  color: #4b5563;
-  padding: 0.75rem 1.5rem;
-  border: 1px solid var(--brand-gray-light);
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-}
-
-.btn-cancel:hover {
-  background-color: var(--brand-gray-bg);
-  color: var(--brand-darkest);
-  border-color: var(--brand-accent-light);
 }

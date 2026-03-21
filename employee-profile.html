@@ -6,22 +6,31 @@
   <title>Employee Profile - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/employee-profile.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,7 +42,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -42,7 +51,7 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
           <div class="page-header-container">
@@ -67,15 +76,15 @@
               <div class="profile-hero-bg"></div>
               
               <div class="profile-hero-content">
-                <div class="profile-avatar">SJ</div>
+                <div class="hero-avatar">SJ</div>
                 <div class="flex-1">
                   <div class="flex items-center gap-3 mb-1">
-                    <h2 class="profile-name">Sarah Johnson</h2>
+                    <h2 class="hero-name">Sarah Johnson</h2>
                     <span class="status-badge status-active">
                       <span class="status-dot"></span> Active Now
                     </span>
                   </div>
-                  <p class="profile-role">Senior Frontend Developer</p>
+                  <p class="hero-role">Senior Frontend Developer</p>
                   
                   <div class="profile-meta">
                     <div class="meta-item">
@@ -179,8 +188,8 @@
                           <td class="log-td font-medium text-[var(--brand-darkest)]">Today</td>
                           <td class="log-td"><span class="status-badge status-active">On Time</span></td>
                           <td class="log-td">8:58 AM</td>
-                          <td class="log-td text-gray-400">--</td>
-                          <td class="log-td">--</td>
+                          <td class="log-td text-[var(--brand-dark)]">--</td>
+                          <td class="log-td text-[var(--brand-dark)]">--</td>
                         </tr>
                         <tr class="log-row">
                           <td class="log-td font-medium text-[var(--brand-darkest)]">Yesterday</td>

@@ -6,22 +6,31 @@
   <title>My Profile - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/profile.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,7 +42,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -42,26 +51,26 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <div class="page-header-container">
+          <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-4">
             <div>
-              <h1 class="page-title">My Profile</h1>
-              <p class="page-subtitle">View and manage your profile information</p>
+              <h1 class="text-2xl font-bold text-brand-darkest mb-1 transition-colors">My Profile</h1>
+              <p class="text-sm text-brand-dark transition-colors">View and manage your profile information</p>
             </div>
-            <div class="header-actions">
-              <button id="reset-password-btn" class="btn-outline">
+            <div class="flex items-center gap-3 flex-wrap">
+              <button id="reset-password-btn" class="flex-1 md:flex-none py-2 px-4 bg-brand-surface border border-brand-grayLight text-brand-darkest text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-brand-grayBg transition-colors shadow-sm">
                 <i data-lucide="key" class="w-4 h-4"></i> Reset Password
               </button>
-              <a href="profile-edit.html" class="btn-primary">
+              <a href="profile-edit.html" class="flex-1 md:flex-none py-2 px-4 bg-brand-primary text-white border border-transparent text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-brand-dark transition-colors shadow-sm">
                 <i data-lucide="pencil" class="w-4 h-4"></i> Edit Details
               </a>
             </div>
           </div>
         </div>
         
-        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+        <div class="px-4 sm:px-6 md:px-8 pt-2 pb-8">
           <div class="space-y-6">
             
             <div class="profile-hero-card">

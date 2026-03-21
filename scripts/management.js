@@ -1,60 +1,313 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. Tab Logic ---
-    const tabs = document.querySelectorAll('.management-tab');
-    const contents = document.querySelectorAll('.management-tab-content');
-    
-    function switchTab(tabName) {
-        tabs.forEach(t => {
+(() => {
+    // ==========================================
+    // 1. RUN EVERY TIME (UI & State Initialization)
+    // ==========================================
+    if (window.lucide) lucide.createIcons();
+    window.activeTeamDept = ""; 
+
+    function switchTab(tabName, updateUrl = true) {
+        if (updateUrl) {
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        document.querySelectorAll('.management-tab').forEach(t => {
             if (t.getAttribute('data-tab') === tabName) {
                 t.classList.add('active');
             } else {
                 t.classList.remove('active');
             }
         });
-        contents.forEach(content => {
-            content.classList.toggle('hidden', content.id !== `${tabName}-tab`);
+        
+        document.querySelectorAll('.management-tab-content').forEach(c => {
+            c.classList.add('hidden');
+        });
+        
+        const activeContent = document.getElementById(`${tabName}-tab`);
+        if (activeContent) activeContent.classList.remove('hidden');
+        
+        document.querySelectorAll('.action-menu').forEach(m => {
+            m.classList.add('hidden');
+            m.style.position = '';
         });
     }
-    
-    tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.getAttribute('data-tab'))));
 
-    // --- 2. Advanced Filtering Logic (Employees) ---
-    const empSearch = document.querySelector('.employees-search');
-    const filterModal = document.getElementById('filter-modal');
-    const filterBadge = document.getElementById('filter-badge');
-    const noResults = document.getElementById('no-results-row');
-    
-    const filterDept = document.getElementById('filter-dept');
-    const filterStatus = document.getElementById('filter-status');
-    
-    const btnOpenModal = document.getElementById('open-filter-modal');
-    const btnCloseModal = document.getElementById('close-filter-modal');
-    const btnApply = document.getElementById('apply-filters');
-    const btnReset = document.getElementById('reset-filters');
-    const btnClearAll = document.getElementById('clear-all-filters');
+    function initializeTabsFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
+        if (tabParam === 'teams' || tabParam === 'employees') {
+            switchTab(tabParam, false); 
+        } else {
+            switchTab('employees', false);
+        }
+    }
 
-    function applyFinalFilters() {
-        const searchText = empSearch.value.toLowerCase().trim();
-        const deptValue = filterDept.value;
-        const statusValue = filterStatus.value.toLowerCase(); // Ensure lowercase matching
+    initializeTabsFromURL();
+    applyEmployeeFilters();
+    applyTeamFilters();
+
+    window.addEventListener('popstate', () => {
+        initializeTabsFromURL();
+    });
+
+    // ==========================================
+    // 2. SPA EVENT GUARD
+    // ==========================================
+    if (window._mgmtEventsBound) return;
+    window._mgmtEventsBound = true;
+
+    // Close floating menus aggressively on any scroll to prevent them flying away
+    window.addEventListener('scroll', (e) => {
+        // Ignore scrolling if the user is scrolling inside a dropdown menu
+        if (e.target.closest && e.target.closest('.dropdown-menu')) return;
         
-        // Grab only the data rows, excluding the "no results" row
+        document.querySelectorAll('.action-menu:not(.hidden)').forEach(m => {
+            m.classList.add('hidden');
+            m.style.position = '';
+        });
+    }, { capture: true, passive: true });
+
+    // ==========================================
+    // 3. EVENT LISTENERS
+    // ==========================================
+    document.body.addEventListener('click', (e) => {
+        // Tab Clicks
+        const tabBtn = e.target.closest('.management-tab');
+        if (tabBtn) switchTab(tabBtn.getAttribute('data-tab'));
+
+        // --- UPGRADED: Viewport Clamped Floating Action Menu ---
+        const actionBtn = e.target.closest('.action-btn');
+        const allMenus = document.querySelectorAll('.action-menu');
+        
+        if (actionBtn) {
+            e.stopPropagation();
+            const menu = actionBtn.nextElementSibling;
+            
+            // Close all others
+            allMenus.forEach(m => { 
+                if (m !== menu) {
+                    m.classList.add('hidden'); 
+                    m.style.position = '';
+                } 
+            });
+            
+            if (menu) {
+                if (menu.classList.contains('hidden')) {
+                    // Temporarily display block to measure width accurately
+                    menu.style.display = 'block';
+                    menu.style.visibility = 'hidden';
+                    menu.classList.remove('hidden');
+                    
+                    const rect = actionBtn.getBoundingClientRect();
+                    const menuWidth = menu.offsetWidth || 160; 
+                    
+                    menu.style.position = 'fixed';
+                    menu.style.top = `${rect.bottom + 4}px`;
+                    
+                    // Math Clamp: Calculate optimal left position
+                    // Default: Align right edges
+                    let idealLeft = rect.right - menuWidth; 
+                    
+                    // Clamp to Right Edge of Screen (16px padding)
+                    if (idealLeft + menuWidth > window.innerWidth - 16) {
+                        idealLeft = window.innerWidth - menuWidth - 16;
+                    }
+                    // Clamp to Left Edge of Screen (16px padding)
+                    if (idealLeft < 16) {
+                        idealLeft = 16;
+                    }
+                    
+                    menu.style.left = `${idealLeft}px`;
+                    menu.style.right = 'auto';
+                    menu.style.zIndex = '9999';
+                    
+                    // Restore visibility
+                    menu.style.visibility = 'visible';
+                    menu.style.display = '';
+                    
+                } else {
+                    menu.classList.add('hidden');
+                    menu.style.position = '';
+                }
+            }
+        } else {
+            // Clicked outside - close menus
+            if (!e.target.closest('.action-menu')) {
+                allMenus.forEach(m => { 
+                    m.classList.add('hidden'); 
+                    m.style.position = ''; 
+                });
+            }
+        }
+        
+        // --- Custom Dropdown Handling ---
+        const isDropdownClick = e.target.closest('.custom-dropdown');
+        if (!isDropdownClick) {
+            document.querySelectorAll('.custom-dropdown.open').forEach(d => d.classList.remove('open'));
+        }
+
+        const trigger = e.target.closest('.dropdown-trigger');
+        if (trigger) {
+            const dropdown = trigger.closest('.custom-dropdown');
+            document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+                if(d !== dropdown) d.classList.remove('open');
+            });
+            dropdown.classList.toggle('open');
+        }
+
+        const dropdownItem = e.target.closest('.dropdown-item');
+        if (dropdownItem) {
+            e.stopPropagation();
+            const dropdown = dropdownItem.closest('.custom-dropdown');
+            const value = dropdownItem.getAttribute('data-value');
+            const textElement = dropdown.querySelector('span[id$="-text"]');
+            const hiddenInput = dropdown.nextElementSibling;
+
+            dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            dropdownItem.classList.add('active');
+            if (textElement) textElement.textContent = dropdownItem.textContent;
+            
+            if (hiddenInput && hiddenInput.tagName === 'INPUT') {
+                hiddenInput.value = value;
+            } else if (dropdown.id === 'team-dept-dropdown') {
+                window.activeTeamDept = value;
+                applyTeamFilters();
+            }
+            
+            dropdown.classList.remove('open');
+        }
+
+        // Modals & Filters
+        if (e.target.closest('#open-filter-modal')) {
+            const fm = document.getElementById('filter-modal');
+            if (fm) fm.classList.remove('hidden');
+        }
+        if (e.target.closest('#close-filter-modal') || e.target.id === 'filter-modal') {
+            const fm = document.getElementById('filter-modal');
+            if (fm) fm.classList.add('hidden');
+        }
+        if (e.target.closest('#apply-filters')) {
+            applyEmployeeFilters();
+            const fm = document.getElementById('filter-modal');
+            if (fm) fm.classList.add('hidden');
+        }
+        
+        if (e.target.closest('#reset-filters')) {
+            const deptDropdown = document.querySelector('#filter-dept').previousElementSibling;
+            const statusDropdown = document.querySelector('#filter-status').previousElementSibling;
+            
+            document.getElementById('filter-dept').value = '';
+            deptDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            deptDropdown.querySelector('.dropdown-item[data-value=""]').classList.add('active');
+            document.getElementById('filter-dept-text').textContent = 'All Departments';
+            
+            document.getElementById('filter-status').value = '';
+            statusDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            statusDropdown.querySelector('.dropdown-item[data-value=""]').classList.add('active');
+            document.getElementById('filter-status-text').textContent = 'All Statuses';
+        }
+        
+        if (e.target.closest('#clear-all-filters')) {
+            const search = document.getElementById('emp-search-input');
+            if(search) search.value = "";
+            document.getElementById('reset-filters').click(); 
+            applyEmployeeFilters();
+        }
+
+        if(e.target.closest('#clear-team-filters')) {
+            const search = document.getElementById('teams-search-input');
+            if (search) search.value = "";
+            window.activeTeamDept = "";
+            
+            const deptText = document.getElementById('team-dept-text');
+            if (deptText) deptText.textContent = "All Departments";
+            
+            const deptDrop = document.getElementById('team-dept-dropdown');
+            if (deptDrop) {
+                deptDrop.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                const first = deptDrop.querySelector('.dropdown-item[data-value=""]');
+                if (first) first.classList.add('active');
+            }
+            applyTeamFilters();
+        }
+
+        // Deletion Flow
+        const deleteBtn = e.target.closest('.delete-employee-btn, .disband-btn');
+        if (deleteBtn) {
+            const dm = document.getElementById('delete-modal');
+            if (dm) {
+                const type = deleteBtn.classList.contains('disband-btn') ? 'team' : 'employee';
+                document.getElementById('delete-type').textContent = type;
+                window.itemToDelete = deleteBtn.closest('tr');
+                window.deleteItemName = deleteBtn.getAttribute('data-name');
+                dm.classList.remove('hidden');
+            }
+        }
+        if (e.target.closest('#cancel-delete') || e.target.id === 'delete-modal') {
+            const dm = document.getElementById('delete-modal');
+            if (dm) dm.classList.add('hidden');
+            window.itemToDelete = null;
+        }
+        if (e.target.closest('#confirm-delete')) {
+            const dm = document.getElementById('delete-modal');
+            if (dm && window.itemToDelete) {
+                const row = window.itemToDelete;
+                const itemName = window.deleteItemName;
+                
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(20px)';
+                
+                setTimeout(() => {
+                    row.remove();
+                    applyEmployeeFilters();
+                    applyTeamFilters();
+                    showManagementToast(`Successfully removed "${itemName}"`);
+                }, 300);
+                
+                dm.classList.add('hidden');
+                window.itemToDelete = null;
+            }
+        }
+    });
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target.id === 'emp-search-input') applyEmployeeFilters();
+        if (e.target.id === 'teams-search-input') applyTeamFilters();
+    });
+
+    // ==========================================
+    // 4. CORE FILTER FUNCTIONS
+    // ==========================================
+    function applyEmployeeFilters() {
+        const empSearch = document.getElementById('emp-search-input');
+        const filterDeptInput = document.getElementById('filter-dept');
+        const filterStatusInput = document.getElementById('filter-status');
+        const noResults = document.getElementById('no-results-row');
+        const clearBtn = document.getElementById('clear-all-filters');
+
+        if(!empSearch) return;
+
+        const searchText = empSearch.value.toLowerCase().trim();
+        const deptValue = filterDeptInput ? filterDeptInput.value : "";
+        const statusValue = filterStatusInput ? filterStatusInput.value.toLowerCase() : "";
+        
+        const isFiltered = searchText !== "" || deptValue !== "" || statusValue !== "";
+
         const rows = document.querySelectorAll('#employee-table-body .data-row:not(#no-results-row)');
         let visibleCount = 0;
 
         rows.forEach(row => {
-            // Extraction based on the semantic table-td layout
             const name = row.querySelector('.font-bold')?.textContent.toLowerCase() || '';
             const email = row.querySelectorAll('.table-td')[2]?.textContent.toLowerCase() || '';
             const rowDept = row.querySelectorAll('.table-td')[1]?.textContent.trim();
             const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim();
 
-            // Comparison
             const matchesSearch = name.includes(searchText) || email.includes(searchText);
             const matchesDept = deptValue === "" || rowDept === deptValue;
             const matchesStatus = statusValue === "" || (rowStatus && rowStatus.includes(statusValue));
 
-            // Fix: Override CSS display property directly
             if (matchesSearch && matchesDept && matchesStatus) {
                 row.style.display = '';
                 visibleCount++;
@@ -62,71 +315,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.style.display = 'none';
             }
         });
-
-        // Toggle UI states
-        filterBadge.classList.toggle('hidden', deptValue === "" && statusValue === "");
+        
+        const filterBadge = document.getElementById('filter-badge');
+        if(filterBadge) filterBadge.classList.toggle('hidden', deptValue === "" && statusValue === "");
+        
         if (noResults) {
             noResults.style.display = visibleCount > 0 ? 'none' : '';
-            noResults.classList.remove('hidden'); // Ensure CSS doesn't fight the style prop
+            noResults.classList.remove('hidden');
+            
+            const titleNode = noResults.querySelector('.empty-state-title');
+            const subtextNode = noResults.querySelector('.empty-state-subtext');
+            
+            if (titleNode) titleNode.textContent = isFiltered ? "No employees found" : "No employees in system";
+            if (subtextNode) subtextNode.textContent = isFiltered ? "Try adjusting your filters or search terms." : "Click 'Add Employee' to get started.";
+            if (clearBtn) clearBtn.style.display = isFiltered ? 'inline-block' : 'none';
         }
-        
-        if (window.lucide) lucide.createIcons();
     }
 
-    // Event Listeners for Filters
-    btnOpenModal.addEventListener('click', () => filterModal.classList.remove('hidden'));
-    btnCloseModal.addEventListener('click', () => filterModal.classList.add('hidden'));
-    
-    btnApply.addEventListener('click', () => {
-        applyFinalFilters();
-        filterModal.classList.add('hidden');
-    });
-
-    btnReset.addEventListener('click', () => {
-        filterDept.value = "";
-        filterStatus.value = "";
-    });
-
-    btnClearAll.addEventListener('click', () => {
-        empSearch.value = "";
-        filterDept.value = "";
-        filterStatus.value = "";
-        applyFinalFilters();
-    });
-
-    empSearch.addEventListener('input', applyFinalFilters);
-
-    filterModal.addEventListener('click', (e) => {
-        if (e.target === filterModal) filterModal.classList.add('hidden');
-    });
-
-    // --- 3. Action Menu Logic (Dropdowns) ---
-    document.addEventListener('click', (e) => {
-        const isActionBtn = e.target.closest('.action-btn');
-        const allMenus = document.querySelectorAll('.action-menu');
-
-        if (isActionBtn) {
-            e.stopPropagation();
-            const currentMenu = isActionBtn.nextElementSibling;
-            allMenus.forEach(m => { if (m !== currentMenu) m.classList.add('hidden'); });
-            currentMenu.classList.toggle('hidden');
-        } else {
-            allMenus.forEach(m => m.classList.add('hidden'));
-        }
-    });
-
-    // --- 4. Teams Filtering Logic ---
-    const teamsSearchInput = document.getElementById('teams-search-input');
-    const teamDeptFilter = document.getElementById('team-dept-filter');
-    const noTeamsRow = document.getElementById('no-teams-row');
-    const clearTeamFiltersBtn = document.getElementById('clear-team-filters');
-
     function applyTeamFilters() {
-        if (!teamsSearchInput || !teamDeptFilter) return;
+        const teamsSearchInput = document.getElementById('teams-search-input');
+        const noTeamsRow = document.getElementById('no-teams-row');
+        const clearBtn = document.getElementById('clear-team-filters');
+
+        if (!teamsSearchInput) return;
 
         const searchText = teamsSearchInput.value.toLowerCase().trim();
-        const deptValue = teamDeptFilter.value;
+        const deptValue = window.activeTeamDept; 
         
+        const isFiltered = searchText !== "" || deptValue !== "";
+
         const rows = document.querySelectorAll('#teams-table-body .data-row:not(#no-teams-row)');
         let visibleCount = 0;
 
@@ -149,93 +366,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (noTeamsRow) {
             noTeamsRow.style.display = visibleCount > 0 ? 'none' : '';
             noTeamsRow.classList.remove('hidden');
-        }
-        
-        if (window.lucide) lucide.createIcons();
-    }
-
-    if (teamsSearchInput && teamDeptFilter) {
-        teamsSearchInput.addEventListener('input', applyTeamFilters);
-        teamDeptFilter.addEventListener('change', applyTeamFilters);
-    }
-
-    if (clearTeamFiltersBtn) {
-        clearTeamFiltersBtn.addEventListener('click', () => {
-            teamsSearchInput.value = "";
-            teamDeptFilter.value = "";
-            applyTeamFilters();
-        });
-    }
-
-    // --- 5. Disband Team / Delete Employee Logic ---
-    const deleteModal = document.getElementById('delete-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete');
-    const cancelDeleteBtn = document.getElementById('cancel-delete');
-    
-    let itemToDelete = null; 
-    let deleteName = "";     
-
-    document.addEventListener('click', (e) => {
-        const disbandBtn = e.target.closest('.disband-btn');
-        const deleteEmpBtn = e.target.closest('.delete-employee-btn');
-        
-        if (disbandBtn || deleteEmpBtn) {
-            const activeBtn = disbandBtn || deleteEmpBtn;
-            itemToDelete = activeBtn.closest('tr');
-            deleteName = activeBtn.getAttribute('data-name');
             
-            document.getElementById('delete-type').textContent = disbandBtn ? "team" : "employee";
-            deleteModal.classList.remove('hidden');
+            const titleNode = noTeamsRow.querySelector('.empty-state-title');
+            const subtextNode = noTeamsRow.querySelector('.empty-state-subtext');
+            
+            if (titleNode) titleNode.textContent = isFiltered ? "No teams found" : "No teams in system";
+            if (subtextNode) subtextNode.textContent = isFiltered ? "Try adjusting your filters or search terms." : "Click 'Create Team' to get started.";
+            if (clearBtn) clearBtn.style.display = isFiltered ? 'inline-block' : 'none';
         }
-    });
+    }
 
-    cancelDeleteBtn.addEventListener('click', () => {
-        deleteModal.classList.add('hidden');
-        itemToDelete = null;
-    });
-
-    confirmDeleteBtn.addEventListener('click', () => {
-        if (!itemToDelete) return;
-
-        const row = itemToDelete;
-        const name = deleteName;
-
-        // Animations for visual feedback
-        row.style.transition = 'all 0.4s ease';
-        row.style.transform = 'translateX(30px)';
-        row.style.opacity = '0';
-
-        setTimeout(() => {
-            row.style.height = row.offsetHeight + 'px';
-            row.offsetHeight; 
-            row.style.height = '0px';
-            row.querySelectorAll('td').forEach(td => {
-                td.style.paddingTop = '0px';
-                td.style.paddingBottom = '0px';
-                td.style.border = 'none';
-            });
-
-            setTimeout(() => {
-                row.remove();
-                
-                // Re-run filters to show "Empty State" message if it was the last row
-                applyFinalFilters(); 
-                applyTeamFilters();
-                
-                showManagementToast(`Successfully removed "${name}"`);
-            }, 300);
-        }, 300);
-
-        deleteModal.classList.add('hidden');
-    });
-
-    // --- Toast Utility ---
     function showManagementToast(message) {
         const toast = document.createElement('div');
-        // Styled using standard Tailwind classes mapped to your palette
-        toast.className = `fixed bottom-6 right-6 bg-[#000523] text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-[9999]`;
-        toast.style.cssText = "transform: translateY(20px); opacity: 0; transition: all 0.3s ease;";
-        toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-[#57e8ff]"></i> <span class="text-sm font-medium">${message}</span>`;
+        toast.className = `fixed bottom-6 right-6 bg-brand-surface border border-brand-gray-light text-brand-darkest px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-[9999] transition-all duration-300`;
+        toast.style.cssText = "transform: translateY(20px); opacity: 0;";
+        toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-brand-primary"></i> <span class="text-sm font-medium">${message}</span>`;
         
         document.body.appendChild(toast);
         if(window.lucide) lucide.createIcons();
@@ -251,4 +396,4 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
-});
+})();

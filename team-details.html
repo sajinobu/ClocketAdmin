@@ -6,22 +6,31 @@
   <title>Team Details - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/team-details.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,7 +42,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -42,17 +51,17 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <div class="page-header-container">
-            <div class="header-left">
-              <a id="dynamic-back-btn" href="management.html?tab=teams" class="btn-back">
-               <i data-lucide="arrow-left" class="w-6 h-6"></i>
-              </a>
-              <h1 class="page-title">Team Overview</h1>
+          <div class="flex items-center justify-between gap-4 mb-4">
+            <div class="flex items-center gap-4">
+                <a id="dynamic-back-btn" href="management.html?tab=teams" class="p-2 text-brand-dark hover:text-brand-primary hover:bg-brand-grayBg rounded-lg transition-colors flex items-center justify-center">
+                 <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                </a>
+                <h1 class="text-2xl font-bold text-brand-darkest transition-colors">Team Overview</h1>
             </div>
-            <div class="header-actions">
+            <div>
               <a href="team-edit.html?from=team-details" class="btn-primary">
                 <i data-lucide="pencil" class="w-4 h-4"></i> Edit Team
               </a>
@@ -67,7 +76,7 @@
               <div>
                 <div class="hero-meta">
                   <span class="hero-badge">Engineering</span>
-                  <span class="text-gray-300">•</span>
+                  <span class="text-brand-dark">•</span>
                   <span class="hero-date">EST. JAN 2024</span>
                 </div>
                 <h2 class="hero-title">Engineering Team A</h2>
@@ -139,11 +148,11 @@
                           <p class="member-name">Sarah Johnson</p>
                         </div>
                       </td>
-                      <td class="table-td">Senior Frontend</td>
+                      <td class="table-td text-brand-dark transition-colors">Senior Frontend</td>
                       <td class="table-td">
                         <span class="status-badge">Active</span>
                       </td>
-                      <td class="table-td">6h 42m</td>
+                      <td class="table-td text-brand-dark transition-colors">6h 42m</td>
                       <td class="table-td text-right">
                         <a href="employee-profile.html?from=management" class="link-action font-medium">View</a>
                       </td>
@@ -152,22 +161,22 @@
                     <tr class="data-row member-row">
                       <td class="table-td">
                         <div class="member-info">
-                          <div class="avatar-md avatar-light" style="width: 2.25rem; height: 2.25rem; font-size: 0.75rem;">RK</div>
+                          <div class="avatar-md bg-[rgba(99,102,241,0.1)] text-brand-primary transition-colors" style="width: 2.25rem; height: 2.25rem; font-size: 0.75rem;">RK</div>
                           <p class="member-name">Robert Kim</p>
                         </div>
                       </td>
-                      <td class="table-td">Backend Dev</td>
+                      <td class="table-td text-brand-dark transition-colors">Backend Dev</td>
                       <td class="table-td">
                         <span class="status-badge">Active</span>
                       </td>
-                      <td class="table-td">7h 10m</td>
+                      <td class="table-td text-brand-dark transition-colors">7h 10m</td>
                       <td class="table-td text-right">
                         <a href="employee-profile.html?from=management" class="link-action font-medium">View</a>
                       </td>
                     </tr>
 
                     <tr id="no-members-row" style="display: none;">
-                        <td colspan="5" class="empty-state">
+                        <td colspan="5" class="empty-state text-brand-dark transition-colors">
                             <p class="text-sm font-medium">No members match your search.</p>
                         </td>
                     </tr>

@@ -6,22 +6,31 @@
   <title>Edit Employee - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/employee-edit-profile.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,7 +42,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -42,28 +51,29 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <div class="page-header-container">
-            <a id="dynamic-back-btn" href="employee-profile.html" class="btn-back">
-             <i data-lucide="arrow-left" class="w-6 h-6"></i>
+          <div class="flex items-center justify-start gap-4 mb-4">
+            <a id="dynamic-back-btn" href="employee-profile.html" class="p-2 text-brand-dark hover:text-brand-primary hover:bg-brand-grayBg rounded-lg transition-colors flex items-center justify-center">
+             <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
-            <h1 class="page-title">Edit Employee Details</h1>
+            <h1 class="text-2xl font-bold text-brand-darkest transition-colors">Edit Employee Details</h1>
           </div>
         </div>
         
-        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+        <div class="px-4 sm:px-6 md:px-8 pt-2 pb-8">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <div class="form-panel">
               
               <div class="avatar-edit-section">
                 <div class="avatar-wrapper">
-                  <div class="avatar-circle">SJ</div>
-                  <button class="btn-camera">
+                  <div class="avatar-circle" id="emp-avatar-preview">SJ</div>
+                  <button class="btn-camera" title="Upload new photo">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                   </button>
+                  <input type="file" id="emp-avatar-upload" accept="image/*" class="hidden" style="display: none;">
                 </div>
                 <div>
                   <h2 class="employee-name">Sarah Johnson</h2>
@@ -109,17 +119,25 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="form-group">
                       <label for="edit-employee-id" class="form-label">Employee ID</label>
-                      <input type="text" id="edit-employee-id" value="EMP-001" disabled class="form-input">
+                      <input type="text" id="edit-employee-id" value="EMP-001" disabled class="form-input disabled-input">
                     </div>
+                    
                     <div class="form-group">
-                      <label for="edit-department" class="form-label">Department</label>
-                      <select id="edit-department" required class="form-input">
-                        <option value="Engineering" selected>Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Operations">Operations</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Marketing">Marketing</option>
-                      </select>
+                      <label class="form-label">Department</label>
+                      <div class="custom-dropdown form-variant w-full" id="dept-custom-dropdown">
+                        <div class="dropdown-trigger">
+                          <span id="dept-dropdown-text">Engineering</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu" id="dept-dropdown-menu">
+                          <div class="dropdown-item active" data-value="Engineering">Engineering</div>
+                          <div class="dropdown-item" data-value="Design">Design</div>
+                          <div class="dropdown-item" data-value="Operations">Operations</div>
+                          <div class="dropdown-item" data-value="Sales">Sales</div>
+                          <div class="dropdown-item" data-value="Marketing">Marketing</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="edit-department" value="Engineering">
                     </div>
                   </div>
                   
@@ -128,13 +146,19 @@
                       <label for="edit-job-title" class="form-label">Job Title</label>
                       <input type="text" id="edit-job-title" value="Senior Frontend Developer" required class="form-input">
                     </div>
+                    
                     <div class="form-group">
-                      <label for="edit-assigned-team" class="form-label">Assigned Team</label>
-                      <select id="edit-assigned-team" required class="form-input">
-                        <option value="Engineering Team A" selected>Engineering Team A</option>
-                        <option value="Design Team B">Design Team B</option>
-                        <option value="Operations Team A">Operations Team A</option>
-                      </select>
+                      <label class="form-label">Assigned Team</label>
+                      <div class="custom-dropdown form-variant w-full" id="team-custom-dropdown">
+                        <div class="dropdown-trigger">
+                          <span id="team-dropdown-text">Engineering Team A</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu" id="team-dropdown-menu">
+                          <div class="dropdown-item active" data-value="Engineering Team A">Engineering Team A</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="edit-assigned-team" value="Engineering Team A">
                     </div>
                   </div>
                 </div>
@@ -144,40 +168,40 @@
             <div class="form-panel">
               <div class="space-y-6 flex-1 flex flex-col">
                 
-                <div>
+                <div class="flex-1">
                   <h3 class="section-title">System Role</h3>
                   <div class="space-y-3">
                     <label class="role-card">
                       <input type="radio" name="system-role" value="Employee" checked class="role-radio" form="edit-employee-form">
                       <div>
                         <span class="role-title">Employee</span>
-                        <p class="role-desc">Standard user with limited permissions</p>
+                        <p class="role-desc">Standard user with limited permissions.</p>
                       </div>
                     </label>
                     <label class="role-card">
                       <input type="radio" name="system-role" value="Manager" class="role-radio" form="edit-employee-form">
                       <div>
                         <span class="role-title">Manager</span>
-                        <p class="role-desc">Team management and reporting access</p>
+                        <p class="role-desc">Team management and reporting access.</p>
+                      </div>
+                    </label>
+                    <label class="role-card">
+                      <input type="radio" name="system-role" value="Admin" class="role-radio" form="edit-employee-form">
+                      <div>
+                        <span class="role-title">Administrator</span>
+                        <p class="role-desc">Full system access and configuration.</p>
                       </div>
                     </label>
                   </div>
                 </div>
 
-                <div>
-                  <h3 class="section-title">Account Status</h3>
-                  <div class="form-group">
-                    <select id="edit-status" form="edit-employee-form" class="form-input">
-                      <option value="Active" selected>Active</option>
-                      <option value="On Leave">On Leave</option>
-                      <option value="Suspended">Suspended</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-actions">
-                  <a id="dynamic-cancel-btn" href="employee-profile.html" class="btn-cancel">Cancel</a>
-                  <button type="submit" form="edit-employee-form" class="btn-primary">Save Changes</button>
+                <div class="flex flex-row items-center gap-3 pt-6 border-t border-brand-grayLight mt-auto transition-colors">
+                  <a id="dynamic-cancel-btn" href="employee-profile.html" class="flex-1 py-3 px-4 bg-brand-surface border border-brand-grayLight text-brand-darkest text-sm font-bold rounded-xl flex items-center justify-center hover:opacity-80 transition-colors shadow-sm">
+                    Cancel
+                  </a>
+                  <button type="submit" form="edit-employee-form" class="flex-1 py-3 px-4 bg-brand-primary text-white border border-transparent text-sm font-bold rounded-xl flex items-center justify-center hover:bg-brand-dark transition-colors shadow-sm">
+                    Save Changes
+                  </button>
                 </div>
               </div>
             </div>

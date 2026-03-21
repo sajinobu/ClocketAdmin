@@ -1,39 +1,86 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Re-initialize Lucide Icons
+(() => {
+    // ==========================================
+    // 1. RUN EVERY TIME (UI & Animations)
+    // ==========================================
     if (window.lucide) {
         lucide.createIcons();
     }
 
-    // 2. Growth Animation for Progress Bars
-    // Selects elements using the new semantic class and data attribute
-    const animatedBars = document.querySelectorAll('.animate-width');
+    // We MUST run this animation every time the page loads so the charts visually 
+    // "grow" even when navigated to via the SPA router! It sits above the guard flag.
     setTimeout(() => {
+        const animatedBars = document.querySelectorAll('.animate-width');
         animatedBars.forEach(bar => {
             const targetWidth = bar.getAttribute('data-width');
             if (targetWidth) {
                 bar.style.width = targetWidth;
             }
         });
-    }, 150); // Slight delay for visual pop
+    }, 150); 
 
-    // 3. Date Range Filter Toggle
-    const rangeBtns = document.querySelectorAll('.range-btn');
-    rangeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Remove active from all
-            rangeBtns.forEach(b => b.classList.remove('active'));
-            // Add active to clicked
-            btn.classList.add('active');
-            
-            console.log(`Fetching data for range: ${btn.getAttribute('data-range')}`);
-            // Here you would typically trigger an API call to update the charts
+    // Ensure Sidebar Highlight
+    setTimeout(() => {
+        document.querySelectorAll('.sidebar-item, .nav-link').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('href') && item.getAttribute('href').startsWith('analytics')) {
+                item.classList.add('active');
+            }
         });
-    });
+    }, 100);
 
-    // 4. Export Button Functionality with Brand-Themed Toast
-    const exportBtn = document.getElementById('export-btn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', () => {
+    // ==========================================
+    // 2. SPA EVENT GUARD (Run Only Once)
+    // ==========================================
+    if (window.analyticsSPAInitialized) return;
+    window.analyticsSPAInitialized = true;
+
+    // ==========================================
+    // 3. EVENT DELEGATION LISTENERS
+    // ==========================================
+
+    document.body.addEventListener('click', (e) => {
+        
+        // --- Date Range Filter Toggle ---
+        const rangeBtn = e.target.closest('.range-btn');
+        if (rangeBtn) {
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            rangeBtn.classList.add('active');
+            console.log(`Fetching data for range: ${rangeBtn.getAttribute('data-range')}`);
+        }
+
+        // --- Custom Dropdown Handling (Weekly Trends) ---
+        const trendDropdown = document.getElementById('trend-dropdown');
+        
+        // Close if clicked outside
+        if (trendDropdown && !trendDropdown.contains(e.target)) {
+            trendDropdown.classList.remove('open');
+        }
+
+        // Toggle on trigger click
+        const dropdownTrigger = e.target.closest('#trend-dropdown .dropdown-trigger');
+        if (dropdownTrigger && trendDropdown && trendDropdown.contains(dropdownTrigger)) {
+            e.stopPropagation();
+            trendDropdown.classList.toggle('open');
+        }
+
+        // Select an item
+        const dropdownItem = e.target.closest('#trend-dropdown .dropdown-item');
+        if (dropdownItem && trendDropdown && trendDropdown.contains(dropdownItem)) {
+            e.stopPropagation();
+            const value = dropdownItem.getAttribute('data-value');
+            
+            // Update UI
+            trendDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            dropdownItem.classList.add('active');
+            document.getElementById('trend-text').textContent = dropdownItem.textContent;
+            
+            trendDropdown.classList.remove('open');
+            console.log(`Weekly trend data range changed to: ${value}`);
+        }
+
+        // --- Export Button ---
+        const exportBtn = e.target.closest('#export-btn');
+        if (exportBtn && !exportBtn.disabled) {
             const originalIcon = exportBtn.innerHTML;
             
             // Set to loading state
@@ -49,41 +96,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Show Custom Toast
                 showAnalyticsToast("Report exported as CSV successfully!");
             }, 1500);
-        });
-    }
+        }
+    });
 
     // --- Helper Function: Brand-Themed Toast Notification ---
     function showAnalyticsToast(message) {
+        const existingToast = document.querySelector('.analytics-toast');
+        if (existingToast) existingToast.remove();
+
         const toast = document.createElement('div');
+        toast.className = `analytics-toast fixed bottom-6 right-6 bg-brand-surface border border-brand-gray-light text-brand-darkest px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-[9999] transition-all duration-300`;
+        toast.style.cssText = "transform: translateY(20px); opacity: 0;";
         
-        // Styled with the brand-darkest palette to match the other pages
-        toast.className = `fixed bottom-6 right-6 bg-[#000523] text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[100] transition-all duration-500 transform translate-y-20 opacity-0`;
-        toast.style.cssText = "display: flex; align-items: center; justify-content: center; min-width: 300px;";
-
-        toast.innerHTML = `
-            <div class="w-10 h-10 bg-[rgba(0,209,255,0.1)] text-[#00d1ff] rounded-xl flex items-center justify-center flex-shrink-0">
-                <i data-lucide="check" class="w-5 h-5"></i>
-            </div>
-            <div class="flex-1">
-                <p class="text-sm font-bold text-white">Export Complete</p>
-                <p class="text-xs text-gray-300 mt-0.5">${message}</p>
-            </div>
-        `;
-
+        toast.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5 text-brand-primary"></i> <span class="text-sm font-medium">${message}</span>`;
+        
         document.body.appendChild(toast);
         if (window.lucide) lucide.createIcons();
 
-        // Animate In
         requestAnimationFrame(() => {
-            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.style.transform = "translateY(0)";
+            toast.style.opacity = "1";
         });
 
-        // Animate Out & Remove after 3.5 seconds
         setTimeout(() => {
-            toast.classList.add('translate-y-20', 'opacity-0');
-            setTimeout(() => toast.remove(), 500);
-        }, 3500);
+            toast.style.transform = "translateY(20px)";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
-    console.log("Analytics view initialized.");
-});
+})();

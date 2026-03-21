@@ -1,99 +1,91 @@
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // ==========================================
-    // 1. PHOTO VERIFICATION MODAL LOGIC
-    // ==========================================
-    const photoModal = document.getElementById('photo-modal');
-    const viewPhotoBtns = document.querySelectorAll('.view-photo-btn');
-    const closeBtns = [
-        document.getElementById('close-modal-btn'), 
-        document.getElementById('close-modal-btn-2')
-    ];
-    const modalEmpName = document.getElementById('modal-emp-name');
+(() => {
+    // 1. RUN EVERY TIME
+    if (window.lucide) lucide.createIcons();
 
-    // Open Modal and inject the correct employee's name
-    if (viewPhotoBtns.length > 0 && photoModal) {
-        viewPhotoBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const employeeName = btn.getAttribute('data-name');
-                if (modalEmpName) {
-                    modalEmpName.textContent = employeeName;
-                }
-                photoModal.classList.remove('hidden');
-            });
-        });
-    }
+    // Preserve state in closure
+    let todayDate = new Date();
+    let activeDate = new Date(todayDate);
+    let displayedMonth = new Date(todayDate);
+    let activeStatus = 'all';
 
-    // Close Modal Logic
-    function closeModal() {
-        if (photoModal) {
-            photoModal.classList.add('hidden');
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const formatDate = (dateObj) => {
+        const d = new Date(dateObj);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+        return [year, month, day].join('-');
+    };
+
+    const todayStr = formatDate(todayDate);
+
+    // Dynamic Calendar Renderer
+    function renderCalendar() {
+        const calGrid = document.getElementById('calendar-grid');
+        const calMonthYear = document.getElementById('cal-month-year');
+        if (!calGrid || !calMonthYear) return;
+
+        const year = displayedMonth.getFullYear();
+        const month = displayedMonth.getMonth();
+        calMonthYear.textContent = `${monthNames[month]} ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        calGrid.innerHTML = '';
+
+        for (let i = 0; i < firstDay; i++) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'cal-day empty';
+            calGrid.appendChild(emptyDiv);
+        }
+
+        const activeStr = formatDate(activeDate);
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dayBtn = document.createElement('div');
+            const thisDateStr = formatDate(new Date(year, month, i));
+            
+            // Added cal-day-btn class for event delegation
+            dayBtn.className = 'cal-day cal-day-btn';
+            dayBtn.textContent = i;
+            dayBtn.setAttribute('data-date', thisDateStr);
+
+            if (thisDateStr === activeStr) {
+                dayBtn.classList.add('active');
+            } else if (thisDateStr === todayStr) {
+                dayBtn.classList.add('today');
+            }
+            calGrid.appendChild(dayBtn);
         }
     }
 
-    closeBtns.forEach(btn => {
-        if (btn) btn.addEventListener('click', closeModal);
-    });
-
-    // Close modal when clicking outside the white box
-    if (photoModal) {
-        photoModal.addEventListener('click', (e) => {
-            if (e.target === photoModal) {
-                closeModal();
-            }
-        });
-    }
-
-    // ==========================================
-    // 2. SET DATE INPUT TO TODAY (LOCAL TIME)
-    // ==========================================
-    const dateInput = document.getElementById('attendance-date');
-    if (dateInput) {
-        // Get local date properly adjusted for timezone offset
-        const today = new Date();
-        const offset = today.getTimezoneOffset() * 60000;
-        const localDate = new Date(today.getTime() - offset).toISOString().split('T')[0];
-        
-        dateInput.value = localDate;
-    }
-
-    // ==========================================
-    // 3. SEARCH AND FILTER LOGIC
-    // ==========================================
-    const searchInput = document.getElementById('search-input');
-    const statusFilter = document.getElementById('status-filter');
-    const tableRows = document.querySelectorAll('.attendance-row');
-
+    // Dynamic Search Filter
     function filterAttendanceTable() {
-        if (!searchInput || !statusFilter) return;
-
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const statusValue = statusFilter.value;
+        const searchInput = document.getElementById('search-input');
+        const tableRows = document.querySelectorAll('.attendance-row');
+        
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const targetDateStr = formatDate(activeDate);
 
         tableRows.forEach(row => {
-            // Find the Name and Status cells matching the new HTML structure
-            const nameNode = row.querySelector('.table-td:nth-child(1) p.font-bold');
-            const statusNode = row.querySelector('.table-td:nth-child(6) .status-badge');
+            const nameNode = row.querySelector('.employee-name');
+            const rowStatus = row.getAttribute('data-status');
+            let rowDate = row.getAttribute('data-date');
             
-            if (!nameNode || !statusNode) return; // Safety fallback
-            
+            if (rowDate === 'today') rowDate = todayStr;
+
+            if (!nameNode || !rowStatus) return;
             const name = nameNode.textContent.toLowerCase();
-            
-            // Format the text inside the badge to match our <option> values 
-            // e.g., "On Time" -> "on-time", "Missing Punch" -> "missing-punch"
-            let statusText = statusNode.textContent.toLowerCase().replace(/\s+/g, '-'); 
-            
-            // Handle edge case where select option is "missing" but badge might say "missing-punch"
-            if (statusText === 'missing-punch') {
-                statusText = 'missing';
-            }
 
-            // Check if row matches search AND filter
             const matchesSearch = name.includes(searchTerm);
-            const matchesStatus = statusValue === 'all' || statusText.includes(statusValue);
+            const matchesStatus = activeStatus === 'all' || rowStatus === activeStatus;
+            const matchesDate = rowDate === targetDateStr;
 
-            // Show or hide row overriding standard CSS
-            if (matchesSearch && matchesStatus) {
+            if (matchesSearch && matchesStatus && matchesDate) {
                 row.style.display = ''; 
             } else {
                 row.style.display = 'none';
@@ -101,18 +93,117 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Attach the event listeners ('input' is used instead of 'keyup' to support copy/pasting)
-    if (searchInput) {
-        searchInput.addEventListener('input', filterAttendanceTable);
-    }
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterAttendanceTable);
-    }
+    // Render calendar initially in case elements are ready
+    renderCalendar();
 
-    // ==========================================
-    // 4. INITIALIZE ICONS
-    // ==========================================
-    if (window.lucide) {
-        lucide.createIcons();
-    }
-});
+    // 2. SPA EVENT GUARD (Run Only Once)
+    if (window.attendanceSPAInitialized) return;
+    window.attendanceSPAInitialized = true;
+
+    // 3. EVENT DELEGATION LISTENERS
+    document.body.addEventListener('click', (e) => {
+        
+        // --- Dropdown Management ---
+        const statusDropdown = document.getElementById('status-dropdown');
+        const dateDropdown = document.getElementById('date-dropdown');
+        
+        // Close dropdowns if clicking outside
+        if (statusDropdown && !statusDropdown.contains(e.target)) statusDropdown.classList.remove('open');
+        if (dateDropdown && !dateDropdown.contains(e.target)) dateDropdown.classList.remove('open');
+
+        // Toggle Status Dropdown
+        const statusTrigger = e.target.closest('#status-dropdown .dropdown-trigger');
+        if (statusTrigger) {
+            e.stopPropagation();
+            if (dateDropdown) dateDropdown.classList.remove('open'); 
+            statusDropdown.classList.toggle('open');
+        }
+
+        // Toggle Date Dropdown
+        const dateTrigger = e.target.closest('#date-dropdown .dropdown-trigger');
+        if (dateTrigger) {
+            e.stopPropagation();
+            if (statusDropdown) statusDropdown.classList.remove('open'); 
+            dateDropdown.classList.toggle('open');
+            renderCalendar(); 
+        }
+
+        // Select Status Item
+        const statusItem = e.target.closest('#status-menu .dropdown-item');
+        if (statusItem) {
+            e.stopPropagation();
+            const items = statusDropdown.querySelectorAll('.dropdown-item');
+            items.forEach(i => i.classList.remove('active'));
+            statusItem.classList.add('active');
+            
+            activeStatus = statusItem.getAttribute('data-value');
+            document.getElementById('status-text').textContent = statusItem.textContent;
+            
+            statusDropdown.classList.remove('open');
+            filterAttendanceTable();
+        }
+
+        // Calendar Prev/Next Buttons
+        if (e.target.closest('#cal-prev')) {
+            e.stopPropagation();
+            displayedMonth.setMonth(displayedMonth.getMonth() - 1);
+            renderCalendar();
+        }
+        if (e.target.closest('#cal-next')) {
+            e.stopPropagation();
+            displayedMonth.setMonth(displayedMonth.getMonth() + 1);
+            renderCalendar();
+        }
+
+        // Select Calendar Day
+        const dayBtn = e.target.closest('.cal-day-btn');
+        if (dayBtn && !dayBtn.classList.contains('empty')) {
+            e.stopPropagation();
+            const selectedDateStr = dayBtn.getAttribute('data-date');
+            
+            const [y, m, d] = selectedDateStr.split('-');
+            activeDate = new Date(y, m - 1, d);
+
+            const dateText = document.getElementById('date-text');
+            if (selectedDateStr === todayStr) {
+                if(dateText) dateText.textContent = "Today";
+            } else {
+                if(dateText) dateText.textContent = `${monthNames[activeDate.getMonth()].substring(0,3)} ${activeDate.getDate()}, ${activeDate.getFullYear()}`;
+            }
+
+            if (dateDropdown) dateDropdown.classList.remove('open');
+            filterAttendanceTable();
+        }
+
+        // --- Photo Verification Modal ---
+        const photoModal = document.getElementById('photo-modal');
+        
+        // Open Modal
+        const viewPhotoBtn = e.target.closest('.view-photo-btn');
+        if (viewPhotoBtn && photoModal) {
+            const employeeName = viewPhotoBtn.getAttribute('data-name');
+            const captureTime = viewPhotoBtn.getAttribute('data-time');
+            
+            const modalEmpName = document.getElementById('modal-emp-name');
+            const modalPhotoTime = document.getElementById('modal-photo-time');
+            
+            if (modalEmpName) modalEmpName.textContent = employeeName;
+            if (modalPhotoTime) modalPhotoTime.textContent = `Selfie captured at ${captureTime}`;
+            
+            photoModal.classList.remove('hidden');
+        }
+
+        // Close Modal
+        const closeBtn = e.target.closest('#close-modal-btn, #close-modal-btn-2');
+        if ((closeBtn || e.target === photoModal) && photoModal) {
+            photoModal.classList.add('hidden');
+        }
+    });
+
+    document.body.addEventListener('input', (e) => {
+        if (e.target.id === 'search-input') {
+            filterAttendanceTable();
+        }
+    });
+
+})();

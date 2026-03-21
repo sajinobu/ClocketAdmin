@@ -2,19 +2,6 @@
    SETTINGS SPECIFIC STYLES
    ========================================= */
 
-:root {
-  /* Custom Brand Palette */
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-}
-
 /* --- Page Layout & Typography --- */
 .page-header-container {
   margin-bottom: 1.5rem;
@@ -25,20 +12,23 @@
   font-weight: 700;
   color: var(--brand-darkest);
   margin-bottom: 0.25rem;
+  transition: color 0.3s ease;
 }
 
 .page-subtitle {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--brand-dark);
+  transition: color 0.3s ease;
 }
 
 /* --- Settings Panels --- */
 .settings-panel {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 1.5rem;
   padding: 2rem;
   border: 1px solid var(--brand-gray-light);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
 }
 
 .panel-title {
@@ -46,13 +36,15 @@
   font-weight: 700;
   color: var(--brand-darkest);
   margin-bottom: 1.5rem;
+  transition: color 0.3s ease;
 }
 
 .panel-desc {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   margin-bottom: 1.5rem;
   line-height: 1.5;
+  transition: color 0.3s ease;
 }
 
 /* --- Setting Rows --- */
@@ -63,6 +55,7 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--brand-gray-light);
   margin-bottom: 1.5rem;
+  transition: border-color 0.3s ease;
 }
 
 .setting-row:last-child {
@@ -74,12 +67,14 @@
 .setting-label {
   font-weight: 600;
   color: var(--brand-darkest);
+  transition: color 0.3s ease;
 }
 
 .setting-desc {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   margin-top: 0.25rem;
+  transition: color 0.3s ease;
 }
 
 /* --- Custom Toggle Switch --- */
@@ -91,7 +86,6 @@
 }
 
 .toggle-input {
-  /* Hide the default checkbox completely */
   position: absolute;
   width: 0;
   height: 0;
@@ -99,26 +93,27 @@
 }
 
 .toggle-bg {
-  width: 2.75rem; /* 44px */
-  height: 1.5rem; /* 24px */
-  background-color: #e5e7eb;
+  width: 2.75rem; 
+  height: 1.5rem; 
+  background-color: var(--brand-gray-light); /* Inherits proper dark mode shade */
   border-radius: 9999px;
   transition: background-color 0.3s ease;
   position: relative;
 }
 
-/* The White Circle inside the toggle */
+/* The Circle inside the toggle */
 .toggle-bg::after {
   content: '';
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 1.25rem; /* 20px */
-  height: 1.25rem; /* 20px */
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
+  width: 1.25rem; 
+  height: 1.25rem; 
+  background-color: var(--brand-surface); /* Inherits proper dark mode shade */
+  border: 1px solid var(--brand-gray-light);
   border-radius: 50%;
-  transition: transform 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Checked State Styles */
@@ -127,21 +122,22 @@
 }
 
 .toggle-input:checked + .toggle-bg::after {
-  transform: translateX(1.25rem); /* Move to the right */
-  border-color: #ffffff;
+  transform: translateX(1.25rem); 
+  border-color: transparent;
+  background-color: #ffffff; /* Keep it pure white when checked for contrast */
 }
 
 /* Focus Outline for Accessibility */
 .toggle-input:focus-visible + .toggle-bg {
-  box-shadow: 0 0 0 4px rgba(0, 26, 255, 0.2);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
 }
 
 /* --- Buttons --- */
 .btn-outline {
   padding: 0.625rem 1.5rem;
   border: 1px solid var(--brand-gray-light);
-  color: #4b5563;
-  background-color: #ffffff;
+  color: var(--brand-dark);
+  background-color: var(--brand-surface);
   border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 700;
@@ -154,11 +150,12 @@
 
 .btn-outline:hover {
   background-color: var(--brand-gray-bg);
-  color: var(--brand-darkest);
-  border-color: var(--brand-accent-light);
+  color: var(--brand-primary);
+  border-color: var(--brand-primary);
 }
 
 .btn-outline:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
+  background-color: var(--brand-gray-bg);
 }

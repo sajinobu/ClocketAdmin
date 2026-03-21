@@ -2,29 +2,12 @@
    MANAGEMENT SPECIFIC STYLES
    ========================================= */
 
-:root {
-  /* Custom Brand Palette */
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-}
-
 /* --- Layout & Typography --- */
 .page-title {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--brand-darkest);
-}
-
-.page-subtitle {
-  font-size: 0.875rem;
-  color: #6b7280;
+  transition: color 0.3s ease;
 }
 
 /* --- Tabs --- */
@@ -34,6 +17,7 @@
   gap: 0.5rem;
   border-bottom: 1px solid var(--brand-gray-light);
   margin-bottom: 1.5rem;
+  transition: border-color 0.3s ease;
 }
 
 .management-tab {
@@ -41,10 +25,10 @@
   border-bottom: 2px solid transparent;
   font-weight: 600;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--brand-dark);
   background: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .management-tab:hover {
@@ -67,7 +51,7 @@
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
   border: none;
   cursor: pointer;
   white-space: nowrap;
@@ -79,48 +63,34 @@
 }
 
 .btn-outline {
-  flex: 1;
-  padding: 0.625rem 1rem;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--brand-gray-light);
-  color: #4b5563;
-  background-color: #ffffff;
-  border-radius: 0.75rem;
+  color: var(--brand-dark);
+  background-color: var(--brand-surface);
+  border-radius: 0.5rem;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .btn-outline:hover {
   background-color: var(--brand-gray-bg);
-  color: var(--brand-darkest);
-}
-
-.btn-danger {
-  flex: 1;
-  padding: 0.625rem 1rem;
-  background-color: #dc2626;
-  color: #ffffff;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  transition: background-color 0.2s ease;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-danger:hover {
-  background-color: #b91c1c;
+  color: var(--brand-primary);
+  border-color: var(--brand-accent-light);
 }
 
 .btn-icon {
   padding: 0.5rem;
   border: 1px solid var(--brand-gray-light);
   border-radius: 0.75rem;
-  background-color: #ffffff;
-  color: #4b5563;
+  background-color: var(--brand-surface);
+  color: var(--brand-darkest);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
 }
 
@@ -138,18 +108,24 @@
 
 .input-field {
   width: 100%;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--brand-gray-light);
   border-radius: 0.75rem;
   font-size: 0.875rem;
-  background-color: #ffffff;
+  background-color: var(--brand-gray-bg);
+  color: var(--brand-darkest);
   outline: none;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+}
+
+.input-field {
+  padding-left: 2.5rem;
 }
 
 .input-field:focus {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(0, 26, 255, 0.1);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+  background-color: var(--brand-surface);
 }
 
 .input-icon {
@@ -159,44 +135,139 @@
   transform: translateY(-50%);
   width: 1rem;
   height: 1rem;
-  color: #9ca3af;
+  color: var(--brand-dark);
   pointer-events: none;
+  transition: color 0.3s ease;
 }
 
-.select-field {
+.input-field:focus ~ .input-icon { color: var(--brand-primary); }
+
+/* =========================================
+   MODERN CUSTOM DROPDOWNS
+   ========================================= */
+.custom-dropdown {
+  position: relative;
+  width: 100%;
+}
+@media (min-width: 640px) { .custom-dropdown { width: 220px; } }
+
+.dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
   padding: 0.5rem 1rem;
+  background-color: var(--brand-surface);
   border: 1px solid var(--brand-gray-light);
   border-radius: 0.75rem;
+  cursor: pointer;
   font-size: 0.875rem;
-  background-color: #ffffff;
-  color: #4b5563;
-  outline: none;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  color: var(--brand-darkest);
+  transition: all 0.3s ease;
+  user-select: none;
+  height: 100%; 
 }
 
-.select-field:focus {
+.dropdown-trigger:hover, .custom-dropdown.open .dropdown-trigger {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(0, 26, 255, 0.1);
+  background-color: var(--brand-surface);
+}
+
+.dropdown-trigger i { color: var(--brand-primary); }
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0; 
+  width: 100%;
+  min-width: 180px;
+  background-color: var(--brand-surface);
+  border: 1px solid var(--brand-gray-light);
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.custom-dropdown.form-variant .dropdown-menu {
+  left: 0;
+  right: auto;
+}
+
+.dropdown-item {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  color: var(--brand-darkest);
+}
+
+.dropdown-item:hover {
+  background-color: var(--brand-gray-bg);
+  color: var(--brand-primary);
+}
+
+.dropdown-item.active {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.custom-dropdown.form-variant {
+  width: 100%; 
+}
+
+.custom-dropdown.form-variant .dropdown-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background-color: var(--brand-gray-bg);
+  color: var(--brand-darkest);
+}
+
+.custom-dropdown.form-variant .dropdown-trigger:hover, 
+.custom-dropdown.form-variant.open .dropdown-trigger {
+  background-color: var(--brand-surface);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.custom-dropdown.form-variant .dropdown-menu {
+  left: 0;
+  right: auto;
 }
 
 /* --- Table Styles --- */
+/* --- Table Styles --- */
 .table-panel {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 1rem;
   border: 1px solid var(--brand-gray-light);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: visible; /* Allows action dropdowns to escape */
+  overflow: hidden; /* Clips the table perfectly so the corners stay rounded */
+  transition: all 0.3s ease;
+}
+
+.table-wrapper {
+  overflow-x: auto; /* Allows smooth horizontal scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
   width: 100%;
   min-width: 100%;
-  border-collapse: collapse;
+  border-collapse: collapse; /* Restored for perfect 1px borders */
 }
 
-.table-head-row {
+.table-head-row th {
   background-color: var(--brand-gray-bg);
   border-bottom: 1px solid var(--brand-gray-light);
+  transition: background-color 0.3s ease;
 }
 
 .table-th {
@@ -204,18 +275,23 @@
   padding: 1rem 1.5rem;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--brand-dark);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  transition: color 0.3s ease;
 }
 
 .data-row {
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   border-bottom: 1px solid var(--brand-gray-light);
 }
 
 .data-row:hover {
   background-color: var(--brand-gray-bg);
+}
+
+.data-row:last-child {
+  border-bottom: none;
 }
 
 .table-td {
@@ -245,20 +321,21 @@
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
+  border: 1px solid transparent;
 }
 
-.status-active { background-color: #f0fdf4; color: #15803d; }
-.status-break { background-color: #fefce8; color: #a16207; }
+.status-active { background-color: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
+.status-break { background-color: rgba(234, 179, 8, 0.1); color: #eab308; border-color: rgba(234, 179, 8, 0.2); }
 
 /* --- Action Menus (Dropdown) --- */
 .action-btn {
   padding: 0.25rem;
-  color: #9ca3af;
+  color: var(--brand-dark);
   border-radius: 0.375rem;
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: color 0.3s ease;
 }
 
 .action-btn:hover {
@@ -266,17 +343,15 @@
 }
 
 .action-menu {
-  position: absolute;
-  right: 0;
-  top: 100%;
+  /* Positioning is now handled dynamically by Javascript! */
   margin-top: 0.5rem;
   width: 10rem;
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
   border: 1px solid var(--brand-gray-light);
-  z-index: 50;
   padding: 0.25rem 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .menu-item {
@@ -284,7 +359,7 @@
   text-align: left;
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--brand-darkest);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -292,7 +367,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
 .menu-item:hover {
@@ -301,56 +376,69 @@
 }
 
 .menu-item-danger {
-  color: #dc2626;
+  color: #ef4444;
   border-top: 1px solid var(--brand-gray-light);
   margin-top: 0.25rem;
   padding-top: 0.75rem;
 }
 
 .menu-item-danger:hover {
-  background-color: #fef2f2;
-  color: #b91c1c;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 /* --- Modals --- */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 5, 35, 0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease;
 }
 
 .modal-box {
-  background-color: #ffffff;
+  background-color: var(--brand-surface);
   border-radius: 1rem;
   width: 100%;
   max-width: 24rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 5, 35, 0.25);
-  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: visible; /* Prevent custom dropdowns from clipping */
+  transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--brand-gray-light);
   background-color: var(--brand-gray-bg);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  transition: all 0.3s ease;
 }
 
 .modal-body {
   padding: 1.5rem;
+  overflow: visible; /* FIXED: Removes the internal scrollbar */
 }
 
 .modal-footer {
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
   border-top: 1px solid var(--brand-gray-light);
   background-color: var(--brand-gray-bg);
   display: flex;
   gap: 0.75rem;
+  border-bottom-left-radius: 1rem;
+  border-bottom-right-radius: 1rem;
+  transition: all 0.3s ease;
 }
+
+.hidden { display: none !important; }

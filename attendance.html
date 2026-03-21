@@ -3,31 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Attendance Logs - TimeTrack Portal</title>
+  <title>Attendance Logs - Clocket Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/attendance.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', 
-              darker: '#000533',
-              dark: '#000b66',
-              primary: '#001aff', 
-              secondary: '#007bff', 
-              accent: '#00d1ff',
-              accentLight: '#57e8ff',
-              grayLight: '#f1f1f1',
-              grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -35,90 +39,84 @@
       }
     }
   </script>
-  
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
 
     <div class="flex flex-1 overflow-hidden">
-      
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg relative">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
-        <div id="photo-modal" class="hidden modal-overlay">
-            <div class="modal-box">
-                <div class="modal-header">
-                    <h3 class="font-bold text-brand-darkest">Clock-In Photo Verification</h3>
-                    <button id="close-modal-btn" class="text-gray-400 hover:text-brand-primary transition-colors">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-                
-                <div class="modal-content-photo">
-                    <div class="photo-placeholder">
-                        <div class="text-center">
-                            <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
-                            <p class="text-sm font-medium">Selfie captured at 8:58 AM</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="modal-footer">
-                    <div>
-                        <p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">Sarah Johnson</p>
-                        <p class="text-xs text-gray-500">HQ Office • Matched via Face ID</p>
-                    </div>
-                    <button id="close-modal-btn-2" class="btn-secondary">Close</button>
-                </div>
-            </div>
-        </div>
-
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="text-2xl font-bold text-brand-darkest">Daily Attendance Logs</h1>
-          <p class="text-sm text-gray-500">Review employee clock-ins, photos, and time entries</p>
+          <div class="mb-6">
+             <div>
+                <h1 class="text-2xl font-bold text-brand-darkest mb-1 transition-colors">Daily Attendance Logs</h1>
+                <p class="text-sm text-gray-500">Review employee clock-ins, photos, and time entries</p>
+             </div>
+          </div>
         </div>
         
-        <div class="px-4 sm:px-6 md:px-8 pt-6 pb-8">
+        <div class="px-4 sm:px-6 md:px-8 pt-4 pb-8">
           <div class="space-y-6">
             
             <div class="filter-container">
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div class="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                     
-                    <div class="input-group">
-                        <i data-lucide="calendar" class="input-icon"></i>
-                        <input type="date" class="input-field" id="attendance-date" value="2026-03-19">
+                    <div class="custom-dropdown" id="date-dropdown">
+                        <div class="dropdown-trigger">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span id="date-text">Today</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 ml-auto"></i>
+                        </div>
+                        <div class="dropdown-menu calendar-menu" id="calendar-menu">
+                            <div class="calendar-header">
+                                <button id="cal-prev" class="cal-btn"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                                <span id="cal-month-year" class="font-bold text-brand-darkest">March 2026</span>
+                                <button id="cal-next" class="cal-btn"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                            </div>
+                            <div class="calendar-grid-header">
+                                <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                            </div>
+                            <div class="calendar-grid" id="calendar-grid">
+                                </div>
+                        </div>
                     </div>
-                    
-                    <div class="input-group">
-                      <select id="status-filter" class="input-field w-full">
-                          <option value="all">All Statuses</option>
-                          <option value="on-time">On Time</option>
-                          <option value="late">Late</option>
-                          <option value="missing">Missing Punch</option>
-                      </select>
+
+                    <div class="custom-dropdown" id="status-dropdown">
+                        <div class="dropdown-trigger">
+                            <i data-lucide="filter" class="w-4 h-4"></i>
+                            <span id="status-text">All Statuses</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 ml-auto"></i>
+                        </div>
+                        <div class="dropdown-menu" id="status-menu">
+                            <div class="dropdown-item active" data-value="all">All Statuses</div>
+                            <div class="dropdown-item" data-value="on-time">On Time</div>
+                            <div class="dropdown-item" data-value="late">Late</div>
+                            <div class="dropdown-item" data-value="missing">Missing Punch</div>
+                        </div>
                     </div>
 
                 </div>
                 
-                <div class="input-group input-group-search">
-                  <i data-lucide="search" class="input-icon"></i>
-                  <input type="text" id="search-input" placeholder="Search logs..." class="input-field">
+                <div class="input-group-search">
+                  <input type="text" id="search-input" placeholder="Search by name..." class="search-input">
+                  <i data-lucide="search" class="search-icon"></i>
                 </div>
             </div>
             
             <div class="table-panel">
               <div class="table-wrapper">
-                <table class="attendance-table">
+                <table class="attendance-table" id="attendance-table">
                   
                   <thead class="table-head-row">
                     <tr>
                       <th class="table-th">Employee</th>
-                      <th class="table-th">Photo</th>
+                      <th class="table-th text-center">Photo</th>
                       <th class="table-th">Clock In</th>
                       <th class="table-th">Clock Out</th>
                       <th class="table-th">Location</th>
@@ -128,19 +126,19 @@
                   </thead>
                   
                   <tbody>
-                    <tr class="attendance-row">
+                    <tr class="attendance-row" data-status="on-time" data-date="today">
                       <td class="table-td">
                         <div class="flex items-center gap-3">
                           <div class="avatar-sm">SJ</div>
                           <div>
-                            <p class="font-bold text-brand-darkest text-sm">Sarah Johnson</p>
+                            <p class="font-bold text-brand-darkest text-sm employee-name">Sarah Johnson</p>
                             <p class="text-xs text-gray-500">Engineering</p>
                           </div>
                         </div>
                       </td>
-                      <td class="table-td">
-                        <button class="btn-photo view-photo-btn" data-name="Sarah Johnson">
-                            <i data-lucide="user" class="w-5 h-5"></i>
+                      <td class="table-td text-center">
+                        <button class="btn-photo view-photo-btn mx-auto" data-name="Sarah Johnson" data-time="8:58 AM" title="View Verification Photo">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
                         </button>
                       </td>
                       <td class="table-td">
@@ -149,7 +147,7 @@
                       <td class="table-td">
                         <p class="text-sm font-medium text-gray-400">--</p>
                       </td>
-                      <td class="table-td text-sm font-medium text-gray-600">HQ Office</td>
+                      <td class="table-td text-sm font-medium text-gray-500">HQ Office</td>
                       <td class="table-td">
                         <span class="status-badge status-on-time">On Time</span>
                       </td>
@@ -158,19 +156,19 @@
                       </td>
                     </tr>
 
-                    <tr class="attendance-row">
+                    <tr class="attendance-row" data-status="late" data-date="today">
                       <td class="table-td">
                         <div class="flex items-center gap-3">
                           <div class="avatar-sm">MC</div>
                           <div>
-                            <p class="font-bold text-brand-darkest text-sm">Mike Chen</p>
+                            <p class="font-bold text-brand-darkest text-sm employee-name">Mike Chen</p>
                             <p class="text-xs text-gray-500">Design</p>
                           </div>
                         </div>
                       </td>
-                      <td class="table-td">
-                        <button class="btn-photo view-photo-btn" data-name="Mike Chen">
-                            <i data-lucide="user" class="w-5 h-5"></i>
+                      <td class="table-td text-center">
+                        <button class="btn-photo view-photo-btn mx-auto" data-name="Mike Chen" data-time="9:15 AM" title="View Verification Photo">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
                         </button>
                       </td>
                       <td class="table-td">
@@ -180,7 +178,7 @@
                       <td class="table-td">
                         <p class="text-sm font-medium text-gray-400">--</p>
                       </td>
-                      <td class="table-td text-sm font-medium text-gray-600">Remote - Austin</td>
+                      <td class="table-td text-sm font-medium text-gray-500">Remote - Austin</td>
                       <td class="table-td">
                         <span class="status-badge status-late">Late</span>
                       </td>
@@ -198,6 +196,36 @@
         </div>
       </main>
     </div>
+  </div>
+
+  <div id="photo-modal" class="hidden modal-overlay">
+      <div class="modal-box">
+          <div class="modal-header">
+              <h3 class="font-bold text-brand-darkest flex items-center gap-2">
+                <i data-lucide="scan-face" class="w-5 h-5 text-brand-primary"></i> Verification
+              </h3>
+              <button id="close-modal-btn" class="modal-close-btn">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+          </div>
+          
+          <div class="modal-content-photo">
+              <div class="photo-placeholder">
+                  <div class="text-center">
+                      <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                      <p class="text-sm font-medium mt-2 text-brand-darkest" id="modal-photo-time">Selfie captured at --</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="modal-footer">
+              <div>
+                  <p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">Employee Name</p>
+                  <p class="text-xs text-gray-500">Matched via Face ID</p>
+              </div>
+              <button id="close-modal-btn-2" class="btn-secondary">Close</button>
+          </div>
+      </div>
   </div>
   
   <script src="scripts/layout.js"></script>

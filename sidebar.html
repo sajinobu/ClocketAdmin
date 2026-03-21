@@ -4,54 +4,79 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <script>
+    tailwind.config = {
+      darkMode: 'class', /* Forces Tailwind to listen to our toggle button! */
+      theme: {
+        extend: {
+          colors: {
+            brand: { 
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)' /* NEW: Used for cards, headers, sidebar */
+            }
+          },
+          fontFamily: { sans: ['DM Sans', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
 </head>
 <body>
-    <aside class="app-sidebar" id="app-sidebar">
+    <aside class="app-sidebar dark:bg-slate-900 dark:border-slate-800 transition-colors duration-200" id="app-sidebar">
     <nav class="sidebar-nav">
-        <div class="nav-section-title">Main</div>
+        <div class="nav-section-title dark:text-slate-500">Main</div>
         
-        <a href="dashboard.html" class="nav-link">
-            <i data-lucide="layout-dashboard" class="nav-icon"></i>
+        <a href="dashboard.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="layout-dashboard" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Dashboard</span>
         </a> 
-        <a href="attendance.html" class="nav-link">
-            <i data-lucide="clipboard-check" class="nav-icon"></i>
+        <a href="attendance.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="clipboard-check" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Attendance Logs</span>
         </a>
-        <a href="management.html" class="nav-link">
-            <i data-lucide="users" class="nav-icon"></i>
+        <a href="management.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="users" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Management</span>
         </a> 
-        <a href="live-tracking.html" class="nav-link">
-            <i data-lucide="map-pin" class="nav-icon"></i>
+        <a href="live-tracking.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="map-pin" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Live Tracking</span>
         </a> 
-        <a href="analytics.html" class="nav-link">
-            <i data-lucide="bar-chart-3" class="nav-icon"></i>
+        <a href="analytics.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="bar-chart-3" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Analytics</span>
         </a> 
         
-        <div class="nav-section-title mt-6">Settings</div>
+        <div class="nav-section-title mt-6 dark:text-slate-500">Settings</div>
         
-        <a href="settings.html" class="nav-link">
-            <i data-lucide="settings" class="nav-icon"></i>
+        <a href="settings.html" class="nav-link dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white">
+            <i data-lucide="settings" class="nav-icon dark:group-hover:text-brand-accentLight"></i>
             <span class="nav-text">Settings</span>
         </a>
     </nav>
     
-    <div class="sidebar-footer">
-        <div class="profile-btn" id="profile-btn">
+    <div class="sidebar-footer dark:border-slate-800">
+        <div class="profile-btn dark:hover:bg-slate-800" id="profile-btn">
             <div class="profile-avatar">AM</div>
             <div class="profile-info">
-                <p class="profile-name">Admin Manager</p>
-                <p class="profile-email">admin@company.com</p>
+                <p class="profile-name dark:text-white">Admin Manager</p>
+                <p class="profile-email dark:text-gray-400">admin@company.com</p>
             </div>
-            <i data-lucide="more-vertical" class="profile-more-icon"></i>
+            <i data-lucide="more-vertical" class="profile-more-icon dark:text-gray-400"></i>
         </div>
         
-        <div class="profile-dropdown hidden" id="profile-dropdown">
-            <a href="profile.html" class="dropdown-item border-bottom">Profile</a> 
-            <button class="dropdown-item-danger" id="logout-btn">Sign Out</button>
+        <div class="profile-dropdown hidden dark:bg-slate-800 dark:border-slate-700" id="profile-dropdown">
+            <a href="profile.html" class="dropdown-item border-bottom dark:text-gray-200 dark:hover:bg-slate-700 dark:hover:text-white dark:border-slate-700">Profile</a> 
+            <button class="dropdown-item-danger dark:hover:bg-red-900/30 dark:hover:text-red-400" id="logout-btn">Sign Out</button>
         </div>
     </div>
 </aside>

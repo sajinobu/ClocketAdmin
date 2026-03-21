@@ -6,22 +6,31 @@
   <title>Edit Team - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/team-edit.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,7 +42,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
     
     <div id="header-placeholder"></div>
@@ -42,14 +51,14 @@
       
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-auto bg-brand-grayBg">
+      <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
           <div class="page-header-container">
-            <a id="dynamic-back-btn" href="management.html?tab=teams" class="btn-back">
+            <a id="dynamic-back-btn" href="management.html?tab=teams" class="p-2 text-brand-dark hover:text-brand-primary hover:bg-brand-grayBg rounded-lg transition-colors flex items-center justify-center">
              <i data-lucide="arrow-left" class="w-6 h-6"></i>
             </a>
-            <h1 class="page-title">Edit Team Details</h1>
+            <h1 class="page-title text-2xl font-bold text-brand-darkest transition-colors">Edit Team Details</h1>
           </div>
         </div>
         
@@ -73,40 +82,65 @@
                   </div>
                 </div>
 
-                <div class="pt-6 border-t border-brand-gray-light">
+                <div class="pt-6 border-t border-brand-grayLight transition-colors">
                   <h3 class="section-title">Team Structure</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="form-group">
-                      <label for="team-department" class="form-label">Department</label>
-                      <select id="team-department" required class="form-input">
-                        <option value="Engineering" selected>Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Operations">Operations</option>
-                      </select>
+                      <label class="form-label">Department</label>
+                      <div class="custom-dropdown form-variant w-full">
+                        <div class="dropdown-trigger">
+                          <span id="team-dept-text">Engineering</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item active" data-value="Engineering">Engineering</div>
+                          <div class="dropdown-item" data-value="Design">Design</div>
+                          <div class="dropdown-item" data-value="Operations">Operations</div>
+                          <div class="dropdown-item" data-value="Sales">Sales</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="team-department" value="Engineering">
                     </div>
+                    
                     <div class="form-group">
-                      <label for="team-lead" class="form-label">Team Lead</label>
-                      <select id="team-lead" required class="form-input">
-                        <option value="Sarah Johnson" selected>Sarah Johnson</option>
-                        <option value="Mike Chen">Mike Chen</option>
-                        <option value="Emma Wilson">Emma Wilson</option>
-                      </select>
+                      <label class="form-label">Team Lead</label>
+                      <div class="custom-dropdown form-variant w-full">
+                        <div class="dropdown-trigger">
+                          <span id="team-lead-text">Sarah Johnson</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item active" data-value="Sarah Johnson">Sarah Johnson</div>
+                          <div class="dropdown-item" data-value="Mike Chen">Mike Chen</div>
+                          <div class="dropdown-item" data-value="Emma Wilson">Emma Wilson</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="team-lead" value="Sarah Johnson">
                     </div>
                   </div>
                 </div>
 
-                <div class="pt-6 border-t border-brand-gray-light">
+                <div class="pt-6 border-t border-brand-grayLight transition-colors">
                   <h3 class="section-title">Add Team Member</h3>
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div class="form-group">
-                      <label for="new-member-dept" class="form-label">Department</label>
-                      <select id="new-member-dept" class="form-input">
-                        <option value="">Select Dept...</option>
-                        <option value="Engineering">Engineering</option>
-                        <option value="Design">Design</option>
-                        <option value="Operations">Operations</option>
-                      </select>
+                      <label class="form-label">Department</label>
+                      <div class="custom-dropdown form-variant w-full" id="new-member-dept-dropdown">
+                        <div class="dropdown-trigger">
+                          <span id="new-member-dept-text">Select Dept...</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item active" data-value="">Select Dept...</div>
+                          <div class="dropdown-item" data-value="Engineering">Engineering</div>
+                          <div class="dropdown-item" data-value="Design">Design</div>
+                          <div class="dropdown-item" data-value="Operations">Operations</div>
+                          <div class="dropdown-item" data-value="Sales">Sales</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="new-member-dept" value="">
                     </div>
+                    
                     <div class="form-group">
                       <label for="new-member-name" class="form-label">Employee Name</label>
                       <input type="text" id="new-member-name" class="form-input" placeholder="e.g. Jane Doe">
@@ -117,7 +151,17 @@
                     <i data-lucide="user-plus" class="w-4 h-4"></i> Add Member
                   </button>
 
-                  <div id="added-members-container" class="member-list"></div>
+                  <div id="added-members-container" class="member-list">
+                    <div class="member-item">
+                        <div class="member-item-info">
+                            <span class="member-item-dept">Engineering</span>
+                            <span class="member-item-name">Mike Chen</span>
+                        </div>
+                        <button type="button" class="btn-remove-member" title="Remove Member">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                  </div>
                 </div>
 
               </form>
@@ -133,7 +177,7 @@
                     <input type="number" id="team-size" value="8" min="1" max="100" required form="edit-team-form" class="form-input">
                   </div>
 
-                  <div class="mt-8 pt-8 border-t border-brand-gray-light">
+                  <div class="mt-8 pt-8 border-t border-brand-grayLight transition-colors">
                     <h3 class="form-label mb-3">Administrative Notes</h3>
                     <div class="alert-box">
                         <i data-lucide="info" class="alert-icon"></i>

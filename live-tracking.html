@@ -1,29 +1,37 @@
 <!doctype html>
 <html lang="en" class="h-full">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Tracking - TimeTrack Portal</title>
   
   <link rel="stylesheet" href="styles/styles.css">
+  <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/live-tracking.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', 
+              darker: 'var(--brand-darker)', 
+              dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', 
+              secondary: 'var(--brand-secondary)', 
+              accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', 
+              grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)',
+              surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -35,7 +43,7 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full bg-brand-grayBg font-sans text-gray-700 overflow-auto">
+<body class="h-full bg-brand-grayBg font-sans text-brand-darkest overflow-auto transition-colors duration-300">
   <div class="flex flex-col h-full w-full">
 
     <div id="header-placeholder"></div>
@@ -44,11 +52,11 @@
 
       <div id="sidebar-placeholder"></div>
 
-      <main class="flex-1 overflow-hidden bg-brand-grayBg flex flex-col">
+      <main class="flex-1 overflow-y-auto overflow-x-hidden bg-brand-grayBg flex flex-col relative transition-colors duration-300">
         
         <div class="px-8 pt-8 pb-3 flex-shrink-0">
-          <h1 class="page-title">Live Tracking</h1>
-          <p class="page-subtitle">Monitoring 247 active sessions across 3 sites</p>
+          <h1 class="page-title text-2xl font-bold text-brand-darkest transition-colors">Live Tracking</h1>
+          <p class="page-subtitle text-sm text-brand-dark transition-colors">Monitoring 247 active sessions across 3 sites</p>
         </div>
 
         <div class="px-8 py-4 flex gap-4 overflow-x-auto no-scrollbar flex-shrink-0">
@@ -87,7 +95,7 @@
           <div class="sidebar-panel">
             
             <div class="sidebar-header">
-              <h3 class="font-bold text-brand-darkest">Active Staff</h3>
+              <h3 class="font-bold text-brand-darkest transition-colors">Active Staff</h3>
               <div class="search-wrapper">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" id="staff-search" placeholder="Search name or site..." class="search-input">
@@ -97,36 +105,36 @@
             <div class="staff-list" id="staff-list">
               
               <div class="staff-card group" data-name="Sarah Johnson">
-                <div class="avatar-circle bg-blue-100 text-blue-600">SJ</div>
+                <div class="avatar-circle bg-[rgba(59,130,246,0.1)] text-blue-600 dark:text-blue-400">SJ</div>
                 <div class="flex-1 min-w-0">
                   <p class="staff-card-name">Sarah Johnson</p>
                   <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="w-1.5 h-1.5 bg-teal-500 rounded-full flex-shrink-0"></span>
-                    <span class="text-[11px] text-gray-500 font-medium truncate">HQ Office • Floor 1</span>
+                    <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">HQ Office • Floor 1</span>
                   </div>
                 </div>
                 <i data-lucide="chevron-right" class="staff-card-arrow"></i>
               </div>
 
               <div class="staff-card group" data-name="Mike Chen">
-                <div class="avatar-circle bg-purple-100 text-purple-600">MC</div>
+                <div class="avatar-circle bg-[rgba(168,85,247,0.1)] text-purple-600 dark:text-purple-400">MC</div>
                 <div class="flex-1 min-w-0">
                   <p class="staff-card-name">Mike Chen</p>
                   <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></span>
-                    <span class="text-[11px] text-gray-500 font-medium truncate">Remote • Austin, TX</span>
+                    <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">Remote • Austin, TX</span>
                   </div>
                 </div>
                 <i data-lucide="chevron-right" class="staff-card-arrow"></i>
               </div>
 
               <div class="staff-card group" data-name="Emma Wilson">
-                <div class="avatar-circle bg-teal-100 text-teal-600">EW</div>
+                <div class="avatar-circle bg-[rgba(20,184,166,0.1)] text-teal-600 dark:text-teal-400">EW</div>
                 <div class="flex-1 min-w-0">
                   <p class="staff-card-name">Emma Wilson</p>
                   <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="w-1.5 h-1.5 bg-orange-500 rounded-full flex-shrink-0"></span>
-                    <span class="text-[11px] text-gray-500 font-medium truncate">Site B • Warehouse</span>
+                    <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">Site B • Warehouse</span>
                   </div>
                 </div>
                 <i data-lucide="chevron-right" class="staff-card-arrow"></i>

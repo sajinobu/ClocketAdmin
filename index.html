@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - TimeTrack Portal</title>
   
-  <link rel="stylesheet" href="styles/styles.css">
+  <!-- <link rel="stylesheet" href="styles/styles.css"> -->
   <link rel="stylesheet" href="styles/layout.css">
   
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -50,7 +50,7 @@
       <p class="login-subtitle">Enter your credentials to access the dashboard</p>
     </div>
 
-    <form action="dashboard.html" method="GET">
+    <form id="login-form" action="dashboard.html" method="GET">
       
       <div class="login-form-group">
         <label for="email" class="login-label">Email Address</label>
@@ -81,12 +81,6 @@
     
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        if(window.lucide) {
-            lucide.createIcons();
-        }
-    });
-  </script>
+  <script src="scripts/layout.js"></script>
 </body>
 </html>
