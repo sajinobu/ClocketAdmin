@@ -53,6 +53,8 @@
 
     // Handle Clicks (Routing)
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the Add Employee form is on the screen!
+        if (!document.getElementById('add-employee-form')) return;
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();

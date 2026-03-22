@@ -39,6 +39,8 @@
     // ==========================================
 
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the trend dropdown is on the screen!
+        if (!document.getElementById('trend-dropdown')) return;
         
         // --- Date Range Filter Toggle ---
         const rangeBtn = e.target.closest('.range-btn');

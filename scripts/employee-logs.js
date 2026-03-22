@@ -28,6 +28,8 @@
 
     // 3. EVENT DELEGATION LISTENERS
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the export button is on the screen!
+        if (!document.getElementById('export-log-btn')) return;
         
         // --- Dynamic Back Button Routing ---
         const backBtn = e.target.closest('#dynamic-back-btn');

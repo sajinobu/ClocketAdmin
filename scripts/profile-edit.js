@@ -15,6 +15,8 @@
 
     // 3. EVENT DELEGATION LISTENERS
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the profile edit form is on screen
+        if (!document.getElementById('admin-edit-form')) return;
         
         // --- Back & Cancel Routing ---
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');

@@ -46,6 +46,8 @@
     });
 
     document.body.addEventListener('click', (e) => {
+        // FIXED GUARD: Now this will ONLY run on the actual Create Team page!
+        if (!document.getElementById('create-team-form')) return;
         
         // --- Back & Cancel Routing ---
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');

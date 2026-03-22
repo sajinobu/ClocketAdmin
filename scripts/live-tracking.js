@@ -106,6 +106,8 @@
     // 4. EVENT DELEGATION LISTENERS
     // ==========================================
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the map is on the screen!
+        if (!document.getElementById('map')) return;
         // Map Controls: Zoom In / Zoom Out
         if (e.target.closest('#map-zoom-in') && window._liveMapInstance) {
             window._liveMapInstance.zoomIn();

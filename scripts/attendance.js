@@ -102,6 +102,8 @@
 
     // 3. EVENT DELEGATION LISTENERS
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the calendar grid is on the screen!
+        if (!document.getElementById('calendar-grid')) return;
         
         // --- Dropdown Management ---
         const statusDropdown = document.getElementById('status-dropdown');

@@ -97,6 +97,8 @@
 
     // Handle Clicks
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the edit form is on the screen!
+        if (!document.getElementById('edit-employee-form')) return;
         
         // --- Back & Cancel Routing ---
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');

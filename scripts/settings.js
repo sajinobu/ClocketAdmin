@@ -27,6 +27,9 @@
     
     // Toggle Switches (Change Event)
     document.body.addEventListener('change', (e) => {
+        // NEW PAGE GUARD: Only run if the settings toggles exist
+        if (!document.getElementById('toggle-email')) return;
+
         if (e.target.id === 'toggle-email') {
             const status = e.target.checked ? "enabled" : "disabled";
             showSettingsToast(`Email notifications have been ${status}.`);
@@ -40,6 +43,9 @@
 
     // Buttons (Click Event)
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the download button exists
+        if (!document.getElementById('download-data-btn')) return;
+
         const downloadBtn = e.target.closest('#download-data-btn');
         
         if (downloadBtn && !downloadBtn.disabled) {

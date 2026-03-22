@@ -3,25 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - TimeTrack Portal</title>
+  <title>Login | Clocket</title>
   
-  <!-- <link rel="stylesheet" href="styles/styles.css"> -->
+  <link rel="stylesheet" href="styles/styles.css">
   <link rel="stylesheet" href="styles/layout.css">
   
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             brand: { 
-              darkest: '#000523', darker: '#000533', dark: '#000b66',
-              primary: '#001aff', secondary: '#007bff', accent: '#00d1ff',
-              accentLight: '#57e8ff', grayLight: '#f1f1f1', grayBg: '#f8fafc'
+              darkest: 'var(--brand-darkest)', darker: 'var(--brand-darker)', dark: 'var(--brand-dark)',
+              primary: 'var(--brand-primary)', secondary: 'var(--brand-secondary)', accent: 'var(--brand-accent)',
+              accentLight: 'var(--brand-accent-light)', grayLight: 'var(--brand-gray-light)', 
+              grayBg: 'var(--brand-gray-bg)', surface: 'var(--brand-surface)'
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -29,21 +31,55 @@
       }
     }
   </script>
+
+  <script type="module" src="scripts/firebase-config.js"></script>
+
+  <style>
+    .login-body { display: flex; align-items: center; justify-content: center; }
+    .login-card {
+        background-color: var(--brand-surface); border: 1px solid var(--brand-gray-light);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border-radius: 1.5rem;
+        padding: 2.5rem; width: 100%; max-width: 28rem; transition: all 0.3s ease;
+    }
+    .login-title { font-size: 1.5rem; font-weight: 700; color: var(--brand-darkest); margin-bottom: 0.25rem; transition: color 0.3s ease;}
+    .login-subtitle { font-size: 0.875rem; color: var(--brand-dark); margin-bottom: 2rem; transition: color 0.3s ease;}
+    .login-form-group { margin-bottom: 1.25rem; }
+    .login-label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--brand-dark); margin-bottom: 0.5rem; transition: color 0.3s ease;}
+    .login-input-wrapper { position: relative; }
+    .login-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 1.25rem; height: 1.25rem; color: var(--brand-dark); transition: color 0.3s ease;}
+    .login-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem; border: 1px solid var(--brand-gray-light); border-radius: 0.75rem; font-size: 0.875rem; background-color: var(--brand-gray-bg); color: var(--brand-darkest); outline: none; transition: all 0.3s ease;}
+    .login-input:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); background-color: var(--brand-surface); }
+    .login-options { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; margin-top: 1rem; }
+    .login-checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+    .login-checkbox span { font-size: 0.875rem; color: var(--brand-dark); transition: color 0.3s ease; font-weight: 500; }
+    .login-forgot { font-size: 0.875rem; font-weight: 600; color: var(--brand-primary); transition: color 0.3s ease; text-decoration: none; }
+    .login-forgot:hover { color: var(--brand-darkest); }
+    .login-btn { width: 100%; padding: 0.875rem; background-color: var(--brand-primary); color: white; font-weight: 700; border-radius: 0.75rem; transition: all 0.3s ease; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;}
+    .login-btn:hover:not(:disabled) { background-color: var(--brand-dark); }
+    .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+  </style>
   
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 </head>
 
-<body class="h-full font-sans text-gray-700 login-body">
+<body class="h-full font-sans bg-brand-grayBg text-brand-darkest transition-colors duration-300 login-body">
 
-  <main class="login-card">
+  <div class="fixed top-6 right-8 z-50">
+    <button id="theme-toggle" class="w-10 h-10 rounded-full flex items-center justify-center bg-brand-surface border border-brand-grayLight text-brand-dark hover:text-brand-primary transition-all shadow-sm">
+        <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+    </button>
+  </div>
+
+  <main class="login-card mx-4">
     <div class="login-header">
       <div class="flex items-center justify-center gap-3 mb-6">
-        <svg width="40" height="40" viewBox="0 0 32 32" fill="none" id="logo-svg">
-            <circle cx="16" cy="16" r="13" stroke="#1A1A1A" stroke-width="2"/>
-            <path d="M16 8v9l5 4" stroke="#1A1A1A" stroke-width="2"/>
-            <circle cx="16" cy="16" r="2" fill="#1A1A1A"/>
+        <svg width="40" height="40" viewBox="0 0 32 32" fill="none" id="logo-svg" class="text-brand-darkest transition-colors">
+            <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 8v9l5 4" stroke="currentColor" stroke-width="2"/>
+            <circle cx="16" cy="16" r="2" fill="currentColor"/>
         </svg>
-        <span class="font-display font-bold text-2xl text-[#1A1A1A]" id="nav-brand">Clocket</span>
+        <span class="font-display font-bold text-2xl text-brand-darkest transition-colors" id="nav-brand">Clocket</span>
       </div>
       
       <h1 class="login-title">Admin Portal</h1>
@@ -76,11 +112,29 @@
         <a href="#" class="login-forgot">Forgot Password?</a>
       </div>
 
-      <button type="submit" class="login-btn">Sign In to Dashboard</button>
+      <div id="login-error" class="hidden text-red-500 text-sm font-bold text-center mb-4 transition-opacity"></div>
+
+      <button type="submit" id="login-submit-btn" class="login-btn">Sign In to Dashboard</button>
     </form>
     
   </main>
 
   <script src="scripts/layout.js"></script>
+  
+  <script>
+    if (window.lucide) lucide.createIcons();
+    
+    const themeBtn = document.getElementById('theme-toggle');
+    if(themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+  </script>
 </body>
 </html>

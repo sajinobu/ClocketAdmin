@@ -14,6 +14,8 @@
     // 3. EVENT DELEGATION LISTENERS
     // ==========================================
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the feed modal exists!
+        if (!document.getElementById('feed-modal')) return;
         
         const feedModal = document.getElementById('feed-modal');
         if (!feedModal) return;

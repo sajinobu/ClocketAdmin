@@ -2,12 +2,11 @@
     // 1. RUN EVERY TIME
     if (window.lucide) lucide.createIcons();
 
-    // Force highlight "Management" in the sidebar (Wrap in setTimeout for hard refresh)
+    // Force highlight "Management" in the sidebar
     setTimeout(() => {
         document.querySelectorAll('.sidebar-item, .nav-link').forEach(link => {
             link.classList.remove('active');
             
-            // This page always belongs to the Management tab
             if (link.getAttribute('href') && link.getAttribute('href').startsWith('management')) {
                 link.classList.add('active');
             }
@@ -20,6 +19,9 @@
 
     // 3. EVENT LISTENERS
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the member search input is on screen
+        if (!document.getElementById('member-search')) return;
+        
         // --- Dynamic Back Button ---
         const backBtn = e.target.closest('#dynamic-back-btn');
         if (backBtn) {
@@ -66,6 +68,9 @@
 
     // --- Search Members Logic ---
     document.body.addEventListener('input', (e) => {
+        // NEW INPUT GUARD: Stop this from firing on other pages!
+        if (!document.getElementById('member-search')) return;
+
         if (e.target.id === 'member-search') {
             const searchTerm = e.target.value.toLowerCase().trim();
             const memberRows = document.querySelectorAll('.member-row');

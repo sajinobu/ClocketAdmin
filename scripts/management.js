@@ -72,6 +72,10 @@
     // 3. EVENT LISTENERS
     // ==========================================
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the Management tabs are on the screen!
+        if (!document.querySelector('.management-tab')) return;
+
+        // Tab Clicks...
         // Tab Clicks
         const tabBtn = e.target.closest('.management-tab');
         if (tabBtn) switchTab(tabBtn.getAttribute('data-tab'));

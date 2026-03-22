@@ -44,6 +44,8 @@
     });
 
     document.body.addEventListener('click', (e) => {
+        // NEW PAGE GUARD: Only run if the edit team form is on screen
+        if (!document.getElementById('edit-team-form')) return;
         
         // --- Back & Cancel Routing ---
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');

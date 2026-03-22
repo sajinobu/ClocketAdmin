@@ -15,7 +15,8 @@
 
     // 3. EVENT DELEGATION LISTENERS
     document.body.addEventListener('click', (e) => {
-        
+        // NEW PAGE GUARD: Only run if the reset password button is on screen
+        if (!document.getElementById('reset-password-btn')) return;
         // --- Password Reset Button ---
         const resetBtn = e.target.closest('#reset-password-btn');
         if (resetBtn) {

@@ -192,6 +192,14 @@
   transition: all 0.3s ease;
 }
 
+/* Add this missing block right here! */
+.custom-dropdown.open .dropdown-menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+/* -------------------------------- */
+
 .custom-dropdown.form-variant .dropdown-menu {
   left: 0;
   right: auto;

@@ -144,9 +144,10 @@ function initializeGlobalUI() {
 }
 
 // ==========================================
-// SPA ROUTER ENGINE WITH PREMIUM ANIMATIONS
+// SPA ROUTER ENGINE WITH FIREBASE AUTH
 // ==========================================
 function setupRouter() {
+    // 1. Handle normal link clicks
     document.body.addEventListener('click', (e) => {
         const link = e.target.closest('a');
         if (link && link.href && link.host === window.location.host && link.pathname.endsWith('.html')) {
@@ -155,14 +156,61 @@ function setupRouter() {
         }
     });
 
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+    // 2. Intercept Global Form Submissions (Specifically the Login Form)
+    document.body.addEventListener('submit', async (e) => {
+        if (e.target.id === 'login-form') {
             e.preventDefault();
-            const targetUrl = loginForm.getAttribute('action');
-            navigateTo(targetUrl);
-        });
-    }
+            
+            const submitBtn = document.getElementById('login-submit-btn');
+            
+            // ANTI-DOUBLE-CLICK GUARD: Stop immediately if the button is already loading
+            if (submitBtn.disabled) return; 
+
+            // Always grab the freshest live input values
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+            const targetUrl = e.target.getAttribute('action');
+            
+            // UI Loading State
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
+            if (window.lucide) lucide.createIcons();
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = "";
+
+            try {
+                if (!window.auth || !window.firebaseUtils) {
+                    throw new Error("Cannot connect to server. Please refresh the page.");
+                }
+
+                const { signInWithEmailAndPassword } = window.firebaseUtils;
+                
+                // ATTEMPT FIREBASE LOGIN
+                await signInWithEmailAndPassword(window.auth, email, password);
+                
+                // SUCCESS! Route to the dashboard
+                navigateTo(targetUrl);
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                
+                // Show user-friendly error messages
+                errorDiv.classList.remove('hidden');
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorDiv.textContent = "Invalid email or password.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    errorDiv.textContent = "Too many attempts. Try again later.";
+                } else {
+                    errorDiv.textContent = "Error logging in. Please try again.";
+                }
+
+                // FIXED: Explicitly restore the exact text so it never gets stuck as a spinner
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "Sign In to Dashboard";
+            }
+        }
+    });
 
     window.addEventListener('popstate', () => {
         navigateTo(window.location.href, false);
@@ -271,7 +319,9 @@ function updateActiveLinks() {
 }
 
 function executePageScript(doc) {
-    const pageScript = doc.querySelector('script[src^="scripts/"]:not([src*="layout.js"])');
+    // FIXED: Added 'body ' to the selector so it ignores the <head> scripts!
+    const pageScript = doc.querySelector('body script[src^="scripts/"]:not([src*="layout.js"])');
+    
     if (pageScript) {
         const oldScript = document.getElementById('dynamic-page-script');
         if (oldScript) oldScript.remove();
