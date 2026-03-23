@@ -190,6 +190,9 @@
   pointer-events: none;
   transform: translateY(-10px);
   transition: all 0.3s ease;
+  
+  /* FIXED: Allow content (like scrollbars or inner borders) to breathe */
+  overflow: visible; 
 }
 
 /* Add this missing block right here! */
@@ -203,6 +206,11 @@
 .custom-dropdown.form-variant .dropdown-menu {
   left: 0;
   right: auto;
+  
+  /* FIXED: Allow long lists in modals to scroll smoothly without breaking the border */
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dropdown-item {
