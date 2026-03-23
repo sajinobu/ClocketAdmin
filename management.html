@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/management.css">
 
+  <script type="module" src="scripts/firebase-config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,91 +104,7 @@
                       </tr>
                     </thead>
                     <tbody id="employee-table-body">
-
-                      <tr class="data-row">
-                        <td class="table-td">
-                          <div class="flex items-center gap-3">
-                            <div class="avatar-sm">SJ</div>
-                            <p class="font-bold text-brand-darkest transition-colors">Sarah Johnson</p>
-                          </div>
-                        </td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">Engineering</td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">sarah.j@company.com</td>
-                        <td class="table-td">
-                          <span class="status-badge status-active">Active</span>
-                        </td>
-                        <td class="table-td text-right relative">
-                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                          <div class="action-menu hidden">
-                            <a href="employee-profile.html?from=management" class="menu-item">
-                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                            </a>
-                            <a href="employee-edit-profile.html?from=management" class="menu-item">
-                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
-                            </a>
-                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Sarah Johnson">
-                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr class="data-row">
-                        <td class="table-td">
-                          <div class="flex items-center gap-3">
-                            <div class="avatar-sm">MC</div>
-                            <p class="font-bold text-brand-darkest transition-colors">Mike Chen</p>
-                          </div>
-                        </td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">Design</td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">mike.c@company.com</td>
-                        <td class="table-td">
-                          <span class="status-badge status-active">Active</span>
-                        </td>
-                        <td class="table-td text-right relative">
-                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                          <div class="action-menu hidden">
-                            <a href="employee-profile.html?from=management" class="menu-item">
-                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                            </a>
-                            <a href="employee-edit-profile.html?from=management" class="menu-item">
-                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
-                            </a>
-                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Mike Chen">
-                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
-                      <tr class="data-row">
-                        <td class="table-td">
-                          <div class="flex items-center gap-3">
-                            <div class="avatar-sm">EW</div>
-                            <p class="font-bold text-brand-darkest transition-colors">Emma Wilson</p>
-                          </div>
-                        </td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">Operations</td>
-                        <td class="table-td text-sm text-brand-dark transition-colors">emma.w@company.com</td>
-                        <td class="table-td">
-                          <span class="status-badge status-break">On Break</span>
-                        </td>
-                        <td class="table-td text-right relative">
-                          <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
-                          <div class="action-menu hidden">
-                            <a href="employee-profile.html?from=management" class="menu-item">
-                              <i data-lucide="user" class="w-4 h-4"></i> View Profile
-                            </a>
-                            <a href="employee-edit-profile.html?from=management" class="menu-item">
-                              <i data-lucide="pencil" class="w-4 h-4"></i> Modify
-                            </a>
-                            <button class="menu-item menu-item-danger delete-employee-btn" data-name="Emma Wilson">
-                              <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-
+                      
                       <tr id="no-results-row" class="hidden">
                         <td colspan="5" class="table-td text-center py-12">
                           <div class="flex flex-col items-center justify-center">
@@ -234,6 +151,7 @@
                         <div class="dropdown-item" data-value="Operations">Operations</div>
                         <div class="dropdown-item" data-value="Sales">Sales</div>
                         <div class="dropdown-item" data-value="Marketing">Marketing</div>
+                        <div class="dropdown-item" data-value="Programming">Programming</div>
                     </div>
                   </div>
 

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/attendance.css">
   
+  <script type="module" src="scripts/firebase-config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -125,68 +126,19 @@
                     </tr>
                   </thead>
                   
-                  <tbody>
-                    <tr class="attendance-row" data-status="on-time" data-date="today">
-                      <td class="table-td">
-                        <div class="flex items-center gap-3">
-                          <div class="avatar-sm">SJ</div>
-                          <div>
-                            <p class="font-bold text-brand-darkest text-sm employee-name">Sarah Johnson</p>
-                            <p class="text-xs text-gray-500">Engineering</p>
+                  <tbody id="attendance-table-body">
+                    
+                    <tr id="no-results-row" class="hidden">
+                      <td colspan="7" class="table-td text-center py-12">
+                        <div class="flex flex-col items-center justify-center">
+                          <div class="w-12 h-12 bg-brand-grayBg text-brand-dark rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="search-x" class="w-6 h-6"></i>
                           </div>
+                          <p class="empty-state-title text-sm font-bold text-brand-darkest">No attendance records found</p>
+                          <p class="empty-state-subtext text-xs text-brand-dark mt-1">Try adjusting your filters or search terms.</p>
                         </div>
                       </td>
-                      <td class="table-td text-center">
-                        <button class="btn-photo view-photo-btn mx-auto" data-name="Sarah Johnson" data-time="8:58 AM" title="View Verification Photo">
-                            <i data-lucide="camera" class="w-4 h-4"></i>
-                        </button>
-                      </td>
-                      <td class="table-td">
-                        <p class="text-sm font-bold text-brand-darkest">8:58 AM</p>
-                      </td>
-                      <td class="table-td">
-                        <p class="text-sm font-medium text-gray-400">--</p>
-                      </td>
-                      <td class="table-td text-sm font-medium text-gray-500">HQ Office</td>
-                      <td class="table-td">
-                        <span class="status-badge status-on-time">On Time</span>
-                      </td>
-                      <td class="table-td text-right">
-                        <a href="employee-logs.html?from=attendance" class="link-action">View Log</a>
-                      </td>
                     </tr>
-
-                    <tr class="attendance-row" data-status="late" data-date="today">
-                      <td class="table-td">
-                        <div class="flex items-center gap-3">
-                          <div class="avatar-sm">MC</div>
-                          <div>
-                            <p class="font-bold text-brand-darkest text-sm employee-name">Mike Chen</p>
-                            <p class="text-xs text-gray-500">Design</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td class="table-td text-center">
-                        <button class="btn-photo view-photo-btn mx-auto" data-name="Mike Chen" data-time="9:15 AM" title="View Verification Photo">
-                            <i data-lucide="camera" class="w-4 h-4"></i>
-                        </button>
-                      </td>
-                      <td class="table-td">
-                        <p class="text-sm font-bold text-brand-darkest">9:15 AM</p>
-                        <p class="text-xs font-semibold text-red-500 mt-0.5">15m late</p>
-                      </td>
-                      <td class="table-td">
-                        <p class="text-sm font-medium text-gray-400">--</p>
-                      </td>
-                      <td class="table-td text-sm font-medium text-gray-500">Remote - Austin</td>
-                      <td class="table-td">
-                        <span class="status-badge status-late">Late</span>
-                      </td>
-                      <td class="table-td text-right">
-                        <a href="employee-logs.html?from=attendance" class="link-action">View Log</a>
-                      </td>
-                    </tr>
-
                   </tbody>
                 </table>
               </div>

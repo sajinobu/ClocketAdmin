@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/employee-profile.css">
   
+  <script type="module" src="scripts/firebase-config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,25 +77,27 @@
               <div class="profile-hero-bg"></div>
               
               <div class="profile-hero-content">
-                <div class="hero-avatar">SJ</div>
+                
+                <img id="profile-avatar" src="" class="w-16 h-16 rounded-full object-cover border-4 border-brand-surface shadow-sm bg-white" alt="Profile Picture">
+                
                 <div class="flex-1">
                   <div class="flex items-center gap-3 mb-1">
-                    <h2 class="hero-name">Sarah Johnson</h2>
+                    <h2 class="hero-name" id="profile-name">Loading...</h2>
                     <span class="status-badge status-active">
                       <span class="status-dot"></span> Active Now
                     </span>
                   </div>
-                  <p class="hero-role">Senior Frontend Developer</p>
+                  <p class="hero-role" id="profile-role">...</p>
                   
                   <div class="profile-meta">
-                    <div class="meta-item">
-                      <i data-lucide="briefcase" class="meta-icon"></i> Engineering
+                    <div class="meta-item" id="profile-dept">
+                      <i data-lucide="briefcase" class="meta-icon"></i> ...
                     </div>
                     <div class="meta-item">
-                      <i data-lucide="map-pin" class="meta-icon"></i> HQ Office - Floor 1
+                      <i data-lucide="map-pin" class="meta-icon"></i> HQ Office
                     </div>
                     <div class="meta-item">
-                      <i data-lucide="clock" class="meta-icon"></i> Local Time: 9:02 AM
+                      <i data-lucide="clock" class="meta-icon"></i> Local Time: 9:00 AM
                     </div>
                   </div>
                 </div>
@@ -112,14 +115,14 @@
                       <div class="info-icon-wrapper"><i data-lucide="mail" class="w-4 h-4"></i></div>
                       <div>
                         <p class="info-label">Email Address</p>
-                        <p class="info-value">sarah.j@company.com</p>
+                        <p class="info-value" id="profile-email">...</p>
                       </div>
                     </div>
                     <div class="info-row">
                       <div class="info-icon-wrapper"><i data-lucide="phone" class="w-4 h-4"></i></div>
                       <div>
                         <p class="info-label">Phone Number</p>
-                        <p class="info-value">+1 (555) 987-6543</p>
+                        <p class="info-value" id="profile-phone">...</p>
                       </div>
                     </div>
                   </div>
@@ -130,19 +133,19 @@
                   <div class="info-list">
                     <div class="info-row-bordered">
                       <span class="info-label">Employee ID</span>
-                      <span class="info-value">EMP-001</span>
+                      <span class="info-value" id="profile-emp-id">...</span>
                     </div>
                     <div class="info-row-bordered">
                       <span class="info-label">Hire Date</span>
-                      <span class="info-value">Mar 12, 2022</span>
+                      <span class="info-value" id="profile-hire-date">...</span>
                     </div>
                     <div class="info-row-bordered">
                       <span class="info-label">Assigned Team</span>
-                      <span class="info-value">Engineering Team A</span>
+                      <span class="info-value" id="profile-team">...</span>
                     </div>
                     <div class="info-row-bordered">
-                      <span class="info-label">Direct Manager</span>
-                      <span class="info-value text-[var(--brand-secondary)] cursor-pointer hover:underline">Admin Manager</span>
+                      <span class="info-label">System Role</span>
+                      <span class="info-value text-[var(--brand-secondary)]" id="profile-system-role">...</span>
                     </div>
                   </div>
                 </div>
@@ -169,7 +172,7 @@
                 <div class="table-panel">
                   <div class="table-header">
                     <h3 class="info-card-title !mb-0">Recent Attendance</h3>
-                    <a href="employee-logs.html?from=employee-profile" class="btn-link">View Full Log</a>
+                    <a href="employee-logs.html?from=employee-profile" id="view-log-btn" class="btn-link">View Full Log</a>
                   </div>
                   
                   <div class="table-wrapper">
@@ -191,21 +194,7 @@
                           <td class="log-td text-[var(--brand-dark)]">--</td>
                           <td class="log-td text-[var(--brand-dark)]">--</td>
                         </tr>
-                        <tr class="log-row">
-                          <td class="log-td font-medium text-[var(--brand-darkest)]">Yesterday</td>
-                          <td class="log-td"><span class="status-badge status-active">On Time</span></td>
-                          <td class="log-td">8:55 AM</td>
-                          <td class="log-td">5:05 PM</td>
-                          <td class="log-td">8h 10m</td>
-                        </tr>
-                        <tr class="log-row">
-                          <td class="log-td font-medium text-[var(--brand-darkest)]">Wed, Oct 25</td>
-                          <td class="log-td"><span class="status-badge status-late">Late</span></td>
-                          <td class="log-td">9:15 AM</td>
-                          <td class="log-td">5:30 PM</td>
-                          <td class="log-td">8h 15m</td>
-                        </tr>
-                      </tbody>
+                        </tbody>
                     </table>
                   </div>
                 </div>

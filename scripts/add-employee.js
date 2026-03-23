@@ -15,10 +15,24 @@
         "Marketing": ["Content Team", "Growth & SEO", "Event Marketing"]
     };
 
+    // Helper Function: Format Datetime for Firestore
+    function getFormattedDateTime() {
+        const now = new Date();
+        return now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0') + ' ' +
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
+    }
+
     // 3. EVENT DELEGATION LISTENERS
     
-    // Handle Dropdown Changes
+    // Handle Dropdown Changes (Native <select> tags)
     document.body.addEventListener('change', (e) => {
+        // NEW PAGE GUARD: Only run if the Add Employee form is on the screen!
+        if (!document.getElementById('add-employee-form')) return;
+
         if (e.target.id === 'department') {
             const teamSelect = document.getElementById('assigned-team');
             const selectedDept = e.target.value;
@@ -53,8 +67,8 @@
 
     // Handle Clicks (Routing)
     document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the Add Employee form is on the screen!
         if (!document.getElementById('add-employee-form')) return;
+        
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
@@ -73,30 +87,115 @@
         }
     });
 
-    // Handle Form Submission
-    document.body.addEventListener('submit', (e) => {
+    // --- FIREBASE: Handle Form Submission ---
+    document.body.addEventListener('submit', async (e) => {
         if (e.target.id === 'add-employee-form') {
             e.preventDefault();
             
-            const firstName = document.getElementById('first-name').value;
-            const lastName = document.getElementById('last-name').value;
-            const employeeId = document.getElementById('employee-id').value;
+            // FIXED: Search the whole document for the linked button!
+            const submitBtn = document.querySelector('button[form="add-employee-form"]');
+            const originalBtnText = submitBtn.innerHTML;
             
-            showSuccessToast(`${firstName} ${lastName} (${employeeId}) has been successfully added to the system.`);
+            // 1. Validate Dropdowns
+            const dept = document.getElementById('department').value;
+            const team = document.getElementById('assigned-team').value;
             
-            setTimeout(() => {
-                let fromPage = 'management'; 
-                const urlParams = new URLSearchParams(window.location.search);
-                if(urlParams.get('from')) {
-                    fromPage = urlParams.get('from');
+            if (!dept || !team) {
+                alert("Please select a Department and Assigned Team.");
+                return;
+            }
+
+            // Set UI to loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Saving...`;
+            if (window.lucide) lucide.createIcons();
+            
+            try {
+                // Ensure Firebase is connected via the Global Window trick
+                if (!window.secondaryAuth || !window.firebaseUtils) {
+                    throw new Error("Firebase is not initialized. Please refresh the page.");
                 }
 
-                if (typeof navigateTo === 'function') {
-                    navigateTo(`${fromPage}.html`);
+                const { doc, setDoc, createUserWithEmailAndPassword, signOut } = window.firebaseUtils;
+
+                // 2. Gather UI Data
+                const firstName = document.getElementById('first-name').value.trim();
+                const lastName = document.getElementById('last-name').value.trim();
+                const email = document.getElementById('email').value.trim();
+                const empId = document.getElementById('employee-id').value.trim();
+                const systemRole = document.querySelector('input[name="system-role"]:checked').value;
+                
+                // Fallbacks just in case you add these inputs back to the HTML later
+                const phoneNode = document.getElementById('phone');
+                const phone = phoneNode ? phoneNode.value.trim() : "";
+                const titleNode = document.getElementById('job-title');
+                const jobTitle = titleNode ? titleNode.value.trim() : "Employee";
+
+                const currentTime = getFormattedDateTime();
+                const tempPassword = "SuP3rS3crtP@ssWord#1234";
+
+                // 3. Create User in Firebase Auth (Using secondary ghost app to prevent logout)
+                await createUserWithEmailAndPassword(window.secondaryAuth, email, tempPassword);
+                await signOut(window.secondaryAuth);
+
+                // 4. Build Exact Database Payload
+                const employeeData = {
+                    account_status: "active",
+                    address: "",
+                    assigned_team: team,
+                    contact_number: phone,
+                    created_at: currentTime,
+                    created_by: "admin@company.com", // We can make this dynamic later
+                    department: dept,
+                    email: email,
+                    employee_code: "EMP" + Math.floor(Math.random() * 900 + 100),
+                    employee_id: empId,
+                    first_name: firstName,
+                    full_name: `${firstName} ${lastName}`,
+                    last_login: "",
+                    last_name: lastName,
+                    login_attempts: 0,
+                    password: "pending_setup",
+                    password_last_changed: currentTime,
+                    profile_picture: "coming soon",
+                    role: jobTitle,
+                    system_role: systemRole,
+                    updated_at: currentTime
+                };
+
+                // 5. Write to Firestore using the email as the Document ID
+                await setDoc(doc(window.db, "employees", email), employeeData);
+
+                showSuccessToast(`${firstName} ${lastName} (${empId}) has been successfully added.`);
+                
+                // 6. Route back after success
+                setTimeout(() => {
+                    let fromPage = 'management'; 
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if(urlParams.get('from')) {
+                        fromPage = urlParams.get('from');
+                    }
+
+                    if (typeof navigateTo === 'function') {
+                        navigateTo(`${fromPage}.html`);
+                    } else {
+                        window.location.href = `${fromPage}.html`;
+                    }
+                }, 2000); 
+
+            } catch (error) {
+                console.error("Error adding employee: ", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    alert("Error: An account with this email address already exists.");
                 } else {
-                    window.location.href = `${fromPage}.html`;
+                    alert("Error saving employee. Check console for details.");
                 }
-            }, 2000); 
+                
+                // Reset button on failure
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                if (window.lucide) lucide.createIcons();
+            }
         }
     });
 
@@ -131,5 +230,4 @@
             setTimeout(() => toast.remove(), 500);
         }, 1500);
     }
-
 })();

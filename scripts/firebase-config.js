@@ -2,8 +2,8 @@
 
 // 1. We MUST use the CDN links for your Vanilla SPA router to work!
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // Your exact Firebase configuration
 const firebaseConfig = {
@@ -30,9 +30,13 @@ window.secondaryAuth = getAuth(secondaryApp);
 window.firebaseUtils = {
     doc,
     setDoc,
+    getDoc,
+    collection,
+    getDocs,
     createUserWithEmailAndPassword,
-    signInWithEmailAndPassword, // <-- Ready for the Login Page!
-    signOut
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged // <-- NEW: The Session Guard Tool
 };
 
 console.log("Firebase loaded globally via CDN! Ready for SPA.");

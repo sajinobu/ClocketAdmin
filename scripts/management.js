@@ -1,6 +1,6 @@
 (() => {
     // ==========================================
-    // 1. RUN EVERY TIME (UI & State Initialization)
+    // 1. RUN EVERY TIME (UI & Fetch Initialization)
     // ==========================================
     if (window.lucide) lucide.createIcons();
     window.activeTeamDept = ""; 
@@ -44,22 +44,124 @@
     }
 
     initializeTabsFromURL();
-    applyEmployeeFilters();
-    applyTeamFilters();
-
+    
     window.addEventListener('popstate', () => {
         initializeTabsFromURL();
     });
 
+    // --- FIREBASE FETCH LOGIC ---
+    async function loadEmployeesFromFirebase() {
+        const tableBody = document.getElementById('employee-table-body');
+        const noResultsRow = document.getElementById('no-results-row');
+        
+        if (!tableBody || !window.firebaseUtils) return;
+
+        try {
+            // Show a quick loading spinner
+            const loadingRow = document.createElement('tr');
+            loadingRow.id = "emp-loading-row";
+            loadingRow.innerHTML = `<td colspan="5" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
+            tableBody.prepend(loadingRow);
+            if (window.lucide) lucide.createIcons();
+
+            const { collection, getDocs } = window.firebaseUtils;
+            
+            // Fetch all documents from the "employees" collection
+            const querySnapshot = await getDocs(collection(window.db, "employees"));
+            
+            // Remove loading spinner
+            const loader = document.getElementById('emp-loading-row');
+            if (loader) loader.remove();
+
+            // Clear old data rows (keep no-results-row)
+            document.querySelectorAll('#employee-table-body .data-row').forEach(row => row.remove());
+
+            if (querySnapshot.empty) {
+                noResultsRow.style.display = '';
+                return;
+            }
+
+            // Loop through Firebase data and build HTML
+            // Loop through Firebase data and build HTML
+            querySnapshot.forEach((docSnap) => {
+                const emp = docSnap.data();
+                
+                // --- NEW DEFAULT AVATAR LOGIC ---
+                const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+                
+                let avatarSrc = defaultAvatar;
+                if (emp.profile_picture && emp.profile_picture !== "coming soon") {
+                    avatarSrc = emp.profile_picture;
+                }
+
+                // Map status to your CSS classes
+                let statusClass = "status-active";
+                let statusText = "Active";
+                if (emp.account_status === "inactive" || emp.account_status === "disabled") {
+                    statusClass = "bg-gray-100 text-gray-500 border-gray-200"; 
+                    statusText = "Inactive";
+                }
+
+                // Build the Row
+                const tr = document.createElement('tr');
+                tr.className = 'data-row';
+                tr.innerHTML = `
+                    <td class="table-td">
+                      <div class="flex items-center gap-3">
+                        <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-white" alt="Avatar">
+                        <p class="font-bold text-brand-darkest transition-colors">${emp.full_name}</p>
+                      </div>
+                    </td>
+                    <td class="table-td text-sm text-brand-dark transition-colors">${emp.department || "Unassigned"}</td>
+                    <td class="table-td text-sm text-brand-dark transition-colors">${emp.email}</td>
+                    <td class="table-td">
+                      <span class="status-badge ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="table-td text-right relative">
+                      <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                      <div class="action-menu hidden">
+                        <a href="employee-profile.html?from=management&id=${docSnap.id}" class="menu-item">
+                          <i data-lucide="user" class="w-4 h-4"></i> View Profile
+                        </a>
+                        <a href="employee-edit-profile.html?from=management&id=${docSnap.id}" class="menu-item">
+                          <i data-lucide="pencil" class="w-4 h-4"></i> Modify
+                        </a>
+                        <button class="menu-item menu-item-danger delete-employee-btn" data-name="${emp.full_name}" data-id="${docSnap.id}">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                        </button>
+                      </div>
+                    </td>
+                `;
+                
+                // Insert before the no-results row
+                tableBody.insertBefore(tr, noResultsRow);
+            });
+
+            if (window.lucide) lucide.createIcons();
+            applyEmployeeFilters(); // Run your filters over the new data!
+
+        } catch(error) {
+            console.error("Error fetching employees: ", error);
+        }
+    }
+
+    // Execute Fetch Safely (Wait for Firebase to finish loading on hard refreshes)
+    const waitForFirebase = setInterval(() => {
+        if (window.firebaseUtils && window.db) {
+            clearInterval(waitForFirebase);
+            loadEmployeesFromFirebase();
+            applyTeamFilters();
+        }
+    }, 50);
+    
     // ==========================================
     // 2. SPA EVENT GUARD
     // ==========================================
     if (window._mgmtEventsBound) return;
     window._mgmtEventsBound = true;
 
-    // Close floating menus aggressively on any scroll to prevent them flying away
+    // Close floating menus aggressively on any scroll
     window.addEventListener('scroll', (e) => {
-        // Ignore scrolling if the user is scrolling inside a dropdown menu
         if (e.target.closest && e.target.closest('.dropdown-menu')) return;
         
         document.querySelectorAll('.action-menu:not(.hidden)').forEach(m => {
@@ -72,15 +174,13 @@
     // 3. EVENT LISTENERS
     // ==========================================
     document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the Management tabs are on the screen!
         if (!document.querySelector('.management-tab')) return;
 
-        // Tab Clicks...
         // Tab Clicks
         const tabBtn = e.target.closest('.management-tab');
         if (tabBtn) switchTab(tabBtn.getAttribute('data-tab'));
 
-        // --- UPGRADED: Viewport Clamped Floating Action Menu ---
+        // --- Viewport Clamped Floating Action Menu ---
         const actionBtn = e.target.closest('.action-btn');
         const allMenus = document.querySelectorAll('.action-menu');
         
@@ -88,7 +188,6 @@
             e.stopPropagation();
             const menu = actionBtn.nextElementSibling;
             
-            // Close all others
             allMenus.forEach(m => { 
                 if (m !== menu) {
                     m.classList.add('hidden'); 
@@ -98,7 +197,6 @@
             
             if (menu) {
                 if (menu.classList.contains('hidden')) {
-                    // Temporarily display block to measure width accurately
                     menu.style.display = 'block';
                     menu.style.visibility = 'hidden';
                     menu.classList.remove('hidden');
@@ -109,15 +207,11 @@
                     menu.style.position = 'fixed';
                     menu.style.top = `${rect.bottom + 4}px`;
                     
-                    // Math Clamp: Calculate optimal left position
-                    // Default: Align right edges
                     let idealLeft = rect.right - menuWidth; 
                     
-                    // Clamp to Right Edge of Screen (16px padding)
                     if (idealLeft + menuWidth > window.innerWidth - 16) {
                         idealLeft = window.innerWidth - menuWidth - 16;
                     }
-                    // Clamp to Left Edge of Screen (16px padding)
                     if (idealLeft < 16) {
                         idealLeft = 16;
                     }
@@ -126,7 +220,6 @@
                     menu.style.right = 'auto';
                     menu.style.zIndex = '9999';
                     
-                    // Restore visibility
                     menu.style.visibility = 'visible';
                     menu.style.display = '';
                     
@@ -136,7 +229,6 @@
                 }
             }
         } else {
-            // Clicked outside - close menus
             if (!e.target.closest('.action-menu')) {
                 allMenus.forEach(m => { 
                     m.classList.add('hidden'); 

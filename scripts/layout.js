@@ -39,6 +39,9 @@ async function loadLayout() {
 
         initializeGlobalUI();
         updateActiveLinks();
+        
+        // NEW: Fetch and populate the user's data!
+        updateSidebarProfile(); 
 
     } catch (error) {
         console.error("Error loading layout:", error);
@@ -135,8 +138,24 @@ function initializeGlobalUI() {
     // Logout
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            navigateTo('index.html'); 
+        // Remove old listeners to prevent duplicates
+        const newLogoutBtn = logoutBtn.cloneNode(true);
+        logoutBtn.parentNode.replaceChild(newLogoutBtn, logoutBtn);
+        
+        newLogoutBtn.addEventListener('click', async (e) => {
+            e.preventDefault(); 
+            if (window.auth && window.firebaseUtils) {
+                try {
+                    // Tell Firebase to destroy the session token
+                    await window.firebaseUtils.signOut(window.auth);
+                    // Hard redirect to login page to clear all memory
+                    window.location.href = 'index.html'; 
+                } catch(error) {
+                    console.error("Logout failed", error);
+                }
+            } else {
+                window.location.href = 'index.html';
+            }
         });
     }
 
@@ -184,20 +203,48 @@ function setupRouter() {
                     throw new Error("Cannot connect to server. Please refresh the page.");
                 }
 
-                const { signInWithEmailAndPassword } = window.firebaseUtils;
+                const { signInWithEmailAndPassword, signOut, doc, getDoc } = window.firebaseUtils;
                 
-                // ATTEMPT FIREBASE LOGIN
-                await signInWithEmailAndPassword(window.auth, email, password);
+                // 1. ATTEMPT FIREBASE LOGIN
+                const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
                 
-                // SUCCESS! Route to the dashboard
-                navigateTo(targetUrl);
+                // 2. THE BOUNCER: Fetch the user's document from Firestore
+                const userDocRef = doc(window.db, "employees", email);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    
+                    // 3. CHECK THE ROLE
+                    // You can allow "Manager" here too later if you want them to access the portal
+                    if (userData.system_role === "Admin") {
+                        // SUCCESS! Route to the dashboard
+                        navigateTo(targetUrl);
+                    } else {
+                        // KICK THEM OUT
+                        await signOut(window.auth);
+                        throw new Error("unauthorized");
+                    }
+                } else {
+                    // Record doesn't exist in the database, only in Auth
+                    await signOut(window.auth);
+                    throw new Error("no-database-record");
+                }
 
             } catch (error) {
                 console.error("Login Error:", error);
                 
                 // Show user-friendly error messages
                 errorDiv.classList.remove('hidden');
-                if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                
+                // Handle our custom Bouncer errors
+                if (error.message === "unauthorized") {
+                    errorDiv.textContent = "Access Denied: Administrator privileges required.";
+                } else if (error.message === "no-database-record") {
+                    errorDiv.textContent = "Account error: Employee record not found.";
+                } 
+                // Handle standard Firebase Auth errors
+                else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                     errorDiv.textContent = "Invalid email or password.";
                 } else if (error.code === 'auth/too-many-requests') {
                     errorDiv.textContent = "Too many attempts. Try again later.";
@@ -205,7 +252,6 @@ function setupRouter() {
                     errorDiv.textContent = "Error logging in. Please try again.";
                 }
 
-                // FIXED: Explicitly restore the exact text so it never gets stuck as a spinner
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = "Sign In to Dashboard";
             }
@@ -333,8 +379,88 @@ function executePageScript(doc) {
     }
 }
 
+// ==========================================
+// DYNAMIC SIDEBAR PROFILE
+// ==========================================
+async function updateSidebarProfile() {
+    // Make sure Firebase is ready and a user is actually logged in
+    if (!window.auth || !window.auth.currentUser || !window.firebaseUtils) return;
+    
+    const email = window.auth.currentUser.email;
+
+    try {
+        const { doc, getDoc } = window.firebaseUtils;
+        const docRef = doc(window.db, "employees", email);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            const emp = docSnap.data();
+            
+            // Find the sidebar elements
+            const nameEl = document.querySelector('.profile-name');
+            const emailEl = document.querySelector('.profile-email');
+            const avatarEl = document.querySelector('.profile-avatar');
+
+            // Update text
+            if (nameEl) nameEl.textContent = emp.full_name || "Admin";
+            if (emailEl) emailEl.textContent = emp.email || email;
+            
+            // Update Avatar (Initials or Image)
+            if (avatarEl) {
+                if (emp.profile_picture && emp.profile_picture !== "coming soon") {
+                    avatarEl.innerHTML = `<img src="${emp.profile_picture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    avatarEl.style.background = 'transparent'; 
+                } else {
+                    const firstInit = emp.first_name ? emp.first_name.charAt(0).toUpperCase() : "";
+                    const lastInit = emp.last_name ? emp.last_name.charAt(0).toUpperCase() : "";
+                    avatarEl.textContent = `${firstInit}${lastInit}` || "U";
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error updating sidebar profile:", error);
+    }
+}
+
 // Initial Load Bootstrapper
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadLayout();
-    setupRouter();
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Wait a split second for firebase-config.js to attach to the window
+    const checkFirebase = setInterval(() => {
+        if (window.auth && window.firebaseUtils) {
+            clearInterval(checkFirebase);
+            
+            const { onAuthStateChanged } = window.firebaseUtils;
+            let isInitialLoad = true;
+
+            // 2. THE SESSION GUARD: Listen for Firebase to verify the token
+            onAuthStateChanged(window.auth, async (user) => {
+                const currentPath = window.location.pathname.split('/').pop() || 'login.html';
+                // Check if they are on the login page (adjust 'index.html' if your login page is named differently)
+                const isLoginPage = currentPath === 'login.html' || currentPath === 'index.html' || currentPath === '';
+
+                if (user) {
+                    // --- SCENARIO A: USER IS LOGGED IN ---
+                    if (isLoginPage) {
+                        // If they go to the login page while logged in, bounce them to the dashboard!
+                        window.location.href = 'dashboard.html'; 
+                    } else if (isInitialLoad) {
+                        // Standard page load: Load the UI safely
+                        await loadLayout();
+                        setupRouter();
+                        isInitialLoad = false;
+                    }
+                } else {
+                    // --- SCENARIO B: USER IS LOGGED OUT ---
+                    if (!isLoginPage) {
+                        // If they try to access the dashboard while logged out, kick them to login!
+                        window.location.href = 'login.html'; 
+                    } else if (isInitialLoad) {
+                        // Let the login page render normally
+                        setupRouter(); 
+                        isInitialLoad = false;
+                    }
+                }
+            });
+        }
+    }, 50); // Check every 50ms until Firebase is ready
 });

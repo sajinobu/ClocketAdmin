@@ -49,7 +49,6 @@
             const dayBtn = document.createElement('div');
             const thisDateStr = formatDate(new Date(year, month, i));
             
-            // Added cal-day-btn class for event delegation
             dayBtn.className = 'cal-day cal-day-btn';
             dayBtn.textContent = i;
             dayBtn.setAttribute('data-date', thisDateStr);
@@ -63,13 +62,114 @@
         }
     }
 
+    // --- FIREBASE: FETCH ATTENDANCE DATA ---
+    async function loadAttendanceData() {
+        const tableBody = document.getElementById('attendance-table-body');
+        const noResultsRow = document.getElementById('no-results-row');
+        
+        if (!tableBody || !window.firebaseUtils) return;
+
+        try {
+            // Show a quick loading spinner
+            const loadingRow = document.createElement('tr');
+            loadingRow.id = "att-loading-row";
+            loadingRow.innerHTML = `<td colspan="7" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
+            tableBody.prepend(loadingRow);
+            if (window.lucide) lucide.createIcons();
+
+            const { collection, getDocs } = window.firebaseUtils;
+            
+            // We fetch Employees for now to build the list. 
+            // Later, this will be changed to an 'attendance' collection query!
+            const querySnapshot = await getDocs(collection(window.db, "employees"));
+            
+            const loader = document.getElementById('att-loading-row');
+            if (loader) loader.remove();
+
+            document.querySelectorAll('#attendance-table-body .attendance-row').forEach(row => row.remove());
+
+            if (querySnapshot.empty) {
+                if (noResultsRow) noResultsRow.style.display = '';
+                return;
+            }
+
+            const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+
+            querySnapshot.forEach((docSnap) => {
+                const emp = docSnap.data();
+                
+                let avatarSrc = defaultAvatar;
+                if (emp.profile_picture && emp.profile_picture !== "coming soon") {
+                    avatarSrc = emp.profile_picture;
+                }
+
+                // Placeholder Data for columns that don't exist yet
+                const clockInTime = "N/A";
+                const clockOutTime = "--";
+                const locationStr = "N/A";
+                const statusClass = "bg-gray-100 text-gray-500 border-gray-200"; 
+                const statusText = "No Data";
+                const filterStatus = "missing"; // Helps the dropdown filter hide them if searching for "On Time"
+
+                const tr = document.createElement('tr');
+                tr.className = 'attendance-row data-row';
+                tr.setAttribute('data-status', filterStatus);
+                tr.setAttribute('data-date', 'today'); // Defaulting to today for testing
+                
+                tr.innerHTML = `
+                    <td class="table-td">
+                      <div class="flex items-center gap-3">
+                        <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-white" alt="Avatar">
+                        <div>
+                          <p class="font-bold text-brand-darkest text-sm employee-name">${emp.full_name}</p>
+                          <p class="text-xs text-gray-500">${emp.department || "Unassigned"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="table-td text-center">
+                      <button class="btn-photo mx-auto opacity-50 cursor-not-allowed" disabled title="No Photo Available">
+                          <i data-lucide="camera-off" class="w-4 h-4"></i>
+                      </button>
+                    </td>
+                    <td class="table-td">
+                      <p class="text-sm font-bold text-gray-400">${clockInTime}</p>
+                    </td>
+                    <td class="table-td">
+                      <p class="text-sm font-medium text-gray-400">${clockOutTime}</p>
+                    </td>
+                    <td class="table-td text-sm font-medium text-gray-400">${locationStr}</td>
+                    <td class="table-td">
+                      <span class="status-badge ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="table-td text-right">
+                      <a href="employee-logs.html?from=attendance&id=${docSnap.id}" class="link-action">View Log</a>
+                    </td>
+                `;
+                
+                if (noResultsRow) {
+                    tableBody.insertBefore(tr, noResultsRow);
+                } else {
+                    tableBody.appendChild(tr);
+                }
+            });
+
+            if (window.lucide) lucide.createIcons();
+            filterAttendanceTable(); // Re-run search/filters
+
+        } catch(error) {
+            console.error("Error fetching attendance data: ", error);
+        }
+    }
+
     // Dynamic Search Filter
     function filterAttendanceTable() {
         const searchInput = document.getElementById('search-input');
         const tableRows = document.querySelectorAll('.attendance-row');
+        const noResultsRow = document.getElementById('no-results-row');
         
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
         const targetDateStr = formatDate(activeDate);
+        let visibleCount = 0;
 
         tableRows.forEach(row => {
             const nameNode = row.querySelector('.employee-name');
@@ -83,18 +183,33 @@
 
             const matchesSearch = name.includes(searchTerm);
             const matchesStatus = activeStatus === 'all' || rowStatus === activeStatus;
-            const matchesDate = rowDate === targetDateStr;
+            
+            // Note: Since all placeholder rows are set to 'today', changing the calendar date will hide them
+            const matchesDate = rowDate === targetDateStr; 
 
             if (matchesSearch && matchesStatus && matchesDate) {
                 row.style.display = ''; 
+                visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
+
+        if (noResultsRow) {
+            noResultsRow.style.display = visibleCount > 0 ? 'none' : '';
+        }
     }
 
     // Render calendar initially in case elements are ready
     renderCalendar();
+
+    // Fetch Safely (Wait for Firebase to finish loading on hard refreshes)
+    const waitForFirebase = setInterval(() => {
+        if (window.firebaseUtils && window.db) {
+            clearInterval(waitForFirebase);
+            loadAttendanceData();
+        }
+    }, 50);
 
     // 2. SPA EVENT GUARD (Run Only Once)
     if (window.attendanceSPAInitialized) return;
@@ -182,7 +297,7 @@
         
         // Open Modal
         const viewPhotoBtn = e.target.closest('.view-photo-btn');
-        if (viewPhotoBtn && photoModal) {
+        if (viewPhotoBtn && photoModal && !viewPhotoBtn.disabled) {
             const employeeName = viewPhotoBtn.getAttribute('data-name');
             const captureTime = viewPhotoBtn.getAttribute('data-time');
             
