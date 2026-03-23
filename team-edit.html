@@ -68,131 +68,92 @@
             
             <div class="form-panel">
               <form id="edit-team-form" class="space-y-6">
-                
                 <div>
-                  <h3 class="section-title">Team Information</h3>
+                  <h3 class="section-title">Team Identity</h3>
                   <div class="space-y-4">
                     <div class="form-group">
                       <label for="team-name" class="form-label">Team Name</label>
-                      <input type="text" id="team-name" value="Engineering Team A" required class="form-input">
+                      <input type="text" id="team-name" required class="form-input" placeholder="Loading...">
                     </div>
+                    
+                    <div class="form-group">
+                      <label class="form-label">Team Department</label>
+                      <div class="custom-dropdown form-variant w-full" id="team-dept-custom-dropdown">
+                        <div class="dropdown-trigger">
+                          <span id="team-dept-text">Loading...</span>
+                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                        </div>
+                        <div class="dropdown-menu">
+                          <div class="dropdown-item active" data-value="">Select Department</div>
+                          <div class="dropdown-item" data-value="Engineering">Engineering</div>
+                          <div class="dropdown-item" data-value="IT">IT</div>
+                          <div class="dropdown-item" data-value="Design">Design</div>
+                          <div class="dropdown-item" data-value="Operations">Operations</div>
+                          <div class="dropdown-item" data-value="Sales">Sales</div>
+                          <div class="dropdown-item" data-value="Marketing">Marketing</div>
+                        </div>
+                      </div>
+                      <input type="hidden" id="team-department" value="">
+                    </div>
+
                     <div class="form-group">
                       <label for="team-description" class="form-label">Description</label>
-                      <textarea id="team-description" class="form-input">Core infrastructure development and frontend performance optimization. Currently managing cloud migration.</textarea>
+                      <textarea id="team-description" class="form-input" rows="4" placeholder="Loading..."></textarea>
                     </div>
                   </div>
                 </div>
-
-                <div class="pt-6 border-t border-brand-grayLight transition-colors">
-                  <h3 class="section-title">Team Structure</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="form-group">
-                      <label class="form-label">Department</label>
-                      <div class="custom-dropdown form-variant w-full">
-                        <div class="dropdown-trigger">
-                          <span id="team-dept-text">Engineering</span>
-                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
-                        </div>
-                        <div class="dropdown-menu">
-                          <div class="dropdown-item active" data-value="Engineering">Engineering</div>
-                          <div class="dropdown-item" data-value="Design">Design</div>
-                          <div class="dropdown-item" data-value="Operations">Operations</div>
-                          <div class="dropdown-item" data-value="Sales">Sales</div>
-                        </div>
-                      </div>
-                      <input type="hidden" id="team-department" value="Engineering">
-                    </div>
-                    
-                    <div class="form-group">
-                      <label class="form-label">Team Lead</label>
-                      <div class="custom-dropdown form-variant w-full">
-                        <div class="dropdown-trigger">
-                          <span id="team-lead-text">Sarah Johnson</span>
-                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
-                        </div>
-                        <div class="dropdown-menu">
-                          <div class="dropdown-item active" data-value="Sarah Johnson">Sarah Johnson</div>
-                          <div class="dropdown-item" data-value="Mike Chen">Mike Chen</div>
-                          <div class="dropdown-item" data-value="Emma Wilson">Emma Wilson</div>
-                        </div>
-                      </div>
-                      <input type="hidden" id="team-lead" value="Sarah Johnson">
-                    </div>
-                  </div>
-                </div>
-
-                <div class="pt-6 border-t border-brand-grayLight transition-colors">
-                  <h3 class="section-title">Add Team Member</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div class="form-group">
-                      <label class="form-label">Department</label>
-                      <div class="custom-dropdown form-variant w-full" id="new-member-dept-dropdown">
-                        <div class="dropdown-trigger">
-                          <span id="new-member-dept-text">Select Dept...</span>
-                          <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
-                        </div>
-                        <div class="dropdown-menu">
-                          <div class="dropdown-item active" data-value="">Select Dept...</div>
-                          <div class="dropdown-item" data-value="Engineering">Engineering</div>
-                          <div class="dropdown-item" data-value="Design">Design</div>
-                          <div class="dropdown-item" data-value="Operations">Operations</div>
-                          <div class="dropdown-item" data-value="Sales">Sales</div>
-                        </div>
-                      </div>
-                      <input type="hidden" id="new-member-dept" value="">
-                    </div>
-                    
-                    <div class="form-group">
-                      <label for="new-member-name" class="form-label">Employee Name</label>
-                      <input type="text" id="new-member-name" class="form-input" placeholder="e.g. Jane Doe">
-                    </div>
-                  </div>
-                  
-                  <button type="button" id="add-member-btn" class="btn-secondary" disabled>
-                    <i data-lucide="user-plus" class="w-4 h-4"></i> Add Member
-                  </button>
-
-                  <div id="added-members-container" class="member-list">
-                    <div class="member-item">
-                        <div class="member-item-info">
-                            <span class="member-item-dept">Engineering</span>
-                            <span class="member-item-name">Mike Chen</span>
-                        </div>
-                        <button type="button" class="btn-remove-member" title="Remove Member">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                  </div>
-                </div>
-
               </form>
             </div>
 
             <div class="form-panel">
               <div class="space-y-6 flex-1 flex flex-col">
-                <div class="flex-1">
-                  
-                  <h3 class="section-title">Team Settings</h3>
+                
+                <div>
+                  <h3 class="section-title">Leadership</h3>
                   <div class="form-group">
-                    <label for="team-size" class="form-label">Max Capacity</label>
-                    <input type="number" id="team-size" value="8" min="1" max="100" required form="edit-team-form" class="form-input">
-                  </div>
-
-                  <div class="mt-8 pt-8 border-t border-brand-grayLight transition-colors">
-                    <h3 class="form-label mb-3">Administrative Notes</h3>
-                    <div class="alert-box">
-                        <i data-lucide="info" class="alert-icon"></i>
-                        <p class="alert-text">
-                            Changing the department will update the reporting structure for all team members immediately.
-                        </p>
+                    <label class="form-label">Team Lead</label>
+                    <div class="custom-dropdown form-variant w-full disabled" id="team-lead-custom-dropdown">
+                      <div class="dropdown-trigger">
+                        <span id="team-lead-text">Loading...</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                      </div>
+                      <div class="dropdown-menu">
+                        </div>
                     </div>
+                    <input type="hidden" id="team-lead" value="">
                   </div>
-                  
                 </div>
 
-                <div class="form-actions">
-                  <a id="dynamic-cancel-btn" href="management.html?tab=teams" class="btn-cancel">Cancel</a>
-                  <button type="submit" form="edit-team-form" class="btn-primary">Save Changes</button>
+                <div class="pt-6 border-t border-brand-grayLight transition-colors">
+                  <h3 class="section-title">Team Members</h3>
+                  <p class="text-xs text-brand-dark mb-4">Add employees from the selected department.</p>
+                  
+                  <div class="form-group mb-4">
+                    <label class="form-label">Employee Name</label>
+                    <div class="custom-dropdown form-variant w-full disabled" id="new-member-name-dropdown">
+                      <div class="dropdown-trigger">
+                        <span id="new-member-name-text">Loading...</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
+                      </div>
+                      <div class="dropdown-menu" id="new-member-name-list">
+                        </div>
+                    </div>
+                    <input type="hidden" id="new-member-name" value="">
+                  </div>
+                  
+                  <button type="button" id="add-member-btn" class="btn-secondary w-full" disabled>
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> Add Member
+                  </button>
+
+                  <div id="added-members-container" class="member-list mt-4 max-h-[200px] overflow-y-auto">
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-8 border-t border-brand-grayLight">
+                  <div class="form-actions">
+                    <a id="dynamic-cancel-btn" href="management.html?tab=teams" class="btn-cancel">Cancel</a>
+                    <button type="submit" form="edit-team-form" class="btn-primary">Save Changes</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -203,6 +164,20 @@
     </div>
   </div>
   
+  <div id="custom-alert-modal" class="fixed inset-0 z-[10000] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="custom-alert-backdrop"></div>
+    <div class="relative bg-brand-surface border border-brand-grayLight rounded-2xl shadow-2xl w-full max-w-sm p-6 mx-4 transform scale-95 transition-transform duration-300" id="custom-alert-box">
+      <div class="flex flex-col items-center text-center">
+        <div class="w-12 h-12 rounded-full bg-[rgba(239,68,68,0.1)] text-red-500 flex items-center justify-center mb-4">
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <h3 id="custom-alert-title" class="text-lg font-bold text-brand-darkest mb-2">Notice</h3>
+        <p id="custom-alert-message" class="text-sm text-brand-dark mb-6">Message goes here.</p>
+        <button type="button" id="custom-alert-btn" class="btn-primary w-full justify-center">Got it</button>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/layout.js"></script>
   <script src="scripts/team-edit.js"></script>
 </body>

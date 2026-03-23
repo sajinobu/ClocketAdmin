@@ -69,15 +69,15 @@
             <div class="profile-hero-card">
               <div class="profile-hero-content">
                 <div class="avatar-wrapper">
-                  <div class="profile-hero-avatar" id="avatar-preview">AM</div>
+                  <div class="profile-hero-avatar" id="avatar-preview">--</div>
                   <button class="btn-camera" title="Change Avatar">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                   </button>
                   <input type="file" id="avatar-upload" accept="image/*" class="hidden" style="display: none;">
                 </div>
                 <div>
-                  <h2 class="profile-hero-name">Admin Manager</h2>
-                  <p class="profile-hero-role">System Administrator</p>
+                  <h2 class="profile-hero-name" id="display-name">Loading...</h2>
+                  <p class="profile-hero-role" id="display-role">...</p>
                 </div>
               </div>
             </div>
@@ -90,27 +90,27 @@
                   
                   <div class="form-group">
                     <label for="admin-name" class="form-label">Full Name</label>
-                    <input type="text" id="admin-name" value="Admin Manager" required class="form-input">
+                    <input type="text" id="admin-name" required class="form-input">
                   </div>
                   
                   <div class="form-group">
                     <label for="admin-email" class="form-label">Email Address</label>
-                    <input type="email" id="admin-email" value="admin@company.com" required class="form-input">
+                    <input type="email" id="admin-email" disabled class="form-input disabled-input">
                   </div>
                   
                   <div class="form-group">
                     <label for="admin-phone" class="form-label">Phone Number</label>
-                    <input type="tel" id="admin-phone" value="+1 (555) 123-4567" class="form-input">
+                    <input type="tel" id="admin-phone" class="form-input">
                   </div>
                   
                   <div class="grid grid-cols-2 gap-4 mt-2">
                     <div class="form-group">
                       <label class="form-label">Employee ID</label>
-                      <input type="text" value="ADM-001" disabled class="form-input disabled-input">
+                      <input type="text" id="admin-emp-id" disabled class="form-input disabled-input">
                     </div>
                     <div class="form-group">
                       <label class="form-label">Role</label>
-                      <input type="text" value="System Administrator" disabled class="form-input disabled-input">
+                      <input type="text" id="admin-system-role" disabled class="form-input disabled-input">
                     </div>
                   </div>
                 </div>

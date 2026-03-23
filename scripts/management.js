@@ -49,7 +49,9 @@
         initializeTabsFromURL();
     });
 
-    // --- FIREBASE FETCH LOGIC ---
+    const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+
+    // --- FIREBASE FETCH: EMPLOYEES ---
     async function loadEmployeesFromFirebase() {
         const tableBody = document.getElementById('employee-table-body');
         const noResultsRow = document.getElementById('no-results-row');
@@ -57,7 +59,6 @@
         if (!tableBody || !window.firebaseUtils) return;
 
         try {
-            // Show a quick loading spinner
             const loadingRow = document.createElement('tr');
             loadingRow.id = "emp-loading-row";
             loadingRow.innerHTML = `<td colspan="5" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
@@ -65,15 +66,11 @@
             if (window.lucide) lucide.createIcons();
 
             const { collection, getDocs } = window.firebaseUtils;
-            
-            // Fetch all documents from the "employees" collection
             const querySnapshot = await getDocs(collection(window.db, "employees"));
             
-            // Remove loading spinner
             const loader = document.getElementById('emp-loading-row');
             if (loader) loader.remove();
 
-            // Clear old data rows (keep no-results-row)
             document.querySelectorAll('#employee-table-body .data-row').forEach(row => row.remove());
 
             if (querySnapshot.empty) {
@@ -81,20 +78,14 @@
                 return;
             }
 
-            // Loop through Firebase data and build HTML
-            // Loop through Firebase data and build HTML
             querySnapshot.forEach((docSnap) => {
                 const emp = docSnap.data();
-                
-                // --- NEW DEFAULT AVATAR LOGIC ---
-                const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
                 
                 let avatarSrc = defaultAvatar;
                 if (emp.profile_picture && emp.profile_picture !== "coming soon") {
                     avatarSrc = emp.profile_picture;
                 }
 
-                // Map status to your CSS classes
                 let statusClass = "status-active";
                 let statusText = "Active";
                 if (emp.account_status === "inactive" || emp.account_status === "disabled") {
@@ -102,7 +93,6 @@
                     statusText = "Inactive";
                 }
 
-                // Build the Row
                 const tr = document.createElement('tr');
                 tr.className = 'data-row';
                 tr.innerHTML = `
@@ -133,24 +123,113 @@
                     </td>
                 `;
                 
-                // Insert before the no-results row
                 tableBody.insertBefore(tr, noResultsRow);
             });
 
             if (window.lucide) lucide.createIcons();
-            applyEmployeeFilters(); // Run your filters over the new data!
+            applyEmployeeFilters();
 
         } catch(error) {
             console.error("Error fetching employees: ", error);
         }
     }
 
-    // Execute Fetch Safely (Wait for Firebase to finish loading on hard refreshes)
+    // --- FIREBASE FETCH: TEAMS ---
+    async function loadTeamsFromFirebase() {
+        const tableBody = document.getElementById('teams-table-body');
+        const noResultsRow = document.getElementById('no-teams-row');
+        
+        if (!tableBody || !window.firebaseUtils) return;
+
+        try {
+            const loadingRow = document.createElement('tr');
+            loadingRow.id = "teams-loading-row";
+            loadingRow.innerHTML = `<td colspan="5" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
+            tableBody.prepend(loadingRow);
+            if (window.lucide) lucide.createIcons();
+
+            const { collection, getDocs } = window.firebaseUtils;
+
+            // 1. FETCH ALL EMPLOYEES FIRST (To map Team Lead names to Profile Pictures)
+            const empSnapshot = await getDocs(collection(window.db, "employees"));
+            const employeeAvatarMap = {};
+            
+            empSnapshot.forEach(empDoc => {
+                const data = empDoc.data();
+                const fullName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
+                if (fullName) {
+                    employeeAvatarMap[fullName] = (data.profile_picture && data.profile_picture !== "coming soon") ? data.profile_picture : defaultAvatar;
+                }
+            });
+
+            // 2. FETCH THE TEAMS
+            const querySnapshot = await getDocs(collection(window.db, "teams"));
+            
+            const loader = document.getElementById('teams-loading-row');
+            if (loader) loader.remove();
+
+            document.querySelectorAll('#teams-table-body .data-row').forEach(row => row.remove());
+
+            if (querySnapshot.empty) {
+                noResultsRow.style.display = '';
+                return;
+            }
+
+            querySnapshot.forEach((docSnap) => {
+                const team = docSnap.data();
+                
+                // Fetch Leader's Avatar from the map we built above
+                const leadName = team.team_lead && team.team_lead !== "Unassigned" ? team.team_lead : "Unassigned";
+                const leadAvatar = employeeAvatarMap[leadName] || defaultAvatar;
+
+                const memberCount = team.members ? team.members.length : 0;
+
+                const tr = document.createElement('tr');
+                tr.className = 'data-row';
+                tr.innerHTML = `
+                    <td class="table-td">
+                        <p class="font-bold text-brand-darkest transition-colors">${team.team_name}</p>
+                    </td>
+                    <td class="table-td text-sm text-brand-dark transition-colors">${team.department || "Unassigned"}</td>
+                    <td class="table-td">
+                        <div class="flex items-center gap-2">
+                            <img src="${leadAvatar}" class="w-8 h-8 rounded-full object-cover border border-brand-grayLight bg-white" alt="Avatar">
+                            <p class="text-sm font-medium text-brand-darkest transition-colors">${leadName}</p>
+                        </div>
+                    </td>
+                    <td class="table-td text-sm text-brand-dark transition-colors">${memberCount} members</td>
+                    <td class="table-td text-right relative">
+                        <button class="action-btn"><i data-lucide="more-vertical" class="w-5 h-5"></i></button>
+                        <div class="action-menu hidden">
+                            <a href="team-details.html?from=management&id=${docSnap.id}" class="menu-item">
+                                <i data-lucide="users" class="w-4 h-4"></i> View Team
+                            </a>
+                            <a href="team-edit.html?from=management&id=${docSnap.id}" class="menu-item">
+                                <i data-lucide="pencil" class="w-4 h-4"></i> Edit Team
+                            </a>
+                            <button class="menu-item menu-item-danger disband-btn" data-name="${team.team_name}" data-id="${docSnap.id}">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Disband
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tableBody.insertBefore(tr, noResultsRow);
+            });
+
+            if (window.lucide) lucide.createIcons();
+            applyTeamFilters();
+
+        } catch(error) {
+            console.error("Error fetching teams: ", error);
+        }
+    }
+
     const waitForFirebase = setInterval(() => {
         if (window.firebaseUtils && window.db) {
             clearInterval(waitForFirebase);
             loadEmployeesFromFirebase();
-            applyTeamFilters();
+            loadTeamsFromFirebase(); 
         }
     }, 50);
     
@@ -160,7 +239,6 @@
     if (window._mgmtEventsBound) return;
     window._mgmtEventsBound = true;
 
-    // Close floating menus aggressively on any scroll
     window.addEventListener('scroll', (e) => {
         if (e.target.closest && e.target.closest('.dropdown-menu')) return;
         
@@ -173,14 +251,13 @@
     // ==========================================
     // 3. EVENT LISTENERS
     // ==========================================
-    document.body.addEventListener('click', (e) => {
+    // Changed to 'async (e)' to allow await for Firebase deletion
+    document.body.addEventListener('click', async (e) => {
         if (!document.querySelector('.management-tab')) return;
 
-        // Tab Clicks
         const tabBtn = e.target.closest('.management-tab');
         if (tabBtn) switchTab(tabBtn.getAttribute('data-tab'));
 
-        // --- Viewport Clamped Floating Action Menu ---
         const actionBtn = e.target.closest('.action-btn');
         const allMenus = document.querySelectorAll('.action-menu');
         
@@ -237,7 +314,6 @@
             }
         }
         
-        // --- Custom Dropdown Handling ---
         const isDropdownClick = e.target.closest('.custom-dropdown');
         if (!isDropdownClick) {
             document.querySelectorAll('.custom-dropdown.open').forEach(d => d.classList.remove('open'));
@@ -274,7 +350,6 @@
             dropdown.classList.remove('open');
         }
 
-        // Modals & Filters
         if (e.target.closest('#open-filter-modal')) {
             const fm = document.getElementById('filter-modal');
             if (fm) fm.classList.remove('hidden');
@@ -328,42 +403,89 @@
             applyTeamFilters();
         }
 
-        // Deletion Flow
+        // --- OPEN DELETE MODAL ---
         const deleteBtn = e.target.closest('.delete-employee-btn, .disband-btn');
         if (deleteBtn) {
             const dm = document.getElementById('delete-modal');
             if (dm) {
                 const type = deleteBtn.classList.contains('disband-btn') ? 'team' : 'employee';
                 document.getElementById('delete-type').textContent = type;
-                window.itemToDelete = deleteBtn.closest('tr');
+                
+                // Store required data in window to access upon confirmation
+                window.itemToDeleteRow = deleteBtn.closest('tr');
                 window.deleteItemName = deleteBtn.getAttribute('data-name');
+                window.deleteItemId = deleteBtn.getAttribute('data-id'); // Grab the Firebase ID
+                window.deleteItemType = type; 
+                
                 dm.classList.remove('hidden');
             }
         }
+        
+        // --- CANCEL DELETE ---
         if (e.target.closest('#cancel-delete') || e.target.id === 'delete-modal') {
             const dm = document.getElementById('delete-modal');
             if (dm) dm.classList.add('hidden');
-            window.itemToDelete = null;
+            
+            // Clear temporary data
+            window.itemToDeleteRow = null;
+            window.deleteItemName = null;
+            window.deleteItemId = null;
+            window.deleteItemType = null;
         }
-        if (e.target.closest('#confirm-delete')) {
+
+        // --- CONFIRM DELETE (FIREBASE EXECUTION) ---
+        const confirmDeleteBtn = e.target.closest('#confirm-delete');
+        if (confirmDeleteBtn) {
             const dm = document.getElementById('delete-modal');
-            if (dm && window.itemToDelete) {
-                const row = window.itemToDelete;
+            
+            if (dm && window.itemToDeleteRow && window.deleteItemId) {
+                const row = window.itemToDeleteRow;
                 const itemName = window.deleteItemName;
+                const itemId = window.deleteItemId;
+                const type = window.deleteItemType;
                 
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'translateX(20px)';
-                
-                setTimeout(() => {
-                    row.remove();
-                    applyEmployeeFilters();
-                    applyTeamFilters();
-                    showManagementToast(`Successfully removed "${itemName}"`);
-                }, 300);
-                
-                dm.classList.add('hidden');
-                window.itemToDelete = null;
+                // Determine which Firebase collection to delete from
+                const collectionName = type === 'team' ? 'teams' : 'employees';
+
+                // Put button in loading state
+                const originalText = confirmDeleteBtn.innerHTML;
+                confirmDeleteBtn.disabled = true;
+                confirmDeleteBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block"></i> Deleting...`;
+                if(window.lucide) lucide.createIcons();
+
+                try {
+                    // Firebase Delete Call
+                    const { doc, deleteDoc } = window.firebaseUtils;
+                    await deleteDoc(doc(window.db, collectionName, itemId));
+
+                    // Animate row disappearance
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    
+                    setTimeout(() => {
+                        row.remove();
+                        if (type === 'employee') applyEmployeeFilters();
+                        else applyTeamFilters();
+                        
+                        showManagementToast(`Successfully removed "${itemName}"`);
+                    }, 300);
+                    
+                    dm.classList.add('hidden');
+                    
+                } catch (error) {
+                    console.error(`Error deleting ${type}:`, error);
+                    alert(`Failed to delete ${itemName}. Ensure you have the correct permissions.`);
+                } finally {
+                    // Reset button and state
+                    confirmDeleteBtn.disabled = false;
+                    confirmDeleteBtn.innerHTML = originalText;
+                    
+                    window.itemToDeleteRow = null;
+                    window.deleteItemName = null;
+                    window.deleteItemId = null;
+                    window.deleteItemType = null;
+                }
             }
         }
     });

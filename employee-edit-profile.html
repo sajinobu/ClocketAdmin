@@ -70,15 +70,16 @@
               
               <div class="avatar-edit-section">
                 <div class="avatar-wrapper">
-                  <div class="avatar-circle" id="emp-avatar-preview">SJ</div>
+                  <img id="emp-avatar-preview" src="" class="w-20 h-20 rounded-full object-cover border-2 border-brand-grayLight bg-white" alt="Avatar" style="display: none;">
+                  <div class="avatar-circle" id="emp-avatar-initials">--</div>
                   <button class="btn-camera" title="Upload new photo">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                   </button>
                   <input type="file" id="emp-avatar-upload" accept="image/*" class="hidden" style="display: none;">
                 </div>
                 <div>
-                  <h2 class="employee-name">Sarah Johnson</h2>
-                  <p class="employee-id-text">EMP-001</p>
+                  <h2 class="employee-name" id="display-emp-name">Loading...</h2>
+                  <p class="employee-id-text" id="display-emp-id">EMP-...</p>
                 </div>
               </div>
 
@@ -88,7 +89,7 @@
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="form-group">
                       <label for="edit-first-name" class="form-label">First Name</label>
-                      <input type="text" id="edit-first-name" value="Sarah" required class="form-input">
+                      <input type="text" id="edit-first-name" required class="form-input">
                     </div>
                     <div class="form-group">
                       <label for="edit-middle-name" class="form-label">Middle Name</label>
@@ -96,7 +97,7 @@
                     </div>
                     <div class="form-group">
                       <label for="edit-last-name" class="form-label">Last Name</label>
-                      <input type="text" id="edit-last-name" value="Johnson" required class="form-input">
+                      <input type="text" id="edit-last-name" required class="form-input">
                     </div>
                   </div>
                 </div>
@@ -106,11 +107,11 @@
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="form-group">
                       <label for="edit-email" class="form-label">Email Address</label>
-                      <input type="email" id="edit-email" value="sarah.j@company.com" required class="form-input">
+                      <input type="email" id="edit-email" disabled class="form-input disabled-input">
                     </div>
                     <div class="form-group">
                       <label for="edit-phone" class="form-label">Phone Number</label>
-                      <input type="tel" id="edit-phone" value="+1 (555) 987-6543" class="form-input">
+                      <input type="tel" id="edit-phone" class="form-input">
                     </div>
                   </div>
                 </div>
@@ -120,46 +121,47 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div class="form-group">
                       <label for="edit-employee-id" class="form-label">Employee ID</label>
-                      <input type="text" id="edit-employee-id" value="EMP-001" disabled class="form-input disabled-input">
+                      <input type="text" id="edit-employee-id" disabled class="form-input disabled-input">
                     </div>
                     
                     <div class="form-group">
                       <label class="form-label">Department</label>
                       <div class="custom-dropdown form-variant w-full" id="dept-custom-dropdown">
                         <div class="dropdown-trigger">
-                          <span id="dept-dropdown-text">Engineering</span>
+                          <span id="dept-dropdown-text">Select Department...</span>
                           <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
                         </div>
                         <div class="dropdown-menu" id="dept-dropdown-menu">
-                          <div class="dropdown-item active" data-value="Engineering">Engineering</div>
+                          <div class="dropdown-item active" data-value="">Select Department...</div>
+                          <div class="dropdown-item" data-value="Engineering">Engineering</div>
                           <div class="dropdown-item" data-value="Design">Design</div>
                           <div class="dropdown-item" data-value="Operations">Operations</div>
                           <div class="dropdown-item" data-value="Sales">Sales</div>
                           <div class="dropdown-item" data-value="Marketing">Marketing</div>
                         </div>
                       </div>
-                      <input type="hidden" id="edit-department" value="Engineering">
+                      <input type="hidden" id="edit-department" value="">
                     </div>
                   </div>
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="form-group">
                       <label for="edit-job-title" class="form-label">Job Title</label>
-                      <input type="text" id="edit-job-title" value="Senior Frontend Developer" required class="form-input">
+                      <input type="text" id="edit-job-title" class="form-input">
                     </div>
                     
                     <div class="form-group">
                       <label class="form-label">Assigned Team</label>
-                      <div class="custom-dropdown form-variant w-full" id="team-custom-dropdown">
+                      <div class="custom-dropdown form-variant w-full disabled" id="team-custom-dropdown">
                         <div class="dropdown-trigger">
-                          <span id="team-dropdown-text">Engineering Team A</span>
+                          <span id="team-dropdown-text">Select a department first</span>
                           <i data-lucide="chevron-down" class="w-4 h-4 ml-auto text-brand-dark"></i>
                         </div>
                         <div class="dropdown-menu" id="team-dropdown-menu">
-                          <div class="dropdown-item active" data-value="Engineering Team A">Engineering Team A</div>
+                          <div class="dropdown-item active" data-value="">Please select a department first</div>
                         </div>
                       </div>
-                      <input type="hidden" id="edit-assigned-team" value="Engineering Team A">
+                      <input type="hidden" id="edit-assigned-team" value="">
                     </div>
                   </div>
                 </div>

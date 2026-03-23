@@ -1,54 +1,94 @@
 (() => {
-    // 1. RUN EVERY TIME
+    // 1. RUN EVERY TIME (UI Initialization)
     if (window.lucide) lucide.createIcons();
 
-    // Ensure Sidebar Highlight is cleared for the edit page as it's a sub-page
-    setTimeout(() => {
-        document.querySelectorAll('.sidebar-item, .nav-link').forEach(item => {
-            item.classList.remove('active');
-        });
-    }, 100);
+    // --- FIREBASE: LOAD CURRENT DATA INTO FORM ---
+    async function loadAdminDataForEdit() {
+        if (!window.auth || !window.db || !window.firebaseUtils) return;
+
+        const user = window.auth.currentUser;
+        if (!user) return;
+
+        try {
+            const { doc, getDoc } = window.firebaseUtils;
+            const docRef = doc(window.db, "employees", user.email);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // 1. Populate Hero
+                const initials = (data.first_name?.charAt(0) || "") + (data.last_name?.charAt(0) || "");
+                const previewEl = document.getElementById('avatar-preview');
+                if (previewEl) previewEl.textContent = initials.toUpperCase();
+                
+                document.getElementById('display-name').textContent = data.full_name;
+                document.getElementById('display-role').textContent = data.role || "Administrator";
+
+                // 2. Populate Form Inputs
+                document.getElementById('admin-name').value = data.full_name || "";
+                document.getElementById('admin-email').value = data.email || "";
+                document.getElementById('admin-phone').value = data.contact_number || "";
+                document.getElementById('admin-emp-id').value = data.employee_id || "N/A";
+                document.getElementById('admin-system-role').value = data.system_role || "Admin";
+
+                // If they have a profile picture, show it
+                if (data.profile_picture && data.profile_picture !== "coming soon") {
+                    previewEl.innerHTML = '';
+                    previewEl.style.backgroundImage = `url(${data.profile_picture})`;
+                    previewEl.style.backgroundSize = 'cover';
+                    previewEl.style.backgroundPosition = 'center';
+                }
+            }
+        } catch (error) {
+            console.error("Error loading profile for edit:", error);
+        }
+    }
+
+    // Wait for Firebase Auth
+    const waitForFirebase = setInterval(() => {
+        if (window.auth && window.db) {
+            clearInterval(waitForFirebase);
+            window.firebaseUtils.onAuthStateChanged(window.auth, (user) => {
+                if (user) loadAdminDataForEdit();
+            });
+        }
+    }, 50);
 
     // 2. SPA EVENT GUARD (Run Only Once)
     if (window.profileEditSPAInitialized) return;
     window.profileEditSPAInitialized = true;
 
-    // 3. EVENT DELEGATION LISTENERS
+    // --- EVENT LISTENERS ---
     document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the profile edit form is on screen
         if (!document.getElementById('admin-edit-form')) return;
         
-        // --- Back & Cancel Routing ---
+        // Back & Cancel Routing
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
-            if (typeof navigateTo === 'function') {
-                navigateTo('profile.html');
-            } else {
-                window.location.href = 'profile.html';
-            }
+            if (typeof navigateTo === 'function') navigateTo('profile.html');
+            else window.location.href = 'profile.html';
         }
 
-        // --- Avatar Upload Button Click ---
+        // Avatar Upload Button Click
         const cameraBtn = e.target.closest('.btn-camera');
         if (cameraBtn) {
             e.preventDefault();
-            const fileInput = document.getElementById('avatar-upload');
-            if (fileInput) fileInput.click();
+            document.getElementById('avatar-upload')?.click();
         }
     });
 
-    // --- Avatar File Selection Logic ---
+    // --- Avatar File Selection Logic (Local Preview) ---
     document.body.addEventListener('change', (e) => {
         if (e.target.id === 'avatar-upload') {
             const file = e.target.files[0];
             if (file) {
-                // Use FileReader to instantly preview the image without a server
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const avatarPreview = document.getElementById('avatar-preview');
                     if (avatarPreview) {
-                        avatarPreview.innerHTML = ''; // Remove the "AM" text
+                        avatarPreview.innerHTML = ''; 
                         avatarPreview.style.backgroundImage = `url(${event.target.result})`;
                         avatarPreview.style.backgroundSize = 'cover';
                         avatarPreview.style.backgroundPosition = 'center';
@@ -59,24 +99,55 @@
         }
     });
 
-    // --- Form Submission ---
-    document.body.addEventListener('submit', (e) => {
+    // --- SAVE CHANGES LOGIC ---
+    document.body.addEventListener('submit', async (e) => {
         if (e.target.id === 'admin-edit-form') {
             e.preventDefault();
             
-            showSuccessToast("Your profile details have been successfully updated.");
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
             
-            setTimeout(() => {
-                if (typeof navigateTo === 'function') {
-                    navigateTo('profile.html');
-                } else {
-                    window.location.href = 'profile.html';
-                }
-            }, 2000); 
+            // UI Loading State
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Saving...`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                const user = window.auth.currentUser;
+                const docRef = doc(window.db, "employees", user.email);
+
+                const newFullName = document.getElementById('admin-name').value.trim();
+                const names = newFullName.split(" ");
+                const firstName = names[0];
+                const lastName = names.length > 1 ? names.slice(1).join(" ") : "";
+
+                // Update Firestore
+                await updateDoc(docRef, {
+                    full_name: newFullName,
+                    first_name: firstName,
+                    last_name: lastName,
+                    contact_number: document.getElementById('admin-phone').value.trim()
+                });
+
+                // Trigger the restored Toast function!
+                showSuccessToast("Your profile details have been updated.");
+                
+                setTimeout(() => {
+                    if (typeof navigateTo === 'function') navigateTo('profile.html');
+                    else window.location.href = 'profile.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error("Save Error:", error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                alert("Failed to save changes. Please try again.");
+            }
         }
     });
 
-    // --- Custom Brand Toast Utility ---
+    // --- Custom Brand Toast Utility (RESTORED) ---
     function showSuccessToast(message) {
         const existingToast = document.querySelector('.profile-edit-toast');
         if (existingToast) existingToast.remove();
