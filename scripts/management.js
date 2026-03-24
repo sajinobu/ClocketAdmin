@@ -276,10 +276,19 @@
                     
                     const rect = actionBtn.getBoundingClientRect();
                     const menuWidth = menu.offsetWidth || 160; 
+                    const menuHeight = menu.offsetHeight || 130; // NEW: Track the height
                     
                     menu.style.position = 'fixed';
-                    menu.style.top = `${rect.bottom + 4}px`;
                     
+                    // --- NEW: SMART Y POSITIONING ---
+                    // If the menu drops below the bottom of the window, flip it UP!
+                    if (rect.bottom + menuHeight + 20 > window.innerHeight) {
+                        menu.style.top = `${rect.top - menuHeight - 4}px`;
+                    } else {
+                        menu.style.top = `${rect.bottom + 4}px`;
+                    }
+                    
+                    // --- SMART X POSITIONING ---
                     let idealLeft = rect.right - menuWidth; 
                     
                     if (idealLeft + menuWidth > window.innerWidth - 16) {

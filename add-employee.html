@@ -130,6 +130,60 @@
             <div class="form-panel">
               <div class="space-y-6 flex-1 flex flex-col">
                 
+                <div>
+                  <h3 class="section-title">Work Schedule</h3>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                    <div class="form-group">
+                      <label for="work-start" class="form-label text-sm font-bold text-brand-darkest mb-1.5 block">Start Time</label>
+                      <input type="time" id="work-start" required class="form-input w-full" value="09:00" form="add-employee-form">
+                    </div>
+                    <div class="form-group">
+                      <label for="work-end" class="form-label text-sm font-bold text-brand-darkest mb-1.5 block">End Time</label>
+                      <input type="time" id="work-end" required class="form-input w-full" value="18:00" form="add-employee-form">
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label text-sm font-bold text-brand-darkest mb-2 block">Working Days</label>
+                    <div class="flex flex-wrap gap-2">
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Mon" checked class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Mon</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Tue" checked class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Tue</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Wed" checked class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Wed</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Thu" checked class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Thu</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Fri" checked class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Fri</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Sat" class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Sat</span>
+                      </label>
+                      
+                      <label class="day-toggle">
+                        <input type="checkbox" name="work-days" value="Sun" class="peer sr-only" form="add-employee-form">
+                        <span class="day-chip peer-checked:bg-brand-primary peer-checked:text-white peer-checked:border-brand-primary">Sun</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
                 <div class="flex-1">
                   <h3 class="section-title">System Role</h3>
                   

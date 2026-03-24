@@ -1,61 +1,453 @@
+// scripts/employee-logs.js
+
 (() => {
-    // 1. RUN EVERY TIME
-    if (window.lucide) {
-        lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
+
+    let currentEmpId = null;
+    let employeeData = null;
+    let allAttendanceData = [];
+    let filteredLogs = []; // Stores the currently filtered list
+    let currentFilter = 'This Month';
+
+    // --- NEW: Pagination State ---
+    let currentPage = 1;
+    const logsPerPage = 5;
+
+    // Dynamic Map Injector
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        const mapScript = document.createElement('script');
+        mapScript.src = "https://cdn.jsdelivr.net/gh/somanchiu/Keyless-Google-Maps-API@v7.1/mapsJavaScriptAPI.js";
+        mapScript.async = true; 
+        mapScript.defer = true;
+        document.head.appendChild(mapScript);
     }
 
-    // Dynamic Routing & Sidebar Highlighting
+    // Dynamic Routing
     setTimeout(() => {
         let fromPage = 'attendance';
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('from')) {
-            fromPage = urlParams.get('from');
-        }
+        if (urlParams.get('from')) fromPage = urlParams.get('from');
 
         document.querySelectorAll('.sidebar-item, .nav-link').forEach(item => {
             item.classList.remove('active');
             const targetHref = fromPage === 'dashboard' ? 'dashboard.html' : 'attendance.html';
-            
             if (item.getAttribute('href') && item.getAttribute('href').startsWith(targetHref)) {
                 item.classList.add('active');
             }
         });
     }, 100);
 
-    // 2. SPA EVENT GUARD (Run Only Once)
+    // --- Core Data Fetching ---
+    async function fetchEmployeeLogs() {
+        const urlParams = new URLSearchParams(window.location.search);
+        currentEmpId = urlParams.get('id');
+
+        if (!currentEmpId || !window.firebaseUtils || !window.db) return;
+
+        try {
+            const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
+
+            // 1. Fetch Employee Details
+            const empRef = doc(window.db, "employees", currentEmpId);
+            const empSnap = await getDoc(empRef);
+
+            if (empSnap.exists()) {
+                employeeData = empSnap.data();
+                document.getElementById('log-emp-name').textContent = employeeData.full_name || "Unknown Employee";
+                document.getElementById('log-emp-role-dept').textContent = `${employeeData.job_title || "Employee"} • ${employeeData.department || "Unassigned"}`;
+            } else {
+                document.getElementById('log-emp-name').textContent = "Employee Not Found";
+                return;
+            }
+
+            // 2. Fetch All Attendance for this Employee
+            const attQuery = query(collection(window.db, "attendance"), where("employee_id", "==", currentEmpId));
+            const attSnap = await getDocs(attQuery);
+            
+            allAttendanceData = [];
+            attSnap.forEach(doc => allAttendanceData.push({ id: doc.id, ...doc.data() }));
+
+            // Sort newest first
+            allAttendanceData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // 3. Process and Render
+            applyFilterAndRender();
+
+        } catch (error) {
+            console.error("Error fetching logs:", error);
+        }
+    }
+
+    // --- Helper Functions for Dates ---
+    function getWeekBoundaries(date, offsetWeeks = 0) {
+        const d = new Date(date);
+        d.setDate(d.getDate() - d.getDay() + 1 + (offsetWeeks * 7)); // Get Monday
+        const start = new Date(d);
+        start.setHours(0, 0, 0, 0);
+        
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6); // Get Sunday
+        end.setHours(23, 59, 59, 999);
+        return { start, end };
+    }
+
+    // --- Processing & Rendering ---
+    function applyFilterAndRender() {
+        if (!employeeData) return;
+
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const currentMonthPrefix = todayStr.substring(0, 7); 
+        
+        filteredLogs = [];
+
+        // Apply Time Filter
+        if (currentFilter === 'This Month') {
+            filteredLogs = allAttendanceData.filter(log => log.date.startsWith(currentMonthPrefix));
+        } else if (currentFilter === 'This Week') {
+            const bounds = getWeekBoundaries(today, 0);
+            filteredLogs = allAttendanceData.filter(log => {
+                const logDate = new Date(log.date);
+                return logDate >= bounds.start && logDate <= bounds.end;
+            });
+        } else if (currentFilter === 'Last Week') {
+            const bounds = getWeekBoundaries(today, -1);
+            filteredLogs = allAttendanceData.filter(log => {
+                const logDate = new Date(log.date);
+                return logDate >= bounds.start && logDate <= bounds.end;
+            });
+        }
+
+        // --- Calculate Stats ---
+        let totalSeconds = 0;
+        let lateCount = 0;
+        let validDays = 0;
+        let isClockedInToday = false;
+
+        let expectedStartMin = 9 * 60; 
+        if (employeeData.work_start_time && employeeData.work_start_time !== "Not set") {
+            const [time, modifier] = employeeData.work_start_time.split(' ');
+            let [hours, minutes] = time.split(':');
+            hours = parseInt(hours, 10);
+            if (hours === 12 && modifier === 'AM') hours = 0;
+            if (hours !== 12 && modifier === 'PM') hours += 12;
+            expectedStartMin = (hours * 60) + parseInt(minutes, 10);
+        }
+
+        filteredLogs.forEach(log => {
+            totalSeconds += (log.rendered_seconds || 0);
+            validDays++;
+
+            if (log.date === todayStr && !log.clock_out_time) {
+                isClockedInToday = true;
+            }
+
+            if (log.clock_in_time) {
+                const actualDate = new Date(log.clock_in_time.replace(/-/g, '/'));
+                const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
+                if (actualMin > expectedStartMin + 5) lateCount++;
+            }
+        });
+
+        // Update Header Status
+        const statusBadge = document.getElementById('log-emp-status');
+        if (isClockedInToday) {
+            statusBadge.classList.remove('hidden');
+        } else {
+            statusBadge.classList.add('hidden');
+        }
+
+        // Update Stat Cards
+        const totalHours = (totalSeconds / 3600).toFixed(1);
+        document.getElementById('stat-hours').innerHTML = `${totalHours.split('.')[0]}<span>.${totalHours.split('.')[1]}h</span>`;
+        
+        let punctuality = validDays > 0 ? (((validDays - lateCount) / validDays) * 100).toFixed(0) : 0;
+        document.getElementById('stat-punctuality').innerHTML = `${punctuality}<span>%</span>`;
+        
+        document.getElementById('stat-days').textContent = validDays;
+
+        // Reset Pagination to page 1 on filter change
+        currentPage = 1;
+        renderPaginatedTable();
+        renderTimeline(todayStr);
+    }
+
+    // --- NEW: Table Rendering with Pagination ---
+    function renderPaginatedTable() {
+        const tbody = document.getElementById('log-table-body');
+        const prevBtn = document.getElementById('prev-page-btn');
+        const nextBtn = document.getElementById('next-page-btn');
+        const pageInfo = document.getElementById('pagination-info');
+
+        tbody.innerHTML = '';
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">No attendance records found for ${currentFilter}.</td></tr>`;
+            pageInfo.textContent = "Showing 0 of 0 logs";
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+
+        // Calculate Slices
+        const startIndex = (currentPage - 1) * logsPerPage;
+        const endIndex = startIndex + logsPerPage;
+        const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+        const locationFetchQueue = [];
+
+        // Expected Start Time for Status Logic
+        let expectedStartMin = 9 * 60; 
+        if (employeeData.work_start_time && employeeData.work_start_time !== "Not set") {
+            const [time, modifier] = employeeData.work_start_time.split(' ');
+            let [hours, minutes] = time.split(':');
+            hours = parseInt(hours, 10);
+            if (hours === 12 && modifier === 'AM') hours = 0;
+            if (hours !== 12 && modifier === 'PM') hours += 12;
+            expectedStartMin = (hours * 60) + parseInt(minutes, 10);
+        }
+
+        paginatedLogs.forEach(log => {
+            const logDate = new Date(log.date);
+            const dateDisplay = (log.date === todayStr) ? "Today" : logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            const formatTime = (ts) => {
+                if(!ts) return "--:--";
+                return new Date(ts.replace(/-/g,'/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            };
+
+            const clockIn = formatTime(log.clock_in_time);
+            const clockOut = formatTime(log.clock_out_time);
+
+            // Photo Buttons logic
+            const employeeName = employeeData.full_name;
+
+            const inPhotoBtn = log.clock_in_photo 
+                ? `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${log.clock_in_photo}" data-type="Clock In" title="View Clock In Photo"><i data-lucide="camera" class="w-4 h-4"></i></button>` 
+                : `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled title="No Clock In Photo"><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+
+            const outPhotoBtn = log.clock_out_photo 
+                ? `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${log.clock_out_photo}" data-type="Clock Out" title="View Clock Out Photo"><i data-lucide="camera" class="w-4 h-4"></i></button>` 
+                : `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled title="No Clock Out Photo"><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+
+            // Status Logic
+            let statusHtml = `<span class="badge" style="background:rgba(34,197,94,0.1); color:#22c55e;">On Time</span>`;
+            if (!log.clock_out_time && log.date === todayStr) {
+                statusHtml = `<span class="badge badge-pulse"><span class="status-dot"></span> Active</span>`;
+            } else if (log.clock_in_time) {
+                const actualDate = new Date(log.clock_in_time.replace(/-/g, '/'));
+                const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
+                if (actualMin > expectedStartMin + 5) {
+                    statusHtml = `<span class="badge" style="background:rgba(234,179,8,0.1); color:#eab308;">Late</span>`;
+                }
+            }
+
+            // Location Placeholder
+            const hasLocation = log.clock_in_lat && log.clock_in_long;
+            const locId = `loc-${log.id}`;
+            const locationHtml = hasLocation 
+                ? `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
+                        data-lat="${log.clock_in_lat}" data-lng="${log.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
+                        <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
+                   </button>` 
+                : `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
+
+            tbody.innerHTML += `
+                <tr class="log-row">
+                    <td class="log-td">
+                        <p class="font-bold text-brand-darkest text-sm">${dateDisplay}</p>
+                        <p class="text-[10px] text-brand-dark uppercase tracking-wider font-bold">${log.date}</p>
+                    </td>
+                    <td class="log-td">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-bold text-brand-darkest">${clockIn}</p>
+                            ${inPhotoBtn}
+                        </div>
+                    </td>
+                    <td class="log-td">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-medium text-brand-darkest">${clockOut}</p>
+                            ${outPhotoBtn}
+                        </div>
+                    </td>
+                    <td class="log-td">${locationHtml}</td>
+                    <td class="log-td">${statusHtml}</td>
+                </tr>
+            `;
+
+            if (hasLocation) {
+                locationFetchQueue.push({ locId: locId, lat: log.clock_in_lat, lng: log.clock_in_long });
+            }
+        });
+
+        // Update Pagination Controls
+        pageInfo.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, filteredLogs.length)} of ${filteredLogs.length} logs`;
+        prevBtn.disabled = currentPage === 1;
+        nextBtn.disabled = endIndex >= filteredLogs.length;
+
+        if (window.lucide) lucide.createIcons();
+        processLocationQueue(locationFetchQueue);
+    }
+
+
+    // --- Google Maps Geocoder with Caching ---
+    async function processLocationQueue(queue) {
+        while (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        const geocoder = new google.maps.Geocoder();
+        const addressCache = {}; 
+        
+        for (const item of queue) {
+            const el = document.getElementById(item.locId);
+            if (!el) continue;
+
+            const cacheKey = `${item.lat.toFixed(3)},${item.lng.toFixed(3)}`;
+
+            if (addressCache[cacheKey]) {
+                el.innerHTML = addressCache[cacheKey];
+                continue;
+            }
+
+            try {
+                const response = await geocoder.geocode({ location: { lat: item.lat, lng: item.lng } });
+                
+                if (response.results && response.results[0]) {
+                    const components = response.results[0].address_components;
+                    let brgy = "";
+                    let city = "";
+
+                    components.forEach(comp => {
+                        if (comp.types.includes("sublocality") || comp.types.includes("neighborhood")) brgy = comp.long_name;
+                        if (comp.types.includes("locality") || comp.types.includes("administrative_area_level_2")) city = comp.long_name;
+                    });
+
+                    let placeName = "Unknown Area";
+                    if (brgy && city) placeName = `${brgy}, ${city}`;
+                    else if (city) placeName = city;
+                    else if (brgy) placeName = brgy;
+                    else placeName = response.results[0].formatted_address.split(',').slice(0, 2).join(',');
+
+                    addressCache[cacheKey] = placeName;
+                    el.innerHTML = placeName;
+                    el.title = response.results[0].formatted_address; 
+                } else {
+                    throw new Error("No Google Maps results found");
+                }
+            } catch (error) {
+                el.innerHTML = `${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 250));
+        }
+    }
+
+    // --- Render CSS Timeline ---
+    function renderTimeline(todayStr) {
+        const todayLog = allAttendanceData.find(log => log.date === todayStr);
+        const track = document.getElementById('timeline-track');
+        const fill = document.getElementById('timeline-fill');
+        document.getElementById('timeline-date').textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        track.querySelectorAll('.timeline-marker').forEach(m => m.remove());
+
+        if (!todayLog || !todayLog.clock_in_time) {
+            fill.style.width = '0%';
+            return;
+        }
+
+        const getLeftPercent = (dateStr) => {
+            const d = new Date(dateStr.replace(/-/g, '/'));
+            let mins = (d.getHours() * 60) + d.getMinutes();
+            if (mins < 420) mins = 420;
+            if (mins > 1140) mins = 1140;
+            return ((mins - 420) / 720) * 100;
+        };
+
+        const formatTooltip = (dateStr) => {
+            return new Date(dateStr.replace(/-/g, '/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        };
+
+        const inPercent = getLeftPercent(todayLog.clock_in_time);
+        let outPercent = inPercent; 
+
+        track.innerHTML += `
+            <div class="timeline-marker marker-teal group" style="left: ${inPercent}%;">
+                <div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">In: ${formatTooltip(todayLog.clock_in_time)}</div></div>
+            </div>`;
+
+        if (todayLog.breaks && todayLog.breaks.length > 0) {
+            todayLog.breaks.forEach((b, index) => {
+                if (b.start) {
+                    track.innerHTML += `
+                    <div class="timeline-marker marker-amber group" style="left: ${getLeftPercent(b.start)}%;">
+                        <div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">Break: ${formatTooltip(b.start)}</div></div>
+                    </div>`;
+                }
+                if (b.end) {
+                    track.innerHTML += `
+                    <div class="timeline-marker marker-teal group" style="left: ${getLeftPercent(b.end)}%;">
+                        <div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">Return: ${formatTooltip(b.end)}</div></div>
+                    </div>`;
+                }
+            });
+        }
+
+        if (todayLog.clock_out_time) {
+            outPercent = getLeftPercent(todayLog.clock_out_time);
+            track.innerHTML += `
+                <div class="timeline-marker marker-teal group" style="left: ${outPercent}%;">
+                    <div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">Out: ${formatTooltip(todayLog.clock_out_time)}</div></div>
+                </div>`;
+        }
+
+        setTimeout(() => { fill.style.width = `${outPercent}%`; }, 100);
+    }
+
+
+    // --- Initialization ---
+    const waitForFirebase = setInterval(() => {
+        if (window.firebaseUtils && window.db) {
+            clearInterval(waitForFirebase);
+            fetchEmployeeLogs();
+        }
+    }, 50);
+
     if (window.employeeLogsSPAInitialized) return;
     window.employeeLogsSPAInitialized = true;
 
-    // 3. EVENT DELEGATION LISTENERS
+    // --- EVENT DELEGATION LISTENERS ---
     document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the export button is on the screen!
-        if (!document.getElementById('export-log-btn')) return;
         
-        // --- Dynamic Back Button Routing ---
+        // Pagination Controls
+        if (e.target.closest('#prev-page-btn') && !e.target.closest('#prev-page-btn').disabled) {
+            currentPage--;
+            renderPaginatedTable();
+        }
+        if (e.target.closest('#next-page-btn') && !e.target.closest('#next-page-btn').disabled) {
+            currentPage++;
+            renderPaginatedTable();
+        }
+
+        // Dynamic Back Button
         const backBtn = e.target.closest('#dynamic-back-btn');
         if (backBtn) {
             e.preventDefault();
-            
             let currentFrom = 'attendance'; 
             const currentParams = new URLSearchParams(window.location.search);
-            if(currentParams.get('from')) {
-                currentFrom = currentParams.get('from');
-            }
+            if(currentParams.get('from')) currentFrom = currentParams.get('from');
+            
             const returnUrl = `${currentFrom}.html`;
-
-            if (typeof navigateTo === 'function') {
-                navigateTo(returnUrl);
-            } else {
-                window.location.href = returnUrl;
-            }
+            if (typeof navigateTo === 'function') navigateTo(returnUrl);
+            else window.location.href = returnUrl;
         }
 
-        // --- Custom Dropdown Handling (Time Range) ---
+        // Dropdown Handling
         const logRangeDropdown = document.getElementById('log-range-dropdown');
-        
-        if (logRangeDropdown && !logRangeDropdown.contains(e.target)) {
-            logRangeDropdown.classList.remove('open');
-        }
+        if (logRangeDropdown && !logRangeDropdown.contains(e.target)) logRangeDropdown.classList.remove('open');
 
         const dropdownTrigger = e.target.closest('#log-range-dropdown .dropdown-trigger');
         if (dropdownTrigger && logRangeDropdown && logRangeDropdown.contains(dropdownTrigger)) {
@@ -71,25 +463,23 @@
             logRangeDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
             dropdownItem.classList.add('active');
             
-            const textElement = document.getElementById('log-range-text');
-            if (textElement) textElement.textContent = dropdownItem.textContent;
-            
+            document.getElementById('log-range-text').textContent = dropdownItem.textContent;
             logRangeDropdown.classList.remove('open');
+
+            // Apply filter
+            currentFilter = value;
+            applyFilterAndRender();
         }
 
-        // --- Export Button Logic ---
+        // Export Button
         const exportBtn = e.target.closest('#export-log-btn');
         if (exportBtn && !exportBtn.disabled) {
             e.preventDefault();
             const originalContent = exportBtn.innerHTML;
             
-            exportBtn.innerHTML = `
-                <i data-lucide="loader" class="w-5 h-5 text-brand-primary animate-spin"></i>
-                <span class="text-sm font-bold opacity-80">Exporting...</span>
-            `;
+            exportBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 text-brand-primary animate-spin"></i><span class="text-sm font-bold opacity-80">Exporting...</span>`;
             exportBtn.disabled = true;
             exportBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            
             if (window.lucide) lucide.createIcons();
 
             setTimeout(() => {
@@ -98,18 +488,82 @@
                 exportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                 if (window.lucide) lucide.createIcons();
                 
-                showExportToast("Sarah_Johnson_March_2026.csv has been downloaded.");
+                const fName = employeeData ? employeeData.first_name : "Employee";
+                showExportToast(`${fName}_Log_${currentFilter.replace(' ', '_')}.csv has been downloaded.`);
             }, 1500);
+        }
+
+        // Photo Modal
+        const photoModal = document.getElementById('photo-modal');
+        const viewPhotoBtn = e.target.closest('.view-photo-btn');
+        if (viewPhotoBtn && photoModal && !viewPhotoBtn.disabled) {
+            const employeeName = viewPhotoBtn.getAttribute('data-name');
+            const captureTime = viewPhotoBtn.getAttribute('data-time');
+            const photoData = viewPhotoBtn.getAttribute('data-photo');
+            const photoType = viewPhotoBtn.getAttribute('data-type'); 
+            
+            document.getElementById('modal-emp-name').textContent = employeeName;
+            document.getElementById('modal-photo-time').textContent = `${photoType} selfie captured at ${captureTime}`;
+            
+            const photoPlaceholder = document.querySelector('.photo-placeholder');
+            if (photoData && photoData !== "null") {
+                photoPlaceholder.innerHTML = `<img src="${photoData}" alt="${photoType} Verification Selfie" class="w-full h-full object-cover rounded-lg shadow-sm">`;
+            } else {
+                photoPlaceholder.innerHTML = `<div class="text-center py-6"><i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p class="text-sm font-medium mt-2 text-brand-darkest">No photo available</p></div>`;
+                if (window.lucide) lucide.createIcons();
+            }
+            photoModal.classList.remove('hidden');
+        }
+
+        // Map Modal
+        const mapModal = document.getElementById('map-modal');
+        const viewMapBtn = e.target.closest('.view-map-btn');
+        if (viewMapBtn && mapModal) {
+            const lat = parseFloat(viewMapBtn.getAttribute('data-lat'));
+            const lng = parseFloat(viewMapBtn.getAttribute('data-lng'));
+            const empName = viewMapBtn.getAttribute('data-name');
+            const locId = viewMapBtn.getAttribute('data-locid');
+            const addressSpan = document.getElementById(locId);
+            
+            document.getElementById('modal-map-emp-name').textContent = empName;
+            document.getElementById('modal-map-address').textContent = addressSpan ? addressSpan.textContent : "Unknown Location";
+
+            mapModal.classList.remove('hidden');
+
+            setTimeout(() => {
+                const mapContainer = document.getElementById('log-map-container');
+                const position = { lat, lng };
+
+                if (!window._logMapInstance && typeof google !== 'undefined') {
+                    window._logMapInstance = new google.maps.Map(mapContainer, {
+                        center: position, zoom: 16, disableDefaultUI: true, zoomControl: true
+                    });
+                    window._logMapMarker = new google.maps.Marker({
+                        position: position, map: window._logMapInstance,
+                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#4f46e5", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff" },
+                        title: empName
+                    });
+                } else if (window._logMapInstance) {
+                    window._logMapInstance.setCenter(position);
+                    window._logMapInstance.setZoom(16);
+                    window._logMapMarker.setPosition(position);
+                    window._logMapMarker.setTitle(empName);
+                }
+            }, 100);
+        }
+
+        const closeBtn = e.target.closest('.modal-close-btn, .btn-secondary');
+        if (closeBtn || e.target === photoModal || e.target === mapModal) {
+            if(photoModal) photoModal.classList.add('hidden');
+            if(mapModal) mapModal.classList.add('hidden');
         }
     });
 
-    // --- Modern Dark-Mode Ready Toast Utility ---
     function showExportToast(message) {
         const existingToast = document.querySelector('.export-toast');
         if (existingToast) existingToast.remove();
 
         const toast = document.createElement('div');
-        
         toast.className = `export-toast fixed bottom-6 right-6 bg-brand-surface border border-brand-gray-light text-brand-darkest px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-[9999] transition-all duration-500 transform translate-y-20 opacity-0`;
         toast.style.cssText = "display: flex; align-items: center; justify-content: center; min-width: 300px;";
 
@@ -125,11 +579,7 @@
 
         document.body.appendChild(toast);
         if (window.lucide) lucide.createIcons();
-
-        requestAnimationFrame(() => {
-            toast.classList.remove('translate-y-20', 'opacity-0');
-        });
-
+        requestAnimationFrame(() => toast.classList.remove('translate-y-20', 'opacity-0'));
         setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
             setTimeout(() => toast.remove(), 500);

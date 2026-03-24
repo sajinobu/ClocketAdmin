@@ -1,9 +1,12 @@
+// scripts/employee-edit-profile.js
+
 (() => {
+    // 1. RUN EVERY TIME
     if (window.lucide) lucide.createIcons();
 
     let currentEmpId = null;
     let dynamicTeamsData = {}; 
-    let originalTeamName = ""; // We need to track this to know if we need to remove them from an old team
+    let originalTeamName = ""; 
     
     const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
@@ -24,6 +27,27 @@
         });
     }, 100);
 
+    // Helper: Convert HTML time (18:00) to 12-hour format (06:00 PM) for saving
+    function format12HourTime(time24) {
+        if (!time24) return "";
+        let [hours, minutes] = time24.split(':');
+        hours = parseInt(hours, 10);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; 
+        const strHours = String(hours).padStart(2, '0');
+        return `${strHours}:${minutes} ${ampm}`;
+    }
+
+    // Helper: Convert 12-hour format (06:00 PM) back to HTML time (18:00) for loading
+    function format24HourTime(time12) {
+        if (!time12) return "";
+        const [time, modifier] = time12.split(' ');
+        let [hours, minutes] = time.split(':');
+        if (hours === '12') hours = '00';
+        if (modifier === 'PM') hours = (parseInt(hours, 10) + 12).toString();
+        return `${String(hours).padStart(2, '0')}:${minutes}`;
+    }
+
     function updateTeamDropdown(selectedDept, preselectedTeam = "") {
         const teamMenu = document.getElementById('team-dropdown-menu');
         const teamText = document.getElementById('team-dropdown-text');
@@ -40,13 +64,11 @@
             teamMenu.innerHTML += `<div class="dropdown-item ${!preselectedTeam ? 'active' : ''}" data-value="">Unassigned</div>`;
 
             dynamicTeamsData[selectedDept].forEach((teamData) => {
-                // Using the team name for display and value
                 const teamName = teamData.team_name;
                 const isActive = teamName === preselectedTeam ? 'active' : '';
                 
                 const item = document.createElement('div');
                 item.className = `dropdown-item ${isActive}`;
-                // Crucial: Store the ID as a data attribute so we can find it later for the batch update
                 item.setAttribute('data-id', teamData.team_id); 
                 item.setAttribute('data-value', teamName);
                 item.textContent = teamName;
@@ -57,7 +79,6 @@
                 teamText.textContent = preselectedTeam;
                 teamInput.value = preselectedTeam;
                 
-                // Track the actual ID of the selected team based on the dropdown rendering
                 const activeItem = teamMenu.querySelector('.dropdown-item.active');
                 if (activeItem) teamInput.dataset.teamId = activeItem.getAttribute('data-id');
                 
@@ -106,7 +127,6 @@
                 const tData = tDoc.data();
                 const dept = tData.department || "Unassigned";
                 if (!dynamicTeamsData[dept]) dynamicTeamsData[dept] = [];
-                // Store BOTH name and ID
                 dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
             });
 
@@ -117,7 +137,6 @@
             if (empSnap.exists()) {
                 const emp = empSnap.data();
 
-                // Store original team so we can unassign them later if it changes
                 originalTeamName = emp.assigned_team || "";
 
                 document.getElementById('display-emp-name').textContent = emp.full_name || "Unknown";
@@ -167,6 +186,24 @@
 
                 updateTeamDropdown(emp.department, emp.assigned_team || "");
 
+                // --- LOAD WORK SCHEDULE ---
+                const startInput = document.getElementById('edit-work-start');
+                const endInput = document.getElementById('edit-work-end');
+                
+                if (startInput && emp.work_start_time) {
+                    startInput.value = format24HourTime(emp.work_start_time);
+                }
+                if (endInput && emp.work_end_time) {
+                    endInput.value = format24HourTime(emp.work_end_time);
+                }
+
+                if (emp.working_days && Array.isArray(emp.working_days)) {
+                    document.querySelectorAll('input[name="edit-work-days"]').forEach(checkbox => {
+                        checkbox.checked = emp.working_days.includes(checkbox.value);
+                    });
+                }
+                // --------------------------
+
             } else {
                 alert("Employee not found.");
                 window.location.href = 'management.html?tab=employees'; 
@@ -209,7 +246,6 @@
     document.body.addEventListener('click', (e) => {
         if (!document.getElementById('edit-employee-form')) return;
         
-        // --- BULLETPROOF BACK & CANCEL ROUTING ---
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
@@ -225,7 +261,6 @@
                 if (teamId) finalUrl += `&teamId=${teamId}`;
             }
 
-            // FORCE HARD REDIRECT
             window.location.href = finalUrl; 
         }
 
@@ -265,7 +300,6 @@
             
             if (hiddenInput && hiddenInput.tagName === 'INPUT') {
                 hiddenInput.value = value;
-                // If it's a team dropdown, store the exact team ID so we can query it easily
                 if (hiddenInput.id === 'edit-assigned-team') {
                     hiddenInput.dataset.teamId = item.getAttribute('data-id');
                 }
@@ -304,7 +338,17 @@
                 const jobTitle = document.getElementById('edit-job-title').value.trim();
                 const systemRole = document.querySelector('input[name="system-role"]:checked').value;
 
-                // === FIREBASE BATCH UPDATE ===
+                // --- GATHER WORK SCHEDULE ---
+                const rawStartTime = document.getElementById('edit-work-start')?.value || "09:00";
+                const rawEndTime = document.getElementById('edit-work-end')?.value || "18:00";
+                
+                const formattedStartTime = format12HourTime(rawStartTime);
+                const formattedEndTime = format12HourTime(rawEndTime);
+
+                const checkedDaysNodes = document.querySelectorAll('input[name="edit-work-days"]:checked');
+                const workingDaysArray = Array.from(checkedDaysNodes).map(node => node.value);
+                // ----------------------------
+
                 const { doc, writeBatch, collection, query, where, getDocs, getDoc } = window.firebaseUtils;
                 const batch = writeBatch(window.db);
 
@@ -320,13 +364,17 @@
                     assigned_team: assignedTeam || "Unassigned",
                     job_title: jobTitle,
                     system_role: systemRole,
-                    updated_at: new Date().toISOString()
+                    updated_at: new Date().toISOString(),
+                    
+                    // Add schedule updates
+                    work_start_time: formattedStartTime,
+                    work_end_time: formattedEndTime,
+                    working_days: workingDaysArray
                 });
 
                 // 2. Cross-reference Sync: Did they change teams?
                 if (assignedTeam !== originalTeamName) {
                     
-                    // A. Remove them from the OLD team (if they were in one)
                     if (originalTeamName && originalTeamName !== "Unassigned") {
                         const oldTeamQuery = query(collection(window.db, "teams"), where("team_name", "==", originalTeamName));
                         const oldTeamSnap = await getDocs(oldTeamQuery);
@@ -334,10 +382,8 @@
                         if (!oldTeamSnap.empty) {
                             oldTeamSnap.forEach(tDoc => {
                                 const tData = tDoc.data();
-                                // Remove them from the members array
                                 const updatedMembers = (tData.members || []).filter(m => m.name !== fullName);
                                 
-                                // If they were the team lead, remove them from that too
                                 let newLead = tData.team_lead;
                                 if (newLead === fullName) newLead = "Unassigned";
 
@@ -350,7 +396,6 @@
                         }
                     }
 
-                    // B. Add them to the NEW team (if they selected one)
                     if (newTeamId) {
                         const newTeamRef = doc(window.db, "teams", newTeamId);
                         const newTeamSnap = await getDoc(newTeamRef);
@@ -359,7 +404,6 @@
                             const newTeamData = newTeamSnap.data();
                             const currentMembers = newTeamData.members || [];
                             
-                            // Prevent duplicates
                             const exists = currentMembers.some(m => m.name === fullName);
                             if (!exists) {
                                 currentMembers.push({ name: fullName, department: department });

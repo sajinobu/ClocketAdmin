@@ -179,6 +179,35 @@
       </div>
   </div>
   
+  <div id="map-modal" class="hidden modal-overlay">
+      <div class="modal-box" style="max-width: 32rem;">
+          <div class="modal-header">
+              <h3 class="font-bold text-brand-darkest flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-brand-primary"></i> Location Data
+              </h3>
+              <button id="close-map-modal-btn" class="modal-close-btn">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+          </div>
+          
+          <div class="p-4 bg-brand-grayBg">
+              <div id="log-map-container" class="w-full h-64 sm:h-80 rounded-xl border border-brand-grayLight overflow-hidden shadow-inner relative z-0">
+                  <div class="w-full h-full flex items-center justify-center text-gray-400">
+                      <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="modal-footer">
+              <div>
+                  <p class="text-sm font-bold text-brand-darkest" id="modal-map-emp-name">Employee Name</p>
+                  <p class="text-xs text-gray-500 font-medium mt-0.5" id="modal-map-address">Fetching address...</p>
+              </div>
+              <button id="close-map-modal-btn-2" class="btn-secondary">Close</button>
+          </div>
+      </div>
+  </div>
+  
   <script src="scripts/layout.js"></script>
   <script src="scripts/attendance.js"></script>
 </body>

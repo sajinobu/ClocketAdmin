@@ -259,14 +259,14 @@
 }
 
 /* --- Table Styles --- */
-/* --- Table Styles --- */
 .table-panel {
   background-color: var(--brand-surface);
   border-radius: 1rem;
   border: 1px solid var(--brand-gray-light);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  overflow: hidden; /* Clips the table perfectly so the corners stay rounded */
+  overflow: hidden; 
   transition: all 0.3s ease;
+  min-height: 350px; /* NEW: Gives the table breathing room so the page isn't too short */
 }
 
 .table-wrapper {

@@ -1,3 +1,5 @@
+// scripts/attendance.js
+
 (() => {
     // 1. RUN EVERY TIME
     if (window.lucide) lucide.createIcons();
@@ -21,6 +23,19 @@
     };
 
     const todayStr = formatDate(todayDate);
+
+    // --- DYNAMIC GOOGLE MAPS INJECTOR ---
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        const mapScript = document.createElement('script');
+        mapScript.src = "https://cdn.jsdelivr.net/gh/somanchiu/Keyless-Google-Maps-API@v7.1/mapsJavaScriptAPI.js";
+        mapScript.async = true;
+        mapScript.defer = true;
+        document.head.appendChild(mapScript);
+    }
+    
+    // Global vars for the map modal
+    window._logMapInstance = null;
+    window._logMapMarker = null;
 
     // Dynamic Calendar Renderer
     function renderCalendar() {
@@ -110,6 +125,9 @@
 
             const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
+            // NEW: Queue to hold locations so we don't spam the API
+            const locationFetchQueue = [];
+
             attSnapshot.forEach((docSnap) => {
                 const att = docSnap.data();
                 const empData = employeeMap[att.employee_id] || {}; 
@@ -129,14 +147,15 @@
                 
                 // --- BARANGAY/CITY UI LOGIC ---
                 const hasLocation = att.clock_in_lat && att.clock_in_long;
-                const mapLink = hasLocation ? `https://maps.google.com/?q=${att.clock_in_lat},${att.clock_in_long}` : "#";
                 const locId = `loc-${docSnap.id}`; 
+                const employeeName = empData.full_name || att.employee_id;
                 
                 const locationDisplay = hasLocation 
-                    ? `<a href="${mapLink}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm">
+                    ? `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
+                            data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
                             <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
                             <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
-                       </a>` 
+                       </button>` 
                     : `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
 
                 // Status Logic
@@ -148,8 +167,6 @@
                 }
 
                 // Photo Buttons
-                const employeeName = empData.full_name || att.employee_id;
-                
                 const inPhotoBtn = att.clock_in_photo 
                     ? `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In" title="View Clock In Photo">
                         <i data-lucide="camera" class="w-4 h-4"></i>
@@ -166,8 +183,6 @@
                         <i data-lucide="camera-off" class="w-4 h-4"></i>
                        </button>`;
 
-                // --- NEW AVATAR FALLBACK LOGIC ---
-                // If it's empty, null, or "coming soon", use the default gray icon!
                 const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") 
                     ? empData.profile_picture 
                     : defaultAvatar;
@@ -211,39 +226,80 @@
                 
                 tableBody.appendChild(tr);
 
-                // --- ASYNC FETCH NOMINATIM (OSM) FOR BARANGAY & CITY ---
+                // Add to the fetch queue instead of firing instantly
                 if (hasLocation) {
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${att.clock_in_lat}&lon=${att.clock_in_long}`)
-                        .then(res => res.json())
-                        .then(data => {
-                            const el = document.getElementById(locId);
-                            if (el && data && data.address) {
-                                const addr = data.address;
-                                const brgy = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || '';
-                                const city = addr.city || addr.town || addr.municipality || '';
-                                
-                                let placeName = "Unknown Area";
-                                if (brgy && city) placeName = `${brgy}, ${city}`;
-                                else if (city) placeName = city;
-                                else if (brgy) placeName = brgy;
-                                else if (data.display_name) placeName = data.display_name.split(',').slice(0, 2).join(',');
-
-                                el.innerHTML = placeName;
-                                el.title = data.display_name; 
-                            }
-                        })
-                        .catch(() => {
-                            const el = document.getElementById(locId);
-                            if (el) el.innerHTML = `${att.clock_in_lat.toFixed(4)}, ${att.clock_in_long.toFixed(4)}`;
-                        });
+                    locationFetchQueue.push({
+                        locId: locId,
+                        lat: att.clock_in_lat,
+                        lng: att.clock_in_long
+                    });
                 }
             });
 
             if (window.lucide) lucide.createIcons();
             filterAttendanceTable(); 
 
+            // NEW: Safely process location fetching queue
+            processLocationQueue(locationFetchQueue);
+
         } catch(error) {
             console.error("Error fetching attendance data: ", error);
+        }
+    }
+
+    // ==========================================
+    // NEW: Safe Location Fetcher with Caching
+    // ==========================================
+    async function processLocationQueue(queue) {
+        const addressCache = {}; // Store locations we already looked up
+        
+        for (const item of queue) {
+            const el = document.getElementById(item.locId);
+            if (!el) continue;
+
+            // Round coordinates heavily to group locations (~110 meters)
+            const cacheKey = `${item.lat.toFixed(3)},${item.lng.toFixed(3)}`;
+
+            if (addressCache[cacheKey]) {
+                el.innerHTML = addressCache[cacheKey];
+                continue;
+            }
+
+            try {
+                // Fetch with explicit headers
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${item.lat}&lon=${item.lng}`, {
+                    headers: {
+                        'Accept-Language': 'en-US,en;q=0.9'
+                    }
+                });
+                
+                if (!response.ok) throw new Error("API Blocked or Rate Limited");
+
+                const data = await response.json();
+                
+                if (data && data.address) {
+                    const addr = data.address;
+                    const brgy = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || '';
+                    const city = addr.city || addr.town || addr.municipality || '';
+                    
+                    let placeName = "Unknown Area";
+                    if (brgy && city) placeName = `${brgy}, ${city}`;
+                    else if (city) placeName = city;
+                    else if (brgy) placeName = brgy;
+                    else if (data.display_name) placeName = data.display_name.split(',').slice(0, 2).join(',');
+
+                    // Save it to the cache
+                    addressCache[cacheKey] = placeName;
+                    el.innerHTML = placeName;
+                    el.title = data.display_name; 
+                }
+            } catch (error) {
+                // If it fails, safely fallback to coordinates
+                el.innerHTML = `${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`;
+            }
+
+            // WAIT 1.2 SECONDS (1200ms) to ensure we don't get blocked
+            await new Promise(resolve => setTimeout(resolve, 1200));
         }
     }
 
@@ -401,6 +457,67 @@
         const closeBtn = e.target.closest('#close-modal-btn, #close-modal-btn-2');
         if ((closeBtn || e.target === photoModal) && photoModal) {
             photoModal.classList.add('hidden');
+        }
+
+        // --- Map Verification Modal ---
+        const mapModal = document.getElementById('map-modal');
+        const viewMapBtn = e.target.closest('.view-map-btn');
+        
+        if (viewMapBtn && mapModal) {
+            const lat = parseFloat(viewMapBtn.getAttribute('data-lat'));
+            const lng = parseFloat(viewMapBtn.getAttribute('data-lng'));
+            const empName = viewMapBtn.getAttribute('data-name');
+            
+            // Extract the address text that Nominatim just fetched
+            const locId = viewMapBtn.getAttribute('data-locid');
+            const addressSpan = document.getElementById(locId);
+            const addressText = addressSpan ? addressSpan.textContent : "Unknown Location";
+
+            document.getElementById('modal-map-emp-name').textContent = empName;
+            document.getElementById('modal-map-address').textContent = addressText;
+
+            mapModal.classList.remove('hidden');
+
+            setTimeout(() => {
+                const mapContainer = document.getElementById('log-map-container');
+                const position = { lat, lng };
+
+                // Initialize the map if it hasn't been created yet
+                if (!window._logMapInstance && typeof google !== 'undefined') {
+                    window._logMapInstance = new google.maps.Map(mapContainer, {
+                        center: position,
+                        zoom: 16,
+                        disableDefaultUI: true,
+                        zoomControl: true,
+                        styles: [] 
+                    });
+
+                    window._logMapMarker = new google.maps.Marker({
+                        position: position,
+                        map: window._logMapInstance,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: "#4f46e5", 
+                            fillOpacity: 1,
+                            strokeWeight: 2,
+                            strokeColor: "#ffffff"
+                        },
+                        title: empName
+                    });
+                } else if (window._logMapInstance) {
+                    // Update center, marker position, AND Marker Title!
+                    window._logMapInstance.setCenter(position);
+                    window._logMapInstance.setZoom(16);
+                    window._logMapMarker.setPosition(position);
+                    window._logMapMarker.setTitle(empName);
+                }
+            }, 100);
+        }
+
+        const closeMapBtn = e.target.closest('#close-map-modal-btn, #close-map-modal-btn-2');
+        if ((closeMapBtn || e.target === mapModal) && mapModal) {
+            mapModal.classList.add('hidden');
         }
     });
 

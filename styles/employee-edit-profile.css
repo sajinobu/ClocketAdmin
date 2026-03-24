@@ -217,3 +217,47 @@
 
 .role-title { font-size: 0.875rem; font-weight: 600; color: var(--brand-darkest); display: block; transition: color 0.3s ease;}
 .role-desc { font-size: 0.75rem; color: var(--brand-dark); margin-top: 0.125rem; transition: color 0.3s ease;}
+
+/* --- Custom Day Toggles (Work Schedule) --- */
+.day-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.day-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid var(--brand-gray-light);
+    background-color: var(--brand-surface);
+    color: var(--brand-dark);
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+/* Hover state for unselected chips */
+.day-toggle:hover .day-chip:not(.peer-checked\:bg-brand-primary) {
+    background-color: var(--brand-gray-bg);
+}
+
+/* --- NATIVE TIME PICKER ICON FIX --- */
+
+/* 1. Soften the default black icon so it's less harsh in Light Mode */
+input[type="time"]::-webkit-calendar-picker-indicator {
+    opacity: 0.5;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* 2. Invert the icon to white when Tailwind's dark mode is active */
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(0.9);
+}

@@ -1,3 +1,5 @@
+// scripts/add-employee.js
+
 (() => {
     // 1. RUN EVERY TIME
     if (window.lucide) lucide.createIcons();
@@ -17,6 +19,17 @@
             String(now.getHours()).padStart(2, '0') + ':' +
             String(now.getMinutes()).padStart(2, '0') + ':' +
             String(now.getSeconds()).padStart(2, '0');
+    }
+
+    // Helper Function: Convert HTML time (18:00) to 12-hour format (06:00 PM)
+    function format12HourTime(time24) {
+        if (!time24) return "";
+        let [hours, minutes] = time24.split(':');
+        hours = parseInt(hours, 10);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12; // Convert 0 to 12
+        const strHours = String(hours).padStart(2, '0');
+        return `${strHours}:${minutes} ${ampm}`;
     }
 
     // --- FIREBASE: LOAD TEAMS FOR DROPDOWN ---
@@ -177,7 +190,7 @@
                 const { doc, getDoc, writeBatch, createUserWithEmailAndPassword, signOut } = window.firebaseUtils;
                 const batch = writeBatch(window.db);
 
-                // 2. Gather UI Data
+                // 2. Gather General UI Data
                 const firstName = document.getElementById('first-name').value.trim();
                 const lastName = document.getElementById('last-name').value.trim();
                 const email = document.getElementById('email').value.trim();
@@ -185,16 +198,30 @@
                 const systemRole = document.querySelector('input[name="system-role"]:checked').value;
                 const fullName = `${firstName} ${lastName}`.trim();
                 
+                // Safely grab optional inputs if you add them later
                 const phoneNode = document.getElementById('phone');
                 const phone = phoneNode ? phoneNode.value.trim() : "";
-                const titleNode = document.getElementById('job-title');
-                const jobTitle = titleNode ? titleNode.value.trim() : "Employee";
+                
+                const addressNode = document.getElementById('address');
+                const address = addressNode ? addressNode.value.trim() : "";
+
+                // --- NEW: Gather Work Schedule Data ---
+                const rawStartTime = document.getElementById('work-start').value;
+                const rawEndTime = document.getElementById('work-end').value;
+                
+                // Formatted exactly like "09:00 AM" and "06:00 PM"
+                const formattedStartTime = format12HourTime(rawStartTime);
+                const formattedEndTime = format12HourTime(rawEndTime);
+
+                // Grab an array of all the days they checked
+                const checkedDaysNodes = document.querySelectorAll('input[name="work-days"]:checked');
+                const workingDaysArray = Array.from(checkedDaysNodes).map(node => node.value);
+                // --------------------------------------
 
                 const currentTime = getFormattedDateTime();
                 const tempPassword = "SuP3rS3crtP@ssWord#1234";
-                const currentAdminEmail = window.auth?.currentUser?.email || "System Admin";
+                const currentAdminEmail = window.auth?.currentUser?.email || "admin@company.com";
 
-                // Extract Team ID from the selected option
                 const selectedOption = teamSelect.options[teamSelect.selectedIndex];
                 const teamId = selectedOption ? selectedOption.dataset.teamId : null;
 
@@ -206,7 +233,7 @@
                 const empRef = doc(window.db, "employees", email);
                 batch.set(empRef, {
                     account_status: "active",
-                    address: "",
+                    address: address, 
                     assigned_team: teamName || "Unassigned",
                     contact_number: phone,
                     created_at: currentTime,
@@ -223,9 +250,14 @@
                     password: "pending_setup",
                     password_last_changed: currentTime,
                     profile_picture: "coming soon",
-                    role: jobTitle,
-                    system_role: systemRole,
-                    updated_at: currentTime
+                    role: systemRole, 
+                    system_role: systemRole, 
+                    updated_at: currentTime,
+                    
+                    // The new schedule fields!
+                    work_start_time: formattedStartTime,
+                    work_end_time: formattedEndTime,
+                    working_days: workingDaysArray
                 });
 
                 // 5. Update Team Document in Batch (If a team was chosen)
@@ -236,7 +268,6 @@
                         const teamData = teamSnap.data();
                         const members = teamData.members || [];
                         
-                        // Check for duplicates just in case
                         if (!members.some(m => m.name === fullName)) {
                             members.push({ name: fullName, department: dept });
                             batch.update(teamRef, {
