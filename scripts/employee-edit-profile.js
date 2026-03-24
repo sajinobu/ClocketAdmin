@@ -3,6 +3,8 @@
 
     let currentEmpId = null;
     let dynamicTeamsData = {}; 
+    let originalTeamName = ""; // We need to track this to know if we need to remove them from an old team
+    
     const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
     setTimeout(() => {
@@ -37,21 +39,32 @@
             
             teamMenu.innerHTML += `<div class="dropdown-item ${!preselectedTeam ? 'active' : ''}" data-value="">Unassigned</div>`;
 
-            dynamicTeamsData[selectedDept].forEach((teamName) => {
+            dynamicTeamsData[selectedDept].forEach((teamData) => {
+                // Using the team name for display and value
+                const teamName = teamData.team_name;
                 const isActive = teamName === preselectedTeam ? 'active' : '';
+                
                 const item = document.createElement('div');
                 item.className = `dropdown-item ${isActive}`;
+                // Crucial: Store the ID as a data attribute so we can find it later for the batch update
+                item.setAttribute('data-id', teamData.team_id); 
                 item.setAttribute('data-value', teamName);
                 item.textContent = teamName;
                 teamMenu.appendChild(item);
             });
 
-            if (preselectedTeam && dynamicTeamsData[selectedDept].includes(preselectedTeam)) {
+            if (preselectedTeam) {
                 teamText.textContent = preselectedTeam;
                 teamInput.value = preselectedTeam;
+                
+                // Track the actual ID of the selected team based on the dropdown rendering
+                const activeItem = teamMenu.querySelector('.dropdown-item.active');
+                if (activeItem) teamInput.dataset.teamId = activeItem.getAttribute('data-id');
+                
             } else {
                 teamText.textContent = "Unassigned";
                 teamInput.value = "";
+                teamInput.dataset.teamId = "";
             }
 
         } else {
@@ -59,6 +72,7 @@
             const message = selectedDept ? `No teams in ${selectedDept}` : "Select a department first";
             teamText.textContent = message;
             teamInput.value = "";
+            teamInput.dataset.teamId = "";
             
             const item = document.createElement('div');
             item.className = 'dropdown-item active';
@@ -83,6 +97,7 @@
         try {
             const { doc, getDoc, collection, getDocs } = window.firebaseUtils;
 
+            // Fetch Teams
             const teamsRef = collection(window.db, "teams");
             const teamsSnap = await getDocs(teamsRef);
             
@@ -91,14 +106,19 @@
                 const tData = tDoc.data();
                 const dept = tData.department || "Unassigned";
                 if (!dynamicTeamsData[dept]) dynamicTeamsData[dept] = [];
-                dynamicTeamsData[dept].push(tData.team_name);
+                // Store BOTH name and ID
+                dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
             });
 
+            // Fetch Employee
             const empRef = doc(window.db, "employees", currentEmpId);
             const empSnap = await getDoc(empRef);
 
             if (empSnap.exists()) {
                 const emp = empSnap.data();
+
+                // Store original team so we can unassign them later if it changes
+                originalTeamName = emp.assigned_team || "";
 
                 document.getElementById('display-emp-name').textContent = emp.full_name || "Unknown";
                 document.getElementById('display-emp-id').textContent = emp.employee_id || "N/A";
@@ -245,6 +265,10 @@
             
             if (hiddenInput && hiddenInput.tagName === 'INPUT') {
                 hiddenInput.value = value;
+                // If it's a team dropdown, store the exact team ID so we can query it easily
+                if (hiddenInput.id === 'edit-assigned-team') {
+                    hiddenInput.dataset.teamId = item.getAttribute('data-id');
+                }
             }
             
             dropdown.classList.remove('open');
@@ -276,25 +300,80 @@
                 const contactNumber = document.getElementById('edit-phone').value.trim();
                 const department = document.getElementById('edit-department').value;
                 const assignedTeam = document.getElementById('edit-assigned-team').value;
+                const newTeamId = document.getElementById('edit-assigned-team').dataset.teamId;
                 const jobTitle = document.getElementById('edit-job-title').value.trim();
-                
                 const systemRole = document.querySelector('input[name="system-role"]:checked').value;
 
-                const { doc, updateDoc } = window.firebaseUtils;
-                const docRef = doc(window.db, "employees", currentEmpId);
+                // === FIREBASE BATCH UPDATE ===
+                const { doc, writeBatch, collection, query, where, getDocs, getDoc } = window.firebaseUtils;
+                const batch = writeBatch(window.db);
 
-                await updateDoc(docRef, {
+                // 1. Update the Employee Document
+                const empRef = doc(window.db, "employees", currentEmpId);
+                batch.update(empRef, {
                     first_name: firstName,
                     middle_name: middleName,
                     last_name: lastName,
                     full_name: fullName,
                     contact_number: contactNumber,
                     department: department,
-                    assigned_team: assignedTeam,
+                    assigned_team: assignedTeam || "Unassigned",
                     job_title: jobTitle,
                     system_role: systemRole,
                     updated_at: new Date().toISOString()
                 });
+
+                // 2. Cross-reference Sync: Did they change teams?
+                if (assignedTeam !== originalTeamName) {
+                    
+                    // A. Remove them from the OLD team (if they were in one)
+                    if (originalTeamName && originalTeamName !== "Unassigned") {
+                        const oldTeamQuery = query(collection(window.db, "teams"), where("team_name", "==", originalTeamName));
+                        const oldTeamSnap = await getDocs(oldTeamQuery);
+                        
+                        if (!oldTeamSnap.empty) {
+                            oldTeamSnap.forEach(tDoc => {
+                                const tData = tDoc.data();
+                                // Remove them from the members array
+                                const updatedMembers = (tData.members || []).filter(m => m.name !== fullName);
+                                
+                                // If they were the team lead, remove them from that too
+                                let newLead = tData.team_lead;
+                                if (newLead === fullName) newLead = "Unassigned";
+
+                                batch.update(tDoc.ref, {
+                                    members: updatedMembers,
+                                    expected_size: updatedMembers.length,
+                                    team_lead: newLead
+                                });
+                            });
+                        }
+                    }
+
+                    // B. Add them to the NEW team (if they selected one)
+                    if (newTeamId) {
+                        const newTeamRef = doc(window.db, "teams", newTeamId);
+                        const newTeamSnap = await getDoc(newTeamRef);
+                        
+                        if (newTeamSnap.exists()) {
+                            const newTeamData = newTeamSnap.data();
+                            const currentMembers = newTeamData.members || [];
+                            
+                            // Prevent duplicates
+                            const exists = currentMembers.some(m => m.name === fullName);
+                            if (!exists) {
+                                currentMembers.push({ name: fullName, department: department });
+                                batch.update(newTeamRef, {
+                                    members: currentMembers,
+                                    expected_size: currentMembers.length
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 3. Commit the transaction
+                await batch.commit();
 
                 showSuccessToast(`Profile for ${fullName} has been successfully updated.`);
                 
@@ -311,7 +390,6 @@
                         if (teamId) finalUrl += `&teamId=${teamId}`;
                     }
 
-                    // FORCE HARD REDIRECT
                     window.location.href = finalUrl; 
                 }, 2000);
 

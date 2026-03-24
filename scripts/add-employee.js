@@ -6,14 +6,7 @@
     if (window.addEmployeeSPAInitialized) return;
     window.addEmployeeSPAInitialized = true;
 
-    // --- Dynamic Department -> Team Mapping Database ---
-    const teamsData = {
-        "Engineering": ["Engineering Team A", "Engineering Team B", "QA Testers", "DevOps"],
-        "Design": ["Design Team B", "UX Research", "Brand Identity"],
-        "Operations": ["Operations Team A", "Logistics", "Facility Management"],
-        "Sales": ["Enterprise Sales", "SMB Sales", "Client Success"],
-        "Marketing": ["Content Team", "Growth & SEO", "Event Marketing"]
-    };
+    let dynamicTeamsData = {};
 
     // Helper Function: Format Datetime for Firestore
     function getFormattedDateTime() {
@@ -26,42 +19,112 @@
             String(now.getSeconds()).padStart(2, '0');
     }
 
+    // --- FIREBASE: LOAD TEAMS FOR DROPDOWN ---
+    async function loadTeamsForDropdown() {
+        if (!window.db || !window.firebaseUtils) return;
+        try {
+            const { collection, getDocs } = window.firebaseUtils;
+            const teamsRef = collection(window.db, "teams");
+            const teamsSnap = await getDocs(teamsRef);
+
+            dynamicTeamsData = {};
+            teamsSnap.forEach(tDoc => {
+                const tData = tDoc.data();
+                const dept = tData.department || "Unassigned";
+                if (!dynamicTeamsData[dept]) dynamicTeamsData[dept] = [];
+                // Store both name and ID so we can update the correct team document later
+                dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
+            });
+        } catch (error) {
+            console.error("Error loading teams:", error);
+        }
+    }
+
+    // --- LOGIC: UPDATE TEAM DROPDOWN BASED ON DEPT ---
+    function updateTeamDropdown(selectedDept) {
+        const teamSelect = document.getElementById('assigned-team');
+        if (!teamSelect) return;
+
+        teamSelect.innerHTML = '';
+
+        if (selectedDept && dynamicTeamsData[selectedDept] && dynamicTeamsData[selectedDept].length > 0) {
+            teamSelect.disabled = false;
+            
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = "";
+            defaultOpt.textContent = `Select ${selectedDept} Team`;
+            teamSelect.appendChild(defaultOpt);
+
+            dynamicTeamsData[selectedDept].forEach(team => {
+                const opt = document.createElement('option');
+                opt.value = team.team_name;
+                opt.dataset.teamId = team.team_id; // Store ID for the batch write
+                opt.textContent = team.team_name;
+                teamSelect.appendChild(opt);
+            });
+        } else {
+            teamSelect.disabled = true;
+            const opt = document.createElement('option');
+            opt.value = "";
+            opt.textContent = selectedDept ? `No teams in ${selectedDept}` : "Please select a department first";
+            teamSelect.appendChild(opt);
+        }
+    }
+
+    // --- AUTO-GENERATE NEXT EMPLOYEE ID ---
+    async function generateNextEmployeeId() {
+        if (!window.db || !window.firebaseUtils) return;
+        
+        const empIdInput = document.getElementById('employee-id');
+        if (!empIdInput) return;
+
+        try {
+            empIdInput.placeholder = "Generating ID...";
+            empIdInput.disabled = true;
+
+            const { collection, getDocs } = window.firebaseUtils;
+            const empSnapshot = await getDocs(collection(window.db, "employees"));
+            
+            let maxIdNum = 0;
+
+            empSnapshot.forEach(doc => {
+                const empData = doc.data();
+                if (empData.employee_id && empData.employee_id.startsWith('EMP-')) {
+                    const numPart = parseInt(empData.employee_id.split('-')[1], 10);
+                    if (!isNaN(numPart) && numPart > maxIdNum) {
+                        maxIdNum = numPart;
+                    }
+                }
+            });
+
+            const nextIdNum = maxIdNum + 1;
+            const nextIdString = `EMP-${String(nextIdNum).padStart(3, '0')}`;
+            empIdInput.value = nextIdString;
+
+        } catch (error) {
+            console.error("Error generating employee ID:", error);
+            empIdInput.placeholder = "EMP-...";
+            empIdInput.disabled = false;
+        }
+    }
+
+    // Wait for Firebase, then load teams and generate ID
+    const waitForFirebase = setInterval(() => {
+        if (window.db && window.firebaseUtils) {
+            clearInterval(waitForFirebase);
+            loadTeamsForDropdown();
+            generateNextEmployeeId();
+        }
+    }, 50);
+
     // 3. EVENT DELEGATION LISTENERS
     
-    // Handle Dropdown Changes (Native <select> tags)
+    // Handle Native Select Changes
     document.body.addEventListener('change', (e) => {
-        // NEW PAGE GUARD: Only run if the Add Employee form is on the screen!
         if (!document.getElementById('add-employee-form')) return;
 
         if (e.target.id === 'department') {
-            const teamSelect = document.getElementById('assigned-team');
-            const selectedDept = e.target.value;
-            
-            if (!teamSelect) return;
-            
-            teamSelect.innerHTML = '';
-            
-            if (selectedDept && teamsData[selectedDept]) {
-                teamSelect.disabled = false;
-                
-                const defaultOpt = document.createElement('option');
-                defaultOpt.value = "";
-                defaultOpt.textContent = `Select ${selectedDept} Team`;
-                teamSelect.appendChild(defaultOpt);
-
-                teamsData[selectedDept].forEach(team => {
-                    const opt = document.createElement('option');
-                    opt.value = team;
-                    opt.textContent = team;
-                    teamSelect.appendChild(opt);
-                });
-            } else {
-                teamSelect.disabled = true;
-                const opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "Please select a department first";
-                teamSelect.appendChild(opt);
-            }
+            updateTeamDropdown(e.target.value);
         }
     });
 
@@ -72,36 +135,32 @@
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
-            
             let fromPage = 'management'; 
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get('from')) {
                 fromPage = urlParams.get('from');
             }
 
-            if (typeof navigateTo === 'function') {
-                navigateTo(`${fromPage}.html`);
-            } else {
-                window.location.href = `${fromPage}.html`;
-            }
+            if (typeof navigateTo === 'function') navigateTo(`${fromPage}.html`);
+            else window.location.href = `${fromPage}.html`;
         }
     });
 
-    // --- FIREBASE: Handle Form Submission ---
+    // --- FIREBASE: Handle Form Submission with BATCH WRITE ---
     document.body.addEventListener('submit', async (e) => {
         if (e.target.id === 'add-employee-form') {
             e.preventDefault();
             
-            // FIXED: Search the whole document for the linked button!
             const submitBtn = document.querySelector('button[form="add-employee-form"]');
             const originalBtnText = submitBtn.innerHTML;
             
             // 1. Validate Dropdowns
             const dept = document.getElementById('department').value;
-            const team = document.getElementById('assigned-team').value;
+            const teamSelect = document.getElementById('assigned-team');
+            const teamName = teamSelect.value;
             
-            if (!dept || !team) {
-                alert("Please select a Department and Assigned Team.");
+            if (!dept) {
+                alert("Please select a Department.");
                 return;
             }
 
@@ -111,12 +170,12 @@
             if (window.lucide) lucide.createIcons();
             
             try {
-                // Ensure Firebase is connected via the Global Window trick
                 if (!window.secondaryAuth || !window.firebaseUtils) {
                     throw new Error("Firebase is not initialized. Please refresh the page.");
                 }
 
-                const { doc, setDoc, createUserWithEmailAndPassword, signOut } = window.firebaseUtils;
+                const { doc, getDoc, writeBatch, createUserWithEmailAndPassword, signOut } = window.firebaseUtils;
+                const batch = writeBatch(window.db);
 
                 // 2. Gather UI Data
                 const firstName = document.getElementById('first-name').value.trim();
@@ -124,8 +183,8 @@
                 const email = document.getElementById('email').value.trim();
                 const empId = document.getElementById('employee-id').value.trim();
                 const systemRole = document.querySelector('input[name="system-role"]:checked').value;
+                const fullName = `${firstName} ${lastName}`.trim();
                 
-                // Fallbacks just in case you add these inputs back to the HTML later
                 const phoneNode = document.getElementById('phone');
                 const phone = phoneNode ? phoneNode.value.trim() : "";
                 const titleNode = document.getElementById('job-title');
@@ -133,25 +192,31 @@
 
                 const currentTime = getFormattedDateTime();
                 const tempPassword = "SuP3rS3crtP@ssWord#1234";
+                const currentAdminEmail = window.auth?.currentUser?.email || "System Admin";
 
-                // 3. Create User in Firebase Auth (Using secondary ghost app to prevent logout)
+                // Extract Team ID from the selected option
+                const selectedOption = teamSelect.options[teamSelect.selectedIndex];
+                const teamId = selectedOption ? selectedOption.dataset.teamId : null;
+
+                // 3. Create User in Firebase Auth 
                 await createUserWithEmailAndPassword(window.secondaryAuth, email, tempPassword);
                 await signOut(window.secondaryAuth);
 
-                // 4. Build Exact Database Payload
-                const employeeData = {
+                // 4. Set Employee Document in Batch
+                const empRef = doc(window.db, "employees", email);
+                batch.set(empRef, {
                     account_status: "active",
                     address: "",
-                    assigned_team: team,
+                    assigned_team: teamName || "Unassigned",
                     contact_number: phone,
                     created_at: currentTime,
-                    created_by: "admin@company.com", // We can make this dynamic later
+                    created_by: currentAdminEmail,
                     department: dept,
                     email: email,
                     employee_code: "EMP" + Math.floor(Math.random() * 900 + 100),
                     employee_id: empId,
                     first_name: firstName,
-                    full_name: `${firstName} ${lastName}`,
+                    full_name: fullName,
                     last_login: "",
                     last_name: lastName,
                     login_attempts: 0,
@@ -161,26 +226,40 @@
                     role: jobTitle,
                     system_role: systemRole,
                     updated_at: currentTime
-                };
+                });
 
-                // 5. Write to Firestore using the email as the Document ID
-                await setDoc(doc(window.db, "employees", email), employeeData);
+                // 5. Update Team Document in Batch (If a team was chosen)
+                if (teamId && teamName) {
+                    const teamRef = doc(window.db, "teams", teamId);
+                    const teamSnap = await getDoc(teamRef);
+                    if (teamSnap.exists()) {
+                        const teamData = teamSnap.data();
+                        const members = teamData.members || [];
+                        
+                        // Check for duplicates just in case
+                        if (!members.some(m => m.name === fullName)) {
+                            members.push({ name: fullName, department: dept });
+                            batch.update(teamRef, {
+                                members: members,
+                                expected_size: members.length,
+                                last_updated: new Date().toISOString()
+                            });
+                        }
+                    }
+                }
 
-                showSuccessToast(`${firstName} ${lastName} (${empId}) has been successfully added.`);
+                // 6. Commit both writes simultaneously
+                await batch.commit();
+
+                showSuccessToast(`${fullName} (${empId}) has been successfully added.`);
                 
-                // 6. Route back after success
                 setTimeout(() => {
                     let fromPage = 'management'; 
                     const urlParams = new URLSearchParams(window.location.search);
-                    if(urlParams.get('from')) {
-                        fromPage = urlParams.get('from');
-                    }
+                    if(urlParams.get('from')) fromPage = urlParams.get('from');
 
-                    if (typeof navigateTo === 'function') {
-                        navigateTo(`${fromPage}.html`);
-                    } else {
-                        window.location.href = `${fromPage}.html`;
-                    }
+                    if (typeof navigateTo === 'function') navigateTo(`${fromPage}.html`);
+                    else window.location.href = `${fromPage}.html`;
                 }, 2000); 
 
             } catch (error) {
@@ -191,7 +270,6 @@
                     alert("Error saving employee. Check console for details.");
                 }
                 
-                // Reset button on failure
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
                 if (window.lucide) lucide.createIcons();

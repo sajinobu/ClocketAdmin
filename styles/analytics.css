@@ -349,3 +349,9 @@
   color: var(--brand-primary);
   font-weight: 700;
 }
+
+/* Add this to your analytics.css to ensure modal list items look sharp */
+#ranking-list-container .group:nth-child(1) .list-avatar {
+    box-shadow: 0 0 15px rgba(20, 184, 166, 0.4); /* Glow for #1 */
+    border: 2px solid #2dd4bf;
+}

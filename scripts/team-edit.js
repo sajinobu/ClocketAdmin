@@ -3,6 +3,7 @@
 
     let allEmployeesData = [];
     let currentTeamId = null;
+    let currentTeamNameGlobal = "";
 
     setTimeout(() => {
         let fromPage = 'management';
@@ -31,9 +32,14 @@
                 const data = docSnap.data();
                 const employeeName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
                 const department = data.department || ''; 
+                const assignedTeam = data.assigned_team || 'Unassigned';
                 
                 if (employeeName) {
-                    allEmployeesData.push({ name: employeeName, department: department });
+                    allEmployeesData.push({ 
+                        name: employeeName, 
+                        department: department,
+                        assigned_team: assignedTeam 
+                    });
                 }
             });
         } catch (error) {
@@ -58,13 +64,17 @@
         leadDropdown.classList.remove('disabled');
         memberDropdown.classList.remove('disabled');
 
-        const filteredPool = allEmployeesData.filter(emp => emp.department === dept);
+        // NEW LOGIC: Only show employees who are Unassigned, OR already belong to THIS team
+        const filteredPool = allEmployeesData.filter(emp => {
+            return emp.department === dept &&
+                   (emp.assigned_team === 'Unassigned' || emp.assigned_team === '' || emp.assigned_team === currentTeamNameGlobal);
+        });
 
         let leadHtml = `<div class="dropdown-item active" data-value="">Select Team Lead</div>`;
         let memberHtml = `<div class="dropdown-item active" data-value="">Select Employee...</div>`;
 
         if (filteredPool.length === 0) {
-            const noneFound = `<div class="dropdown-item disabled text-brand-dark" style="pointer-events: none;">No employees found in ${dept}</div>`;
+            const noneFound = `<div class="dropdown-item disabled text-brand-dark" style="pointer-events: none;">No available employees in ${dept}</div>`;
             leadHtml += noneFound;
             memberHtml += noneFound;
         } else {
@@ -110,6 +120,7 @@
 
             if (teamSnap.exists()) {
                 const team = teamSnap.data();
+                currentTeamNameGlobal = team.team_name || ""; // Store globally for the filter logic
 
                 // 1. Populate Text Info
                 document.getElementById('team-name').value = team.team_name || '';
@@ -129,7 +140,7 @@
                     }
                 }
 
-                // 3. Initialize Dropdowns safely (don't clear members yet)
+                // 3. Initialize Dropdowns safely
                 syncDropdownsToDepartment(team.department, false);
 
                 // 4. Set the Team Lead safely
@@ -147,7 +158,7 @@
                     document.getElementById('team-lead-text').textContent = "Select Team Lead";
                 }
 
-                // 5. Populate Members List with nice UI chips
+                // 5. Populate Members List
                 const container = document.getElementById('added-members-container');
                 container.innerHTML = ''; 
                 if (team.members && Array.isArray(team.members)) {
@@ -368,18 +379,55 @@
 
                 const teamSize = membersList.length;
 
-                const { doc, updateDoc } = window.firebaseUtils;
+                const { doc, getDoc, collection, query, where, getDocs, writeBatch } = window.firebaseUtils;
                 const docRef = doc(window.db, "teams", currentTeamId);
+                const batch = writeBatch(window.db);
+
+                // 1. Fetch old team data to see who was removed
+                const oldTeamSnap = await getDoc(docRef);
+                const oldData = oldTeamSnap.exists() ? oldTeamSnap.data() : {};
                 
-                await updateDoc(docRef, {
+                const oldMembers = [];
+                if (oldData.team_lead && oldData.team_lead !== "Unassigned") oldMembers.push(oldData.team_lead);
+                if (oldData.members) oldData.members.forEach(m => oldMembers.push(m.name));
+
+                const newMembers = [];
+                if (teamLead && teamLead !== "Unassigned") newMembers.push(teamLead);
+                membersList.forEach(m => newMembers.push(m.name));
+
+                const removedMembers = oldMembers.filter(m => !newMembers.includes(m));
+
+                // 2. Unassign removed members
+                for (const empName of removedMembers) {
+                    const q = query(collection(window.db, "employees"), where("full_name", "==", empName));
+                    const qSnap = await getDocs(q);
+                    qSnap.forEach(empDoc => {
+                        batch.update(empDoc.ref, { assigned_team: "Unassigned" });
+                    });
+                }
+
+                // 3. Assign new/current members to this team
+                for (const empName of newMembers) {
+                    const q = query(collection(window.db, "employees"), where("full_name", "==", empName));
+                    const qSnap = await getDocs(q);
+                    qSnap.forEach(empDoc => {
+                        batch.update(empDoc.ref, { assigned_team: teamName });
+                    });
+                }
+
+                // 4. Update the Team Document
+                batch.update(docRef, {
                     team_name: teamName,
                     description: description,
                     department: department,
                     team_lead: teamLead || "Unassigned",
-                    expected_size: teamSize, // Auto-calculated size
+                    expected_size: teamSize, 
                     members: membersList,
                     last_updated: new Date().toISOString()
                 });
+                
+                // Execute the entire operation safely
+                await batch.commit();
                 
                 showSuccessToast(`"${teamName}" has been successfully updated.`);
                 
@@ -467,4 +515,10 @@
 
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
+
+    document.body.addEventListener('click', (e) => {
+        if (e.target.id === 'custom-alert-btn' || e.target.id === 'custom-alert-backdrop') {
+            hideCustomAlert();
+        }
+    });
 })();

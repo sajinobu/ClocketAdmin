@@ -33,8 +33,10 @@
                 const data = docSnap.data();
                 const employeeName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
                 const department = data.department || ''; 
+                const assignedTeam = data.assigned_team || 'Unassigned';
                 
-                if (employeeName) {
+                // Only add them to the pool if they are Unassigned
+                if (employeeName && (assignedTeam === 'Unassigned' || assignedTeam === '')) {
                     allEmployeesData.push({ 
                         name: employeeName, 
                         department: department 
@@ -47,13 +49,12 @@
         }
     }
 
-    // --- DROPDOWN FILTER LOGIC (THE "MASTER KEY") ---
+    // --- DROPDOWN FILTER LOGIC ---
     function syncDropdownsToDepartment(dept) {
         const leadDropdown = document.getElementById('team-lead-custom-dropdown');
         const memberDropdown = document.getElementById('new-member-name-dropdown');
         const container = document.getElementById('added-members-container');
 
-        // If no department is selected, lock everything down
         if (!dept) {
             leadDropdown.classList.add('disabled');
             memberDropdown.classList.add('disabled');
@@ -62,18 +63,16 @@
             return;
         }
 
-        // Unblock dropdowns
         leadDropdown.classList.remove('disabled');
         memberDropdown.classList.remove('disabled');
 
-        // Filter employee pool by selected department
         const filteredPool = allEmployeesData.filter(emp => emp.department === dept);
 
         let leadHtml = `<div class="dropdown-item active" data-value="">Select Team Lead</div>`;
         let memberHtml = `<div class="dropdown-item active" data-value="">Select Employee...</div>`;
 
         if (filteredPool.length === 0) {
-            const noneFound = `<div class="dropdown-item disabled text-brand-dark" style="pointer-events: none;">No employees found in ${dept}</div>`;
+            const noneFound = `<div class="dropdown-item disabled text-brand-dark" style="pointer-events: none;">No available employees in ${dept}</div>`;
             leadHtml += noneFound;
             memberHtml += noneFound;
         } else {
@@ -84,11 +83,9 @@
             });
         }
 
-        // Inject HTML
         document.querySelector('#team-lead-custom-dropdown .dropdown-menu').innerHTML = leadHtml;
         document.getElementById('new-member-name-list').innerHTML = memberHtml;
 
-        // RESET FIELDS: If department changes, clear previous selections to maintain integrity
         document.getElementById('team-lead').value = '';
         document.getElementById('team-lead-text').textContent = 'Select Team Lead';
         
@@ -96,11 +93,9 @@
         document.getElementById('new-member-name-text').textContent = 'Select Employee...';
         document.getElementById('add-member-btn').disabled = true;
         
-        // IMPORTANT: Clear the member list if the department changes!
         if (container) container.innerHTML = ''; 
     }
 
-    // --- WAIT FOR FIREBASE INITIALIZATION ---
     const waitForFirebase = setInterval(() => {
         if (window.auth && window.db && window.firebaseUtils) {
             clearInterval(waitForFirebase);
@@ -115,7 +110,6 @@
     document.body.addEventListener('click', async (e) => {
         if (!document.getElementById('create-team-form')) return;
         
-        // 1. Routing (Back / Cancel)
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
@@ -128,13 +122,11 @@
             else window.location.href = returnUrl;
         }
 
-        // 2. Close dropdowns if clicking outside
         const isDropdownClick = e.target.closest('.custom-dropdown');
         if (!isDropdownClick) {
             document.querySelectorAll('.custom-dropdown.open').forEach(d => d.classList.remove('open'));
         }
 
-        // 3. Open Dropdown
         const trigger = e.target.closest('.dropdown-trigger');
         if (trigger) {
             const dropdown = trigger.closest('.custom-dropdown');
@@ -146,7 +138,6 @@
             }
         }
 
-        // 4. Select Dropdown Item
         const item = e.target.closest('.dropdown-item:not(.disabled)');
         if (item) {
             const dropdown = item.closest('.custom-dropdown');
@@ -154,7 +145,6 @@
             const textElement = dropdown.querySelector('span[id$="-text"]');
             const hiddenInput = dropdown.nextElementSibling; 
 
-            // Update UI
             dropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
             item.classList.add('active');
             if (textElement) textElement.textContent = item.textContent || "Unassigned";
@@ -162,23 +152,19 @@
             if (hiddenInput && hiddenInput.tagName === 'INPUT') {
                 hiddenInput.value = value;
                 
-                // Logic: If Department changes, trigger the sync function
                 if (hiddenInput.id === 'team-department') {
                     syncDropdownsToDepartment(value);
                 }
                 
-                // Logic: Enable Add Member button if a name is selected
                 if (hiddenInput.id === 'new-member-name') {
                     document.getElementById('add-member-btn').disabled = !value;
                 }
 
-                // NEW LOGIC: If a Team Lead is selected, ensure they aren't also in the members list
                 if (hiddenInput.id === 'team-lead') {
                     const container = document.getElementById('added-members-container');
                     const existingNames = Array.from(container.querySelectorAll('.member-item-name')).map(el => el.textContent);
                     
                     if (existingNames.includes(value)) {
-                        // Find and remove them from the members list
                         Array.from(container.querySelectorAll('.member-item')).forEach(item => {
                             if (item.querySelector('.member-item-name').textContent === value) {
                                 item.remove();
@@ -191,7 +177,6 @@
             dropdown.classList.remove('open');
         }
 
-        // 5. Add Member Button
         const addBtn = e.target.closest('#add-member-btn');
         if (addBtn && !addBtn.disabled) {
             e.preventDefault();
@@ -201,20 +186,17 @@
             const container = document.getElementById('added-members-container');
             const currentLead = document.getElementById('team-lead').value;
 
-            // NEW LOGIC: Prevent adding the Team Lead as a regular member
             if (name === currentLead) {
                 showCustomAlert('Cannot Add Member', `${name} is already the Team Lead and cannot be added as a regular member.`);
                 return;
             }
 
-            // Prevent adding duplicates
             const existingNames = Array.from(container.querySelectorAll('.member-item-name')).map(el => el.textContent);
             if (existingNames.includes(name)) {
                 showCustomAlert('Duplicate Member', `${name} is already added to the team.`);
                 return;
             }
 
-            // UI FIX: Changed bg-white to bg-brand-surface, improved text colors and pill design
             const memberRow = document.createElement('div');
             memberRow.className = 'member-item flex items-center justify-between p-3 bg-brand-surface border border-brand-grayLight rounded-lg mb-2 shadow-sm transition-colors';
             memberRow.innerHTML = `
@@ -230,11 +212,9 @@
             container.appendChild(memberRow);
             if (window.lucide) lucide.createIcons();
 
-            // Reset only the Name dropdown so they can pick the next person
             document.getElementById('new-member-name-text').textContent = 'Select Employee...';
             nameInput.value = '';
             
-            // Remove active class from the dropdown menu items
             const nameMenu = document.getElementById('new-member-name-list');
             if (nameMenu) {
                 nameMenu.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
@@ -245,14 +225,12 @@
             addBtn.disabled = true;
         }
 
-        // 6. Remove Member
         const removeBtn = e.target.closest('.btn-remove-member');
         if (removeBtn) {
             e.preventDefault();
             removeBtn.closest('.member-item').remove();
         }
 
-        // 7. Custom Alert Handlers (Close logic)
         if (e.target.id === 'custom-alert-btn' || e.target.id === 'custom-alert-backdrop') {
             hideCustomAlert();
         }
@@ -275,9 +253,29 @@
                 const department = document.getElementById('team-department').value;
                 const teamLead = document.getElementById('team-lead').value;
                 
-                // Validate Department
+                if (!teamName) {
+                    showCustomAlert('Missing Information', 'Please provide a Team Name.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    return;
+                }
+
                 if (!department) {
                     showCustomAlert('Missing Information', 'Please select a Team Department.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    return;
+                }
+
+                const { doc, collection, writeBatch, query, where, getDocs } = window.firebaseUtils;
+
+                // === DUPLICATE NAME CHECK ===
+                const teamsRef = collection(window.db, "teams");
+                const q = query(teamsRef, where("team_name", "==", teamName));
+                const duplicateCheckSnap = await getDocs(q);
+
+                if (!duplicateCheckSnap.empty) {
+                    showCustomAlert('Duplicate Team Name', `A team named "${teamName}" already exists. Please choose a different name.`);
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalText;
                     return;
@@ -292,15 +290,13 @@
                     };
                 });
 
-                // Auto-calculate expected size based on actual added members
                 const teamSize = membersList.length;
-                
                 const teamId = teamName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                const batch = writeBatch(window.db);
 
-                const { doc, setDoc } = window.firebaseUtils;
-                const docRef = doc(window.db, "teams", teamId);
-                
-                await setDoc(docRef, {
+                // 1. Create the Team Document
+                const teamDocRef = doc(window.db, "teams", teamId);
+                batch.set(teamDocRef, {
                     team_id: teamId,
                     team_name: teamName,
                     description: description,
@@ -311,6 +307,25 @@
                     created_at: new Date().toISOString(),
                     created_by: window.auth?.currentUser?.email || "System Admin"
                 });
+
+                // 2. Update Employee Documents
+                const namesToUpdate = [];
+                if (teamLead && teamLead !== "Unassigned") namesToUpdate.push(teamLead);
+                membersList.forEach(m => namesToUpdate.push(m.name));
+
+                for (const empName of namesToUpdate) {
+                    const qEmp = query(collection(window.db, "employees"), where("full_name", "==", empName));
+                    const qSnap = await getDocs(qEmp);
+                    
+                    qSnap.forEach(empDoc => {
+                        batch.update(empDoc.ref, {
+                            assigned_team: teamName
+                        });
+                    });
+                }
+
+                // 3. Commit everything at once
+                await batch.commit();
                 
                 showSuccessToast(`"${teamName}" has been successfully created.`);
                 
@@ -378,9 +393,7 @@
         titleEl.textContent = title;
         messageEl.textContent = message;
 
-        // Show modal
         modal.classList.remove('hidden');
-        // Small delay to allow CSS transition to play
         requestAnimationFrame(() => {
             modal.classList.remove('opacity-0');
             box.classList.remove('scale-95');
@@ -399,6 +412,6 @@
 
         setTimeout(() => {
             modal.classList.add('hidden');
-        }, 300); // Matches duration-300
+        }, 300);
     }
 })();

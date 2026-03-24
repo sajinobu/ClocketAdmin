@@ -150,7 +150,6 @@
 
             const { collection, getDocs } = window.firebaseUtils;
 
-            // 1. FETCH ALL EMPLOYEES FIRST (To map Team Lead names to Profile Pictures)
             const empSnapshot = await getDocs(collection(window.db, "employees"));
             const employeeAvatarMap = {};
             
@@ -162,7 +161,6 @@
                 }
             });
 
-            // 2. FETCH THE TEAMS
             const querySnapshot = await getDocs(collection(window.db, "teams"));
             
             const loader = document.getElementById('teams-loading-row');
@@ -178,7 +176,6 @@
             querySnapshot.forEach((docSnap) => {
                 const team = docSnap.data();
                 
-                // Fetch Leader's Avatar from the map we built above
                 const leadName = team.team_lead && team.team_lead !== "Unassigned" ? team.team_lead : "Unassigned";
                 const leadAvatar = employeeAvatarMap[leadName] || defaultAvatar;
 
@@ -251,7 +248,6 @@
     // ==========================================
     // 3. EVENT LISTENERS
     // ==========================================
-    // Changed to 'async (e)' to allow await for Firebase deletion
     document.body.addEventListener('click', async (e) => {
         if (!document.querySelector('.management-tab')) return;
 
@@ -411,10 +407,9 @@
                 const type = deleteBtn.classList.contains('disband-btn') ? 'team' : 'employee';
                 document.getElementById('delete-type').textContent = type;
                 
-                // Store required data in window to access upon confirmation
                 window.itemToDeleteRow = deleteBtn.closest('tr');
                 window.deleteItemName = deleteBtn.getAttribute('data-name');
-                window.deleteItemId = deleteBtn.getAttribute('data-id'); // Grab the Firebase ID
+                window.deleteItemId = deleteBtn.getAttribute('data-id'); 
                 window.deleteItemType = type; 
                 
                 dm.classList.remove('hidden');
@@ -426,14 +421,13 @@
             const dm = document.getElementById('delete-modal');
             if (dm) dm.classList.add('hidden');
             
-            // Clear temporary data
             window.itemToDeleteRow = null;
             window.deleteItemName = null;
             window.deleteItemId = null;
             window.deleteItemType = null;
         }
 
-        // --- CONFIRM DELETE (FIREBASE EXECUTION) ---
+        // --- CONFIRM DELETE (FIREBASE BATCH EXECUTION) ---
         const confirmDeleteBtn = e.target.closest('#confirm-delete');
         if (confirmDeleteBtn) {
             const dm = document.getElementById('delete-modal');
@@ -444,19 +438,45 @@
                 const itemId = window.deleteItemId;
                 const type = window.deleteItemType;
                 
-                // Determine which Firebase collection to delete from
-                const collectionName = type === 'team' ? 'teams' : 'employees';
-
-                // Put button in loading state
                 const originalText = confirmDeleteBtn.innerHTML;
                 confirmDeleteBtn.disabled = true;
                 confirmDeleteBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin inline-block"></i> Deleting...`;
                 if(window.lucide) lucide.createIcons();
 
                 try {
-                    // Firebase Delete Call
-                    const { doc, deleteDoc } = window.firebaseUtils;
-                    await deleteDoc(doc(window.db, collectionName, itemId));
+                    const { doc, deleteDoc, getDoc, collection, query, where, getDocs, writeBatch } = window.firebaseUtils;
+
+                    if (type === 'team') {
+                        // 1. Fetch team data before deleting to know who was inside it
+                        const teamRef = doc(window.db, "teams", itemId);
+                        const teamSnap = await getDoc(teamRef);
+                        const batch = writeBatch(window.db);
+
+                        if (teamSnap.exists()) {
+                            const teamData = teamSnap.data();
+                            
+                            // Compile list of names to unassign (Team Lead + All Members)
+                            const membersToUnassign = [];
+                            if (teamData.team_lead && teamData.team_lead !== "Unassigned") membersToUnassign.push(teamData.team_lead);
+                            if (teamData.members) teamData.members.forEach(m => membersToUnassign.push(m.name));
+
+                            // 2. Unassign them all via Batch
+                            for (const empName of membersToUnassign) {
+                                const q = query(collection(window.db, "employees"), where("full_name", "==", empName));
+                                const qSnap = await getDocs(q);
+                                qSnap.forEach(empDoc => {
+                                    batch.update(empDoc.ref, { assigned_team: "Unassigned" });
+                                });
+                            }
+                        }
+
+                        // 3. Delete the team itself
+                        batch.delete(teamRef);
+                        await batch.commit(); // Execute everything simultaneously!
+                    } else {
+                        // Delete Employee normally
+                        await deleteDoc(doc(window.db, "employees", itemId));
+                    }
 
                     // Animate row disappearance
                     row.style.transition = 'all 0.3s ease';
@@ -475,9 +495,8 @@
                     
                 } catch (error) {
                     console.error(`Error deleting ${type}:`, error);
-                    alert(`Failed to delete ${itemName}. Ensure you have the correct permissions.`);
+                    showCustomAlert('Error Deleting Item', `Failed to delete ${itemName}. Please try again.`);
                 } finally {
-                    // Reset button and state
                     confirmDeleteBtn.disabled = false;
                     confirmDeleteBtn.innerHTML = originalText;
                     
@@ -614,4 +633,43 @@
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    // ==========================================
+    // 5. CUSTOM ALERT MODAL
+    // ==========================================
+    function showCustomAlert(title, message) {
+        const modal = document.getElementById('custom-alert-modal');
+        const box = document.getElementById('custom-alert-box');
+        const titleEl = document.getElementById('custom-alert-title');
+        const messageEl = document.getElementById('custom-alert-message');
+        
+        if (!modal) return;
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+        });
+    }
+
+    function hideCustomAlert() {
+        const modal = document.getElementById('custom-alert-modal');
+        const box = document.getElementById('custom-alert-box');
+        if (!modal) return;
+
+        modal.classList.add('opacity-0');
+        box.classList.remove('scale-100');
+        box.classList.add('scale-95');
+
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    document.body.addEventListener('click', (e) => {
+        if (e.target.id === 'custom-alert-btn' || e.target.id === 'custom-alert-backdrop') {
+            hideCustomAlert();
+        }
+    });
 })();

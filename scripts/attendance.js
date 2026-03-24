@@ -70,24 +70,25 @@
         if (!tableBody || !window.firebaseUtils) return;
 
         try {
-            // 1. Show Loading Spinner
+            // 1. Show Loading Spinner 
             const loadingRow = document.createElement('tr');
             loadingRow.id = "att-loading-row";
-            loadingRow.innerHTML = `<td colspan="7" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
+            loadingRow.innerHTML = `<td colspan="6" class="text-center py-12"><i data-lucide="loader" class="w-8 h-8 animate-spin mx-auto text-brand-primary"></i></td>`;
             tableBody.prepend(loadingRow);
             if (window.lucide) lucide.createIcons();
 
             const { collection, getDocs, query, where } = window.firebaseUtils;
             
-            // 2. FETCH ALL EMPLOYEES FIRST (To get Names, Departments, and Photos)
+            // 2. FETCH ALL EMPLOYEES FIRST 
             const empSnapshot = await getDocs(collection(window.db, "employees"));
             const employeeMap = {};
             empSnapshot.forEach(doc => {
                 employeeMap[doc.data().email] = { ...doc.data(), id: doc.id };
+                employeeMap[doc.id] = { ...doc.data(), id: doc.id }; 
             });
 
             // 3. FETCH ATTENDANCE FOR THE SELECTED DATE
-            const targetDateStr = formatDate(activeDate); // Matches your "2026-03-23" format
+            const targetDateStr = formatDate(activeDate); 
             const attQuery = query(collection(window.db, "attendance"), where("date", "==", targetDateStr));
             const attSnapshot = await getDocs(attQuery);
             
@@ -98,7 +99,10 @@
             document.querySelectorAll('#attendance-table-body .attendance-row').forEach(row => row.remove());
 
             if (attSnapshot.empty) {
-                if (noResultsRow) noResultsRow.style.display = '';
+                if (noResultsRow) {
+                    noResultsRow.querySelector('td').setAttribute('colspan', '6');
+                    noResultsRow.style.display = '';
+                }
                 return;
             } else {
                 if (noResultsRow) noResultsRow.style.display = 'none';
@@ -108,14 +112,32 @@
 
             attSnapshot.forEach((docSnap) => {
                 const att = docSnap.data();
-                const empData = employeeMap[att.employee_id] || {}; // Link via email
+                const empData = employeeMap[att.employee_id] || {}; 
 
-                // Get Times (Firestore Timestamps to String)
-                const clockIn = att.clock_in_time ? (att.clock_in_time.toDate ? att.clock_in_time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : att.clock_in_time) : "N/A";
-                const clockOut = att.clock_out_time ? (att.clock_out_time.toDate ? att.clock_out_time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : att.clock_out_time) : "--";
+                // Process Timestamps safely
+                let clockIn = "N/A";
+                if (att.clock_in_time) {
+                    if (att.clock_in_time.toDate) clockIn = att.clock_in_time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    else if (typeof att.clock_in_time === 'string') clockIn = new Date(att.clock_in_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+
+                let clockOut = "--";
+                if (att.clock_out_time) {
+                    if (att.clock_out_time.toDate) clockOut = att.clock_out_time.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    else if (typeof att.clock_out_time === 'string') clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
                 
-                // Location formatting
-                const location = (att.clock_in_lat && att.clock_in_long) ? `${att.clock_in_lat.toFixed(2)}, ${att.clock_in_long.toFixed(2)}` : "N/A";
+                // --- BARANGAY/CITY UI LOGIC ---
+                const hasLocation = att.clock_in_lat && att.clock_in_long;
+                const mapLink = hasLocation ? `https://maps.google.com/?q=${att.clock_in_lat},${att.clock_in_long}` : "#";
+                const locId = `loc-${docSnap.id}`; 
+                
+                const locationDisplay = hasLocation 
+                    ? `<a href="${mapLink}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
+                            <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
+                       </a>` 
+                    : `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
 
                 // Status Logic
                 let statusText = "On Time";
@@ -125,39 +147,59 @@
                     statusClass = "bg-blue-100 text-blue-600 border-blue-200";
                 }
 
+                // Photo Buttons
+                const employeeName = empData.full_name || att.employee_id;
+                
+                const inPhotoBtn = att.clock_in_photo 
+                    ? `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In" title="View Clock In Photo">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                       </button>` 
+                    : `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled title="No Clock In Photo">
+                        <i data-lucide="camera-off" class="w-4 h-4"></i>
+                       </button>`;
+
+                const outPhotoBtn = att.clock_out_photo 
+                    ? `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out" title="View Clock Out Photo">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                       </button>` 
+                    : `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled title="No Clock Out Photo">
+                        <i data-lucide="camera-off" class="w-4 h-4"></i>
+                       </button>`;
+
+                // --- NEW AVATAR FALLBACK LOGIC ---
+                // If it's empty, null, or "coming soon", use the default gray icon!
+                const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") 
+                    ? empData.profile_picture 
+                    : defaultAvatar;
+
                 const tr = document.createElement('tr');
                 tr.className = 'attendance-row data-row';
                 tr.setAttribute('data-status', statusText.toLowerCase());
-                tr.setAttribute('data-date', att.date);
 
                 tr.innerHTML = `
                     <td class="table-td">
                       <div class="flex items-center gap-3">
-                        <img src="${empData.profile_picture || defaultAvatar}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-white" alt="Avatar">
+                        <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
                         <div>
-                          <p class="font-bold text-brand-darkest text-sm employee-name">${empData.full_name || att.employee_id}</p>
+                          <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
                           <p class="text-xs text-gray-500">${empData.department || "Unassigned"}</p>
                         </div>
                       </div>
                     </td>
-                    <td class="table-td text-center">
-                      <button class="btn-photo mx-auto view-photo-btn" 
-                        data-name="${empData.full_name || 'Employee'}" 
-                        data-time="${clockIn}"
-                        onclick="window.openModalWithImage('${att.clock_in_photo}')">
-                          <i data-lucide="camera" class="w-4 h-4"></i>
-                      </button>
+                    <td class="table-td">
+                      <div class="flex items-center gap-2">
+                        <p class="text-sm font-bold text-brand-darkest">${clockIn}</p>
+                        ${inPhotoBtn}
+                      </div>
                     </td>
                     <td class="table-td">
-                      <p class="text-sm font-bold text-brand-darkest">${clockIn}</p>
+                      <div class="flex items-center gap-2">
+                        <p class="text-sm font-medium text-brand-darkest">${clockOut}</p>
+                        ${outPhotoBtn}
+                      </div>
                     </td>
                     <td class="table-td">
-                      <p class="text-sm font-medium text-brand-darkest">${clockOut}</p>
-                    </td>
-                    <td class="table-td text-sm font-medium text-brand-darkest">
-                        <a href="https://www.google.com/maps?q=${att.clock_in_lat},${att.clock_in_long}" target="_blank" class="hover:underline text-brand-primary">
-                            ${location}
-                        </a>
+                        ${locationDisplay}
                     </td>
                     <td class="table-td">
                       <span class="status-badge ${statusClass}">${statusText}</span>
@@ -168,9 +210,37 @@
                 `;
                 
                 tableBody.appendChild(tr);
+
+                // --- ASYNC FETCH NOMINATIM (OSM) FOR BARANGAY & CITY ---
+                if (hasLocation) {
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${att.clock_in_lat}&lon=${att.clock_in_long}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const el = document.getElementById(locId);
+                            if (el && data && data.address) {
+                                const addr = data.address;
+                                const brgy = addr.village || addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || '';
+                                const city = addr.city || addr.town || addr.municipality || '';
+                                
+                                let placeName = "Unknown Area";
+                                if (brgy && city) placeName = `${brgy}, ${city}`;
+                                else if (city) placeName = city;
+                                else if (brgy) placeName = brgy;
+                                else if (data.display_name) placeName = data.display_name.split(',').slice(0, 2).join(',');
+
+                                el.innerHTML = placeName;
+                                el.title = data.display_name; 
+                            }
+                        })
+                        .catch(() => {
+                            const el = document.getElementById(locId);
+                            if (el) el.innerHTML = `${att.clock_in_lat.toFixed(4)}, ${att.clock_in_long.toFixed(4)}`;
+                        });
+                }
             });
 
             if (window.lucide) lucide.createIcons();
+            filterAttendanceTable(); 
 
         } catch(error) {
             console.error("Error fetching attendance data: ", error);
@@ -184,26 +254,19 @@
         const noResultsRow = document.getElementById('no-results-row');
         
         const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        const targetDateStr = formatDate(activeDate);
         let visibleCount = 0;
 
         tableRows.forEach(row => {
             const nameNode = row.querySelector('.employee-name');
             const rowStatus = row.getAttribute('data-status');
-            let rowDate = row.getAttribute('data-date');
             
-            if (rowDate === 'today') rowDate = todayStr;
-
             if (!nameNode || !rowStatus) return;
             const name = nameNode.textContent.toLowerCase();
 
             const matchesSearch = name.includes(searchTerm);
-            const matchesStatus = activeStatus === 'all' || rowStatus === activeStatus;
-            
-            // Note: Since all placeholder rows are set to 'today', changing the calendar date will hide them
-            const matchesDate = rowDate === targetDateStr; 
+            const matchesStatus = activeStatus === 'all' || rowStatus.replace(' ', '-') === activeStatus;
 
-            if (matchesSearch && matchesStatus && matchesDate) {
+            if (matchesSearch && matchesStatus) {
                 row.style.display = ''; 
                 visibleCount++;
             } else {
@@ -216,7 +279,7 @@
         }
     }
 
-    // Render calendar initially in case elements are ready
+    // Render calendar initially
     renderCalendar();
 
     // Fetch Safely (Wait for Firebase to finish loading on hard refreshes)
@@ -227,24 +290,19 @@
         }
     }, 50);
 
-    // 2. SPA EVENT GUARD (Run Only Once)
     if (window.attendanceSPAInitialized) return;
     window.attendanceSPAInitialized = true;
 
-    // 3. EVENT DELEGATION LISTENERS
+    // --- EVENT DELEGATION LISTENERS ---
     document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the calendar grid is on the screen!
         if (!document.getElementById('calendar-grid')) return;
         
-        // --- Dropdown Management ---
         const statusDropdown = document.getElementById('status-dropdown');
         const dateDropdown = document.getElementById('date-dropdown');
         
-        // Close dropdowns if clicking outside
         if (statusDropdown && !statusDropdown.contains(e.target)) statusDropdown.classList.remove('open');
         if (dateDropdown && !dateDropdown.contains(e.target)) dateDropdown.classList.remove('open');
 
-        // Toggle Status Dropdown
         const statusTrigger = e.target.closest('#status-dropdown .dropdown-trigger');
         if (statusTrigger) {
             e.stopPropagation();
@@ -252,7 +310,6 @@
             statusDropdown.classList.toggle('open');
         }
 
-        // Toggle Date Dropdown
         const dateTrigger = e.target.closest('#date-dropdown .dropdown-trigger');
         if (dateTrigger) {
             e.stopPropagation();
@@ -261,7 +318,6 @@
             renderCalendar(); 
         }
 
-        // Select Status Item
         const statusItem = e.target.closest('#status-menu .dropdown-item');
         if (statusItem) {
             e.stopPropagation();
@@ -276,7 +332,6 @@
             filterAttendanceTable();
         }
 
-        // Calendar Prev/Next Buttons
         if (e.target.closest('#cal-prev')) {
             e.stopPropagation();
             displayedMonth.setMonth(displayedMonth.getMonth() - 1);
@@ -288,7 +343,7 @@
             renderCalendar();
         }
 
-        // Select Calendar Day
+        // --- Calendar Day Click ---
         const dayBtn = e.target.closest('.cal-day-btn');
         if (dayBtn && !dayBtn.classList.contains('empty')) {
             e.stopPropagation();
@@ -305,28 +360,44 @@
             }
 
             if (dateDropdown) dateDropdown.classList.remove('open');
-            filterAttendanceTable();
+            
+            renderCalendar();
+            loadAttendanceData(); 
         }
 
         // --- Photo Verification Modal ---
         const photoModal = document.getElementById('photo-modal');
-        
-        // Open Modal
         const viewPhotoBtn = e.target.closest('.view-photo-btn');
+        
         if (viewPhotoBtn && photoModal && !viewPhotoBtn.disabled) {
             const employeeName = viewPhotoBtn.getAttribute('data-name');
             const captureTime = viewPhotoBtn.getAttribute('data-time');
+            const photoData = viewPhotoBtn.getAttribute('data-photo');
+            const photoType = viewPhotoBtn.getAttribute('data-type'); 
             
             const modalEmpName = document.getElementById('modal-emp-name');
             const modalPhotoTime = document.getElementById('modal-photo-time');
+            const photoPlaceholder = document.querySelector('.photo-placeholder');
             
             if (modalEmpName) modalEmpName.textContent = employeeName;
-            if (modalPhotoTime) modalPhotoTime.textContent = `Selfie captured at ${captureTime}`;
+            
+            if (modalPhotoTime) modalPhotoTime.textContent = `${photoType} selfie captured at ${captureTime}`;
+            
+            if (photoData && photoData !== "null") {
+                photoPlaceholder.innerHTML = `<img src="${photoData}" alt="${photoType} Verification Selfie" class="w-full h-full object-cover rounded-lg shadow-sm">`;
+            } else {
+                photoPlaceholder.innerHTML = `
+                    <div class="text-center py-6">
+                        <i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                        <p class="text-sm font-medium mt-2 text-brand-darkest">No photo available</p>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
             
             photoModal.classList.remove('hidden');
         }
 
-        // Close Modal
         const closeBtn = e.target.closest('#close-modal-btn, #close-modal-btn-2');
         if ((closeBtn || e.target === photoModal) && photoModal) {
             photoModal.classList.add('hidden');

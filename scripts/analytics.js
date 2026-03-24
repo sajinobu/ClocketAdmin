@@ -99,6 +99,14 @@
                 showAnalyticsToast("Report exported as CSV successfully!");
             }, 1500);
         }
+
+        if (e.target.closest('.btn-outline-full')) {
+            showRankingModal();
+        }
+
+        if (e.target.closest('#close-ranking-modal') || e.target.id === 'ranking-modal-backdrop') {
+            hideRankingModal();
+        }
     });
 
     // --- Helper Function: Brand-Themed Toast Notification ---
@@ -126,5 +134,64 @@
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    const rankingData = [
+    { name: "Lisa Smith", score: "100%", avatar: "LS", color: "avatar-teal" },
+    { name: "Mike Chen", score: "99.4%", avatar: "MC", color: "avatar-blue" },
+    { name: "Emma Wilson", score: "98.9%", avatar: "EW", color: "avatar-teal" },
+    { name: "Jon Orlanz", score: "98.2%", avatar: "JO", color: "avatar-blue" },
+    { name: "Sarah Johnson", score: "97.5%", avatar: "SJ", color: "avatar-teal" },
+    { name: "David Miller", score: "96.8%", avatar: "DM", color: "avatar-blue" },
+    { name: "Anna Taylor", score: "96.1%", avatar: "AT", color: "avatar-teal" },
+    { name: "Robert Fox", score: "95.5%", avatar: "RF", color: "avatar-blue" },
+    { name: "Chris Brown", score: "94.9%", avatar: "CB", color: "avatar-teal" },
+    { name: "Teffanie Bornales", score: "94.2%", avatar: "JS", color: "avatar-blue" }
+];
+
+function showRankingModal() {
+    const modal = document.getElementById('ranking-modal');
+    const box = document.getElementById('ranking-modal-box');
+    const container = document.getElementById('ranking-list-container');
+
+    // Populate the list
+    container.innerHTML = rankingData.map((emp, index) => `
+        <div class="flex items-center gap-4 p-3 rounded-xl hover:bg-brand-grayBg transition-colors group">
+            <div class="text-sm font-black text-brand-dark w-6">${index + 1}</div>
+            <div class="list-avatar ${emp.color} shrink-0">${emp.avatar}</div>
+            <div class="flex-1">
+                <p class="text-sm font-bold text-brand-darkest group-hover:text-brand-primary transition-colors">${emp.name}</p>
+                <p class="text-[10px] text-brand-dark uppercase">Engineering Dept</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-black text-brand-primary">${emp.score}</p>
+                <p class="text-[9px] font-bold text-green-500 uppercase">Punctual</p>
+            </div>
+        </div>
+    `).join('');
+
+    if (window.lucide) lucide.createIcons();
+
+    // Show with animation
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.classList.add('flex'); // Ensure flex is applied
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+        box.classList.add('scale-100');
+    });
+}
+
+function hideRankingModal() {
+    const modal = document.getElementById('ranking-modal');
+    const box = document.getElementById('ranking-modal-box');
+    
+    modal.classList.add('opacity-0');
+    box.classList.remove('scale-100');
+    box.classList.add('scale-95');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
 
 })();

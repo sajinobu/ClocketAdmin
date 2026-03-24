@@ -1,11 +1,7 @@
-// scripts/firebase-config.js
-
-// 1. We MUST use the CDN links for your Vanilla SPA router to work!
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Your exact Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCfdLYFSBXpwdcxLas9FxKKcLYALAa14PQ",
   authDomain: "clocket-appcase.firebaseapp.com",
@@ -17,12 +13,9 @@ const firebaseConfig = {
   measurementId: "G-2GZ94KNTK6"
 };
 
-// 2. Initialize Apps
 const app = initializeApp(firebaseConfig);
 const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
 
-// 3. Attach everything to the global window object
-// This ensures your router doesn't block the scripts on page transitions
 window.db = getFirestore(app);
 window.auth = getAuth(app);
 window.secondaryAuth = getAuth(secondaryApp);
@@ -33,8 +26,13 @@ window.firebaseUtils = {
     doc,
     getDoc,
     updateDoc,
+    deleteDoc,
     setDoc,
+    query,
+    where,
+    writeBatch,
     signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
     signOut,
     onAuthStateChanged
 };
