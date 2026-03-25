@@ -58,7 +58,7 @@
         <div class="px-8 pt-8 pb-3 flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
           <div>
             <h1 class="page-title text-2xl font-bold text-brand-darkest transition-colors">Analytics & Insights</h1>
-            <p class="page-subtitle text-sm text-brand-dark transition-colors">Real-time attendance intelligence for March 2026</p>
+            <p class="page-subtitle text-sm text-brand-dark transition-colors" id="analytics-subtitle">Real-time attendance intelligence</p>
           </div>
 
           <div class="flex items-center gap-3">
@@ -84,10 +84,10 @@
                     <span class="kpi-badge">On-Track</span>
                   </div>
                   <p class="kpi-title">Avg Check-in</p>
-                  <p class="kpi-value">8:47 AM</p>
+                  <p class="kpi-value">--:--</p>
                 </div>
                 <p class="text-xs text-green-500 mt-3 flex items-center gap-1 font-bold transition-colors">
-                  <i data-lucide="trending-up" class="w-3 h-3"></i> 5m earlier
+                  <i data-lucide="trending-up" class="w-3 h-3"></i> Based on selected range
                 </p>
               </div>
 
@@ -98,10 +98,10 @@
                     <span class="kpi-badge">Healthy</span>
                   </div>
                   <p class="kpi-title">On-Time Rate</p>
-                  <p class="kpi-value">94.2%</p>
+                  <p class="kpi-value">0%</p>
                 </div>
                 <div class="w-full bg-brand-grayLight h-1.5 rounded-full mt-3 overflow-hidden transition-colors">
-                  <div class="bg-brand-primary h-full transition-all duration-1000 animate-width" data-width="94.2%"></div>
+                  <div class="bg-brand-primary h-full transition-all duration-1000" style="width: 0%;" id="kpi-ontime-bar"></div>
                 </div>
               </div>
 
@@ -112,10 +112,10 @@
                     <span class="kpi-badge">Attention</span>
                   </div>
                   <p class="kpi-title">Late Arrivals</p>
-                  <p class="kpi-value">15</p>
+                  <p class="kpi-value">0</p>
                 </div>
                 <p class="text-xs text-red-500 mt-3 flex items-center gap-1 font-bold transition-colors">
-                  <i data-lucide="arrow-up" class="w-3 h-3"></i> 20% increase
+                  <i data-lucide="activity" class="w-3 h-3"></i> Recorded instances
                 </p>
               </div>
 
@@ -126,9 +126,9 @@
                     <span class="kpi-badge">Efficient</span>
                   </div>
                   <p class="kpi-title">Avg Productive Hours</p>
-                  <p class="kpi-value">8.2h</p>
+                  <p class="kpi-value">0.0h</p>
                 </div>
-                <p class="text-[10px] text-brand-dark mt-3 font-bold uppercase tracking-wider transition-colors">Stabilized this week</p>
+                <p class="text-[10px] text-brand-dark mt-3 font-bold uppercase tracking-wider transition-colors">Stabilized metric</p>
               </div>
             </div>
 
@@ -148,76 +148,51 @@
                         <div class="dropdown-item" data-value="Last Week">Last Week</div>
                     </div>
                   </div>
-
                 </div>
-                <div class="flex-1 flex flex-col justify-center">
-                  <div class="trend-row">
-                    <div class="trend-header">
-                      <span class="trend-label">Monday</span>
-                      <span class="trend-value">98%</span>
+                
+                <div class="flex-1 flex flex-col justify-center" id="weekly-trends-container">
+                    <div class="flex items-center justify-center h-full text-brand-primary">
+                        <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
                     </div>
-                    <div class="progress-track">
-                      <div class="progress-fill animate-width" data-width="98%"></div>
-                    </div>
-                  </div>
-                  <div class="trend-row">
-                    <div class="trend-header">
-                      <span class="trend-label">Tuesday</span>
-                      <span class="trend-value">96%</span>
-                    </div>
-                    <div class="progress-track">
-                      <div class="progress-fill animate-width" data-width="96%"></div>
-                    </div>
-                  </div>
-                  <div class="trend-row">
-                    <div class="trend-header">
-                      <span class="trend-label">Wednesday</span>
-                      <span class="trend-value text-amber-500 dark:text-amber-400 transition-colors">92%</span>
-                    </div>
-                    <div class="progress-track">
-                      <div class="progress-fill warning animate-width" data-width="92%"></div>
-                    </div>
-                  </div>
-                  <div class="trend-row">
-                    <div class="trend-header">
-                      <span class="trend-label">Thursday</span>
-                      <span class="trend-value">97%</span>
-                    </div>
-                    <div class="progress-track">
-                      <div class="progress-fill animate-width" data-width="97%"></div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
               <div class="analytics-panel lg:col-span-1">
                 <h3 class="panel-title mb-4">Live Workforce</h3>
                 <div class="flex-1 flex flex-col justify-center">
-                  <div class="relative w-28 h-28 mx-auto mb-6">
-                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                  <div class="relative w-32 h-32 mx-auto mb-8">
+                    
+                    <svg class="w-full h-full transform -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" fill="none" class="stroke-[var(--brand-gray-light)] transition-colors duration-300" stroke-width="12" />
                       <circle cx="50" cy="50" r="40" fill="none" class="stroke-[var(--brand-primary)] transition-colors duration-300" stroke-width="12"
-                        stroke-dasharray="200 251.2" stroke-linecap="round" style="transition: all 1.5s ease;" />
+                        stroke-dasharray="0 251.2" stroke-linecap="round" style="transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);" id="chart-active-ring" />
+                      <circle cx="50" cy="50" r="40" fill="none" class="stroke-amber-400 transition-colors duration-300" stroke-width="12"
+                        stroke-dasharray="0 251.2" stroke-dashoffset="0" stroke-linecap="round" style="transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);" id="chart-break-ring" />
                     </svg>
+
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
-                      <p class="text-2xl font-black text-brand-darkest transition-colors">247</p>
-                      <p class="text-[9px] font-bold text-brand-dark uppercase tracking-widest transition-colors">Active</p>
+                      <p class="text-3xl font-black text-brand-darkest drop-shadow-sm transition-colors" id="live-total-count">0</p>
+                      <p class="text-[10px] font-bold text-brand-primary uppercase tracking-widest mt-0.5 transition-colors">Active</p>
                     </div>
                   </div>
-                  <div class="space-y-2">
-                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg transition-colors">
-                      <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 bg-brand-primary rounded-full"></span>
-                        <span class="text-xs font-bold text-brand-dark transition-colors">On-Site</span>
+                  <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-brand-surface border border-brand-grayLight shadow-sm hover:shadow-md transition-all group cursor-default">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center">
+                            <span class="w-2.5 h-2.5 bg-brand-primary rounded-full"></span>
+                        </div>
+                        <span class="text-sm font-bold text-brand-darkest">On-Site</span>
                       </div>
-                      <span class="text-sm font-bold text-brand-darkest transition-colors">189</span>
+                      <span class="text-lg font-black text-brand-darkest" id="live-onsite-count">0</span>
                     </div>
-                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-brand-grayBg transition-colors">
-                      <div class="flex items-center gap-2">
-                        <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
-                        <span class="text-xs font-bold text-brand-dark transition-colors">On Break</span>
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-brand-surface border border-brand-grayLight shadow-sm hover:shadow-md transition-all group cursor-default">
+                      <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400/15 flex items-center justify-center">
+                          <span class="w-2.5 h-2.5 bg-amber-400 rounded-full"></span>
+                        </div>
+                        <span class="text-sm font-bold text-brand-darkest">On Break</span>
                       </div>
-                      <span class="text-sm font-bold text-brand-darkest transition-colors">31</span>
+                      <span class="text-lg font-black text-brand-darkest" id="live-break-count">0</span>
                     </div>
                   </div>
                 </div>
@@ -227,51 +202,52 @@
                 <h3 class="panel-title mb-6">Arrival Distribution</h3>
                 <div class="distribution-chart">
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">18</span>
-                    <div class="distribution-bar" style="height: 20%"></div>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">0</span>
+                    <div class="distribution-bar" style="height: 0%"></div>
                     <p class="distribution-label">7AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">45</span>
-                    <div class="distribution-bar" style="height: 45%"></div>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">0</span>
+                    <div class="distribution-bar" style="height: 0%"></div>
                     <p class="distribution-label">8AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-brand-primary mb-1 opacity-0 group-hover:opacity-100 transition-all">142</span>
-                    <div class="distribution-bar peak" style="height: 95%"></div>
+                    <span class="text-xs font-bold text-brand-primary mb-1 opacity-0 group-hover:opacity-100 transition-all">0</span>
+                    <div class="distribution-bar peak" style="height: 0%"></div>
                     <p class="distribution-label text-brand-primary">9AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">27</span>
-                    <div class="distribution-bar" style="height: 30%"></div>
+                    <span class="text-xs font-bold text-brand-dark mb-1 opacity-0 group-hover:opacity-100 transition-all">0</span>
+                    <div class="distribution-bar" style="height: 0%"></div>
                     <p class="distribution-label">10AM</p>
                   </div>
                   <div class="distribution-col group">
-                    <span class="text-xs font-bold text-red-500 mb-1 opacity-0 group-hover:opacity-100 transition-all">15</span>
-                    <div class="distribution-bar late" style="height: 15%"></div>
+                    <span class="text-xs font-bold text-red-500 mb-1 opacity-0 group-hover:opacity-100 transition-all">0</span>
+                    <div class="distribution-bar late" style="height: 0%"></div>
                     <p class="distribution-label">LATE</p>
                   </div>
                 </div>
               </div>
 
               <div class="analytics-panel lg:col-span-1 relative">
-                <div class="absolute top-0 right-0 w-12 h-12 bg-[rgba(234,179,8,0.1)] rounded-bl-full flex items-start justify-end p-2.5">
-                  <i data-lucide="trophy" class="w-4 h-4 text-yellow-500"></i>
+                <div class="absolute top-0 right-0 w-12 h-12 bg-[rgba(234,179,8,0.1)] flex items-start justify-end p-2.5" style="border-bottom-left-radius: 100%;">
+                  <i data-lucide="trophy" class="w-4 h-4 text-yellow-500 relative z-10"></i>
                 </div>
+                
                 <h3 class="panel-title mb-4">Top Performance</h3>
                 <div class="flex-1 flex flex-col mb-4">
                   <div class="list-row">
-                    <div class="list-avatar avatar-teal">LS</div>
+                    <div class="list-avatar avatar-teal">--</div>
                     <div class="flex-1">
-                      <p class="text-sm font-bold text-brand-darkest transition-colors">Lisa Smith</p>
-                      <p class="text-[10px] font-bold text-teal-600 dark:text-teal-400 transition-colors uppercase">100% Punctual</p>
+                      <p class="text-sm font-bold text-brand-darkest transition-colors">Loading...</p>
+                      <p class="text-[10px] font-bold text-teal-600 dark:text-teal-400 transition-colors uppercase">0% Punctual</p>
                     </div>
                   </div>
                   <div class="list-row">
-                    <div class="list-avatar avatar-blue">MC</div>
+                    <div class="list-avatar avatar-blue">--</div>
                     <div class="flex-1">
-                      <p class="text-sm font-bold text-brand-darkest transition-colors">Mike Chen</p>
-                      <p class="text-[10px] font-bold text-brand-secondary uppercase transition-colors">99.4% Punctual</p>
+                      <p class="text-sm font-bold text-brand-darkest transition-colors">Loading...</p>
+                      <p class="text-[10px] font-bold text-brand-secondary uppercase transition-colors">0% Punctual</p>
                     </div>
                   </div>
                 </div>
@@ -285,14 +261,14 @@
       </main>
     </div>
   </div>
+
   <div id="ranking-modal" class="fixed inset-0 z-[10000] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
     <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="ranking-modal-backdrop"></div>
-    
     <div class="relative bg-brand-surface border border-brand-grayLight rounded-2xl shadow-2xl w-full max-w-lg p-0 mx-4 transform scale-95 transition-transform duration-300 overflow-hidden" id="ranking-modal-box">
       <div class="p-6 border-b border-brand-grayLight flex items-center justify-between bg-brand-grayBg/50">
         <div>
           <h3 class="text-xl font-bold text-brand-darkest">Performance Ranking</h3>
-          <p class="text-xs text-brand-dark mt-1">Top 10 Employees - March 2026</p>
+          <p class="text-xs text-brand-dark mt-1" id="ranking-month-text">Top 10 Employees - Current Month</p>
         </div>
         <button type="button" id="close-ranking-modal" class="p-2 hover:bg-brand-grayLight rounded-xl transition-colors text-brand-dark">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -301,12 +277,12 @@
 
       <div class="max-h-[60vh] overflow-y-auto p-4 space-y-2" id="ranking-list-container">
         </div>
-
       <div class="p-4 bg-brand-grayBg/30 border-t border-brand-grayLight text-center">
         <p class="text-[10px] text-brand-dark uppercase font-bold tracking-widest">Rankings reset on the 1st of every month</p>
       </div>
     </div>
   </div>
+
   <script src="scripts/layout.js"></script>
   <script src="scripts/analytics.js"></script>
 </body>

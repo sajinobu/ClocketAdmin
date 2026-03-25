@@ -154,6 +154,7 @@
   flex-direction: column;
   height: 100%; 
   transition: all 0.3s ease;
+  overflow: hidden; /* <--- NEW: Clips the absolute positioned trophy icon nicely! */
 }
 
 .panel-header {
