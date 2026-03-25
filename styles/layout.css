@@ -50,10 +50,28 @@ main {
 .site-header {
   background-color: var(--brand-surface);
   border-bottom: 1px solid var(--brand-gray-light);
-  padding: 1.25rem 1rem;
   flex-shrink: 0;
   width: 100%;
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  
+  /* Mobile Grid Layout - Shorter Padding */
+  padding: 0.75rem 1rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 
+    "menu logo theme"
+    ". date .";
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .site-header { 
+    padding: 1.25rem 2rem; 
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 @media (min-width: 768px) {
@@ -73,13 +91,16 @@ main {
 }
 
 .mobile-menu-btn {
+  grid-area: menu;
   padding: 0.5rem;
   border-radius: 0.5rem;
   color: var(--brand-dark);
   background: none;
   border: none;
   cursor: pointer;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -93,9 +114,28 @@ main {
 }
 
 .brand-logo-wrapper {
+  grid-area: logo;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .brand-logo-wrapper {
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+.header-logo-svg {
+  width: 22px;
+  height: 22px;
+  transition: all 0.3s ease;
+}
+
+@media (min-width: 1024px) {
+  .header-logo-svg { width: 32px; height: 32px; }
 }
 
 .brand-text {
@@ -106,15 +146,61 @@ main {
   transition: color 0.3s ease;
 }
 
+@media (min-width: 1024px) {
+  .brand-text { font-size: 1.25rem; }
+}
+
+.header-right-desktop {
+  display: contents; /* Allows children to participate in the CSS Grid on mobile */
+}
+
+@media (min-width: 1024px) {
+  .header-right-desktop {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
 .header-date {
-  padding: 0.5rem 1rem;
+  grid-area: date;
+  justify-self: center;
+  padding: 0.25rem 0.75rem;
   background-color: var(--brand-gray-bg);
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.75rem; /* Smaller on mobile */
   font-weight: 600;
   color: var(--brand-darkest);
   border: 1px solid var(--brand-gray-light);
   transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .header-date {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+    margin: 0;
+  }
+}
+
+.theme-toggle-btn {
+  grid-area: theme;
+  padding: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  color: var(--brand-darkest);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--brand-gray-light);
+  background-color: var(--brand-gray-bg);
 }
 
 /* --- SIDEBAR STYLES --- */

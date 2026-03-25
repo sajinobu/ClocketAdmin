@@ -8,7 +8,7 @@
     <script type="module" src="scripts/firebase-config.js"></script>
     <script>
     tailwind.config = {
-      darkMode: 'class', /* Forces Tailwind to listen to our toggle button! */
+      darkMode: 'class', 
       theme: {
         extend: {
           colors: {
@@ -22,7 +22,7 @@
               accentLight: 'var(--brand-accent-light)', 
               grayLight: 'var(--brand-gray-light)', 
               grayBg: 'var(--brand-gray-bg)',
-              surface: 'var(--brand-surface)' /* NEW: Used for cards, headers, sidebar */
+              surface: 'var(--brand-surface)' 
             }
           },
           fontFamily: { sans: ['DM Sans', 'sans-serif'] }
@@ -33,29 +33,26 @@
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
 <header class="site-header">
-    <div class="header-container">
-        <div class="header-left">
-            <button id="mobile-menu-btn" class="mobile-menu-btn text-brand-darkest">
-                <i data-lucide="menu"></i>
-            </button>
-            <div class="flex items-center gap-3">
-                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" id="logo-svg">
-                    <circle cx="16" cy="16" r="13" class="stroke-brand-darkest transition-colors" stroke-width="2"/>
-                    <path d="M16 8v9l5 4" class="stroke-brand-darkest transition-colors" stroke-width="2"/>
-                    <circle cx="16" cy="16" r="2" class="fill-brand-darkest transition-colors"/>
-                </svg>
-                <span class="font-display font-bold text-lg text-brand-darkest transition-colors" id="nav-brand">Clocket</span>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-3">
-            <div id="header-date" class="header-date"></div>
-            
-            <button id="theme-toggle-btn" class="p-2 rounded-full border border-transparent hover:border-brand-gray-light hover:bg-brand-gray-bg text-brand-darkest transition-all flex items-center justify-center" title="Toggle Dark Mode">
-            </button>
-        </div>
+    <button id="mobile-menu-btn" class="mobile-menu-btn">
+        <i data-lucide="menu" class="w-6 h-6"></i>
+    </button>
+
+    <div class="brand-logo-wrapper">
+        <svg class="header-logo-svg" viewBox="0 0 32 32" fill="none" id="logo-svg">
+            <circle cx="16" cy="16" r="13" class="stroke-brand-darkest transition-colors" stroke-width="2"/>
+            <path d="M16 8v9l5 4" class="stroke-brand-darkest transition-colors" stroke-width="2"/>
+            <circle cx="16" cy="16" r="2" class="fill-brand-darkest transition-colors"/>
+        </svg>
+        <span class="brand-text" id="nav-brand">Clocket</span>
+    </div>
+
+    <div class="header-right-desktop">
+        <div id="header-date" class="header-date"></div>
+        <button id="theme-toggle-btn" class="theme-toggle-btn text-brand-darkest" title="Toggle Dark Mode"></button>
     </div>
 </header>
+
 </body>
 </html>
