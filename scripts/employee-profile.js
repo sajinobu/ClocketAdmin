@@ -261,11 +261,12 @@
     window.employeeProfileSPAInitialized = true;
 
     // --- BULLETPROOF ROUTING LISTENERS ---
+    // --- BULLETPROOF ROUTING LISTENERS ---
     document.body.addEventListener('click', (e) => {
         if (!document.getElementById('profile-name')) return;
         
         // 1. Back Button
-        const backBtn = e.target.closest('#dynamic-back-btn');
+        const backBtn = e.target.closest('#dynamic-back-btn, #cancel-btn');
         if (backBtn) {
             e.preventDefault();
             const urlParams = new URLSearchParams(window.location.search);
@@ -281,22 +282,30 @@
                 returnUrl = `${fromPage}.html`;
             }
 
-            window.location.href = returnUrl;
+            // Use SPA Router!
+            if (typeof navigateTo === 'function') navigateTo(returnUrl);
+            else window.location.href = returnUrl;
+            return;
         }
 
-        // 2. Edit Details Button
-        const editBtn = e.target.closest('a[href*="employee-edit-profile"]');
-        if (editBtn) {
+        // 2. Forward Links (Edit Profile & View Logs)
+        const forwardBtn = e.target.closest('a[href*="employee-edit-profile"], a[href*="employee-logs"]');
+        if (forwardBtn) {
             e.preventDefault();
             const currentParams = new URLSearchParams(window.location.search);
             const empId = currentParams.get('id');
             const fromParam = currentParams.get('from') || 'management';
             const teamId = currentParams.get('teamId');
 
-            let targetUrl = `employee-edit-profile.html?id=${empId}&from=${fromParam}`;
+            // Figure out base URL from the button's href attribute
+            let targetUrl = forwardBtn.getAttribute('href').split('?')[0]; 
+            targetUrl += `?id=${empId}&from=${fromParam}`;
             if (teamId) targetUrl += `&teamId=${teamId}`;
 
-            window.location.href = targetUrl;
+            // Use SPA Router!
+            if (typeof navigateTo === 'function') navigateTo(targetUrl);
+            else window.location.href = targetUrl;
+            return;
         }
         
         // 3. View Logs Button

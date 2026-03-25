@@ -179,12 +179,14 @@
         }
         
         // --- Intercept Links ---
-        const linkBtn = e.target.closest('a[href^="team-edit.html"], a[href^="employee-profile.html"]');
-        if (linkBtn && linkBtn.getAttribute('href') !== '#') {
+        // Added .link-action and #edit-team-btn to catch all generated links!
+        const linkBtn = e.target.closest('a[href^="team-edit"], a[href^="employee-profile"], .link-action, #edit-team-btn');
+        
+        if (linkBtn && linkBtn.getAttribute('href') && linkBtn.getAttribute('href') !== '#') {
             e.preventDefault();
             
-            // Use .href to get the fully updated URL containing the ID!
-            const targetUrl = linkBtn.href; 
+            // Use getAttribute to keep the relative URL intact for the router
+            const targetUrl = linkBtn.getAttribute('href'); 
             
             if (typeof navigateTo === 'function') navigateTo(targetUrl);
             else window.location.href = targetUrl;

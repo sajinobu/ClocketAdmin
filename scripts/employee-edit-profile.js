@@ -261,7 +261,9 @@
                 if (teamId) finalUrl += `&teamId=${teamId}`;
             }
 
-            window.location.href = finalUrl; 
+            // CHANGE THIS LINE TO USE SPA ROUTER
+            if (typeof navigateTo === 'function') navigateTo(finalUrl);
+            else window.location.href = finalUrl; 
         }
 
         const cameraBtn = e.target.closest('.btn-camera');
@@ -434,7 +436,9 @@
                         if (teamId) finalUrl += `&teamId=${teamId}`;
                     }
 
-                    window.location.href = finalUrl; 
+                    // CHANGE THIS LINE TO USE SPA ROUTER
+                    if (typeof navigateTo === 'function') navigateTo(finalUrl);
+                    else window.location.href = finalUrl; 
                 }, 2000);
 
             } catch (error) {
