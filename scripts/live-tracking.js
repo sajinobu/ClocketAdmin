@@ -1,6 +1,9 @@
 // scripts/live-tracking.js
 
 (() => {
+    // ==========================================
+    // INITIALIZATION & UI SETUP
+    // ==========================================
     if (window.lucide) lucide.createIcons();
 
     setTimeout(() => {
@@ -15,8 +18,9 @@
     // ==========================================
     // GLOBALS & UTILS
     // ==========================================
-    window._liveMapMarkers = {}; 
-    window._infoWindows = {};
+    window._liveMapInstance = null; // Map instance
+    window._liveMapMarkers = {};    // Store Leaflet markers by email
+    window.userLocationMarker = null;
 
     // Helper to turn milliseconds into "2h 15m" or "45m"
     function getDurationText(startTimestamp) {
@@ -41,32 +45,37 @@
     }, 60000);
 
     // ==========================================
-    // MAP INIT
+    // MAP INIT (LEAFLET)
     // ==========================================
-    window.initMap = function() {
+    function initLeafletMap() {
         const mapContainer = document.getElementById('map');
-        if (!mapContainer) return;
+        if (!mapContainer || window._liveMapInstance) return;
 
-        const hqCoords = { lat: 14.6922, lng: 120.9789 }; 
+        // Default coordinates (HQ)
+        const hqCoords = [14.6922, 120.9789]; 
         
-        window._liveMapInstance = new google.maps.Map(mapContainer, {
+        // Initialize map
+        window._liveMapInstance = L.map('map', {
             center: hqCoords,
             zoom: 15,
-            disableDefaultUI: true, 
-            styles: [] 
+            zoomControl: false, // Disable default zoom controls to use custom buttons
+            attributionControl: false // Cleaner look without the default text
         });
 
-        startLiveTracking();
-    };
+        // Add CartoDB Voyager TileLayer (Neutral theme)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 20
+        }).addTo(window._liveMapInstance);
 
-    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        const mapScript = document.createElement('script');
-        mapScript.src = "https://cdn.jsdelivr.net/gh/somanchiu/Keyless-Google-Maps-API@v7.1/mapsJavaScriptAPI.js";
-        mapScript.async = true;
-        mapScript.defer = true;
-        document.head.appendChild(mapScript);
+        startLiveTracking();
+    }
+
+    // Initialize map when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLeafletMap);
     } else {
-        window.initMap();
+        initLeafletMap();
     }
 
     if (window.liveTrackingSPAInitialized) return;
@@ -96,9 +105,9 @@
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
-                Object.values(window._liveMapMarkers).forEach(m => m.setMap(null));
+                // Clear existing markers from the map
+                Object.values(window._liveMapMarkers).forEach(m => window._liveMapInstance.removeLayer(m));
                 window._liveMapMarkers = {};
-                window._infoWindows = {};
 
                 const staffList = document.getElementById('staff-list');
                 if (staffList) staffList.innerHTML = '';
@@ -120,7 +129,6 @@
 
                     if (status === "online") onlineCount++;
 
-                    // Pass liveData so we can access the status_time
                     renderEmployeeRecord(emp, status, lat, lng, liveData);
                 });
 
@@ -144,31 +152,27 @@
         const name = emp.full_name || "Unknown Employee";
         const team = emp.assigned_team || "Unassigned";
         
-        let statusColorHex = "475569"; 
+        let statusColorHex = "475569"; // Slate 600
         let displayStatus = "Offline";
         let dotColorClass = "bg-slate-600";
         let bgClass = "bg-[rgba(71,85,105,0.1)] text-slate-700";
-        let markerScale = 6; 
-        let markerZIndex = 1; 
+        let zIndexOffset = 0;
 
         if (status === "online") {
-            statusColorHex = "10B981"; 
+            statusColorHex = "10B981"; // Emerald 500
             displayStatus = "Active";
             dotColorClass = "bg-emerald-500";
             bgClass = "bg-[rgba(16,185,129,0.1)] text-emerald-600";
-            markerScale = 9; 
-            markerZIndex = 10; 
+            zIndexOffset = 1000;
         } else if (status === "break") {
-            statusColorHex = "F59E0B"; 
+            statusColorHex = "F59E0B"; // Amber 500
             displayStatus = "On Break";
             dotColorClass = "bg-amber-500";
             bgClass = "bg-[rgba(245,158,11,0.1)] text-amber-600";
-            markerScale = 9; 
-            markerZIndex = 10; 
+            zIndexOffset = 1000;
         }
 
         // Determine Time Duration
-        // Fallback to 'timestamp' for older data, but prefer 'status_time'
         const statusTime = liveData ? (liveData.status_time || liveData.timestamp) : null;
         let timeHTML = "";
         let infoWindowTimeText = "";
@@ -184,38 +188,43 @@
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
             : nameParts[0].substring(0, 2).toUpperCase();
 
+        // Render Marker on Leaflet Map
         if (lat && lng && window._liveMapInstance) {
-            const marker = new google.maps.Marker({
-                position: { lat, lng },
-                map: window._liveMapInstance,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: markerScale,
-                    fillColor: `#${statusColorHex}`,
-                    fillOpacity: 1, 
-                    strokeWeight: 2,
-                    strokeColor: "#ffffff" 
-                },
-                title: `${name} - ${displayStatus}`,
-                zIndex: markerZIndex 
+            
+            // Custom HTML Icon using Leaflet DivIcon
+            const markerHtml = `
+                <div style="
+                    width: 16px; 
+                    height: 16px; 
+                    background-color: #${statusColorHex}; 
+                    border: 2px solid white; 
+                    border-radius: 50%; 
+                    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+                "></div>
+            `;
+
+            const icon = L.divIcon({
+                className: 'custom-leaflet-marker',
+                html: markerHtml,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
+                popupAnchor: [0, -10]
             });
 
+            const marker = L.marker([lat, lng], { 
+                icon: icon,
+                zIndexOffset: zIndexOffset 
+            }).addTo(window._liveMapInstance);
+            
             const popupContent = `
                 <div style="font-family: 'DM Sans', sans-serif; padding: 4px; min-width: 120px;">
-                    <p style="font-weight: 700; color: #0f172a; font-size: 14px; margin: 0 0 4px 0;">${name}</p>
+                    <p style="font-weight: 700; color: var(--brand-darkest); font-size: 14px; margin: 0 0 4px 0;">${name}</p>
                     <p style="font-size: 10px; color: #${statusColorHex}; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 0;">${displayStatus} • ${team}${infoWindowTimeText}</p>
                 </div>
             `;
 
-            const infoWindow = new google.maps.InfoWindow({ content: popupContent });
-
-            marker.addListener("click", () => {
-                Object.values(window._infoWindows).forEach(iw => iw.close());
-                infoWindow.open({ anchor: marker, map: window._liveMapInstance });
-            });
-
+            marker.bindPopup(popupContent);
             window._liveMapMarkers[emp.email] = marker;
-            window._infoWindows[emp.email] = infoWindow;
         }
 
         const staffList = document.getElementById('staff-list');
@@ -243,9 +252,9 @@
         card.addEventListener('click', () => {
             const marker = window._liveMapMarkers[emp.email];
             if (marker && window._liveMapInstance) {
-                window._liveMapInstance.panTo(marker.getPosition());
-                window._liveMapInstance.setZoom(17);
-                google.maps.event.trigger(marker, 'click');
+                // Leaflet equivalent to panTo is flyTo or setView
+                window._liveMapInstance.flyTo(marker.getLatLng(), 17, { duration: 1.5 });
+                marker.openPopup();
             } else {
                 showToast(`No location data available for ${name}`, false);
             }
@@ -264,19 +273,20 @@
     // EVENT LISTENERS & UI
     // ==========================================
     document.body.addEventListener('click', (e) => {
-        if (!document.getElementById('map')) return;
+        if (!document.getElementById('map') || !window._liveMapInstance) return;
 
-        if (e.target.closest('#map-zoom-in') && window._liveMapInstance) {
-            window._liveMapInstance.setZoom(window._liveMapInstance.getZoom() + 1);
+        // Custom Map Zoom Controls
+        if (e.target.closest('#map-zoom-in')) {
+            window._liveMapInstance.zoomIn();
         }
-        if (e.target.closest('#map-zoom-out') && window._liveMapInstance) {
-            window._liveMapInstance.setZoom(window._liveMapInstance.getZoom() - 1);
+        if (e.target.closest('#map-zoom-out')) {
+            window._liveMapInstance.zoomOut();
         }
 
+        // Recenter / Geolocation
         const recenterBtn = e.target.closest('#map-recenter');
-        if (recenterBtn && window._liveMapInstance) {
+        if (recenterBtn) {
             
-            // 1. Prevent double-clicks while the spinner is active
             if (recenterBtn.classList.contains('pointer-events-none')) return;
 
             if (!navigator.geolocation) {
@@ -293,26 +303,34 @@
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const userCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    window._liveMapInstance.panTo(userCoords);
-                    window._liveMapInstance.setZoom(16);
+                    const userCoords = [position.coords.latitude, position.coords.longitude];
+                    
+                    window._liveMapInstance.flyTo(userCoords, 16, { duration: 1.5 });
+
+                    // Custom user location dot matching your CSS
+                    const userIconHtml = `
+                        <div class="user-location-dot" style="
+                            width: 12px; height: 12px; 
+                            background: #818cf8; 
+                            border: 2px solid white; 
+                            border-radius: 50%; 
+                            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+                        "></div>
+                    `;
 
                     if (window.userLocationMarker) {
-                        window.userLocationMarker.setPosition(userCoords);
+                        window.userLocationMarker.setLatLng(userCoords);
                     } else {
-                        window.userLocationMarker = new google.maps.Marker({
-                            position: userCoords,
-                            map: window._liveMapInstance,
-                            icon: {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: 6,
-                                fillColor: "#818cf8", 
-                                fillOpacity: 1,
-                                strokeWeight: 2,
-                                strokeColor: "#ffffff"
-                            },
-                            zIndex: 999
+                        const userIcon = L.divIcon({
+                            className: 'custom-user-marker',
+                            html: userIconHtml,
+                            iconSize: [12, 12],
+                            iconAnchor: [6, 6]
                         });
+                        window.userLocationMarker = L.marker(userCoords, { 
+                            icon: userIcon,
+                            zIndexOffset: 2000 
+                        }).addTo(window._liveMapInstance);
                     }
                     
                     // Unlock the button
@@ -326,7 +344,6 @@
                     recenterBtn.innerHTML = originalIcon;
                     if (window.lucide) lucide.createIcons();
                     
-                    // 2. Properly diagnose the exact error
                     let errorMsg = "Unable to retrieve your location.";
                     if (error.code === 1) errorMsg = "Location access denied. Please allow it in browser settings.";
                     if (error.code === 2) errorMsg = "Location unavailable right now.";
@@ -334,12 +351,12 @@
                     
                     showToast(errorMsg, false);
                 },
-                // 3. Give them 15 seconds to click "Allow" on the permission prompt
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
     });
 
+    // Search filter
     document.body.addEventListener('input', (e) => {
         if (e.target.id === 'staff-search') {
             const term = e.target.value.toLowerCase().trim();
@@ -359,6 +376,7 @@
         }
     });
 
+    // Toast notifications
     function showToast(message, isSuccess = true) {
         const existingToast = document.querySelector('.live-track-toast');
         if (existingToast) existingToast.remove();

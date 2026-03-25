@@ -42,11 +42,6 @@
   transition: border-color 0.3s ease;
 }
 
-/* THE MAGIC TRICK: Perfect Leaflet Dark Mode! */
-html.dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-}
-
 .map-controls {
   position: absolute;
   right: 1.5rem;
@@ -231,15 +226,24 @@ html.dark .leaflet-tile-pane {
   100% { transform: scale(4); opacity: 0; }
 }
 
-/* Leaflet Popup Customization to match brand */
-.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+.leaflet-popup-content-wrapper {
   background-color: var(--brand-surface) !important;
-  color: var(--brand-darkest) !important;
   border: 1px solid var(--brand-gray-light);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border-radius: 1rem !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
+
+.leaflet-popup-tip {
+  background-color: var(--brand-surface) !important;
+  border-top: 1px solid var(--brand-gray-light);
+  border-left: 1px solid var(--brand-gray-light);
+}
+
 .leaflet-popup-content { margin: 10px 12px; line-height: 1.4; }
+
+.leaflet-popup-close-button {
+  display: none;
+}
 
 /* Utilities */
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -290,4 +294,45 @@ html.dark .leaflet-tile-pane {
         padding-left: 1rem;
         padding-right: 1rem;
     }
+}
+
+/* Ensure the map container has a background for loading */
+#map {
+    background: var(--brand-gray-bg);
+}
+
+/* THE MAGIC TRICK: Leaflet Dark Mode Tiles */
+html.dark .leaflet-tile-pane {
+  filter: invert(90%) hue-rotate(195deg) saturate(30%) brightness(110%) contrast(105%) !important;
+}
+
+/* Prevent the markers and popups from being inverted in dark mode */
+html.dark .leaflet-marker-pane,
+html.dark .leaflet-popup-pane,
+html.dark .leaflet-control-container {
+  filter: none !important;
+}
+
+/* Custom Marker Styles */
+.custom-location-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marker-pin {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+/* User's own location pulse (AbangPH style) */
+.user-pulse {
+    width: 12px;
+    height: 12px;
+    background: #818cf8;
+    border: 2px solid white;
+    border-radius: 50%;
 }

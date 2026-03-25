@@ -247,3 +247,27 @@
 .modal-footer { padding: 1.25rem 1.5rem; background-color: var(--brand-surface); border-top: 1px solid var(--brand-gray-light); display: flex; justify-content: space-between; align-items: center; transition: all 0.3s ease;}
 
 .hidden { display: none !important; }
+
+/* =========================================
+   LEAFLET BLUE-GRAY DARK MODE
+   ========================================= */
+#log-map-container {
+  background-color: var(--brand-gray-bg);
+}
+
+html.dark .leaflet-tile-pane {
+  filter: invert(90%) hue-rotate(195deg) saturate(30%) brightness(110%) contrast(105%) !important;
+}
+
+html.dark .leaflet-marker-pane,
+html.dark .leaflet-popup-pane,
+html.dark .leaflet-control-container {
+  filter: invert(100%) hue-rotate(-195deg) saturate(333%) brightness(91%) contrast(95%);
+}
+
+html.dark .leaflet-popup-content-wrapper, 
+html.dark .leaflet-popup-tip {
+  background-color: #1e293b !important; 
+  color: #f1f5f9 !important; 
+  border-color: #334155; 
+}
