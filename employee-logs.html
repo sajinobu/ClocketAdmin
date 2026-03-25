@@ -175,44 +175,43 @@
                             </div>
 
                         </div>
-                        </div>
 
                     </div>
                 </div>
+
+                <div id="photo-modal" class="hidden modal-overlay">
+                    <div class="modal-box">
+                        <div class="modal-header">
+                            <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="scan-face" class="w-5 h-5 text-brand-primary"></i> Verification</h3>
+                            <button id="close-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="modal-content-photo"><div class="photo-placeholder" id="modal-photo-container"></div></div>
+                        <div class="modal-footer">
+                            <div><p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">Employee Name</p><p class="text-xs text-gray-500" id="modal-photo-time">Time</p></div>
+                            <button id="close-modal-btn-2" class="btn-secondary">Close</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="map-modal" class="hidden modal-overlay">
+                    <div class="modal-box" style="max-width: 32rem;">
+                        <div class="modal-header">
+                            <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="map-pin" class="w-5 h-5 text-brand-primary"></i> Historical Location</h3>
+                            <button id="close-map-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
+                        </div>
+                        <div class="p-4 bg-brand-grayBg"><div id="log-map-container" class="w-full h-80 rounded-xl border border-brand-grayLight overflow-hidden relative z-0"></div></div>
+                        <div class="modal-footer">
+                            <div><p class="text-sm font-bold text-brand-darkest" id="modal-map-emp-name">Employee Name</p><p class="text-xs text-gray-500 font-medium" id="modal-map-address">Fetching address...</p></div>
+                            <button id="close-map-modal-btn-2" class="btn-secondary">Close</button>
+                        </div>
+                    </div>
+                </div>
+
             </main>
-        </div>
-    </div>
-
-    <div id="photo-modal" class="hidden modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="scan-face" class="w-5 h-5 text-brand-primary"></i> Verification</h3>
-                <button id="close-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="modal-content-photo"><div class="photo-placeholder" id="modal-photo-container"></div></div>
-            <div class="modal-footer">
-                <div><p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">Employee Name</p><p class="text-xs text-gray-500" id="modal-photo-time">Time</p></div>
-                <button id="close-modal-btn-2" class="btn-secondary">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="map-modal" class="hidden modal-overlay">
-        <div class="modal-box" style="max-width: 32rem;">
-            <div class="modal-header">
-                <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="map-pin" class="w-5 h-5 text-brand-primary"></i> Historical Location</h3>
-                <button id="close-map-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="p-4 bg-brand-grayBg"><div id="log-map-container" class="w-full h-80 rounded-xl border border-brand-grayLight overflow-hidden relative z-0"></div></div>
-            <div class="modal-footer">
-                <div><p class="text-sm font-bold text-brand-darkest" id="modal-map-emp-name">Employee Name</p><p class="text-xs text-gray-500 font-medium" id="modal-map-address">Fetching address...</p></div>
-                <button id="close-map-modal-btn-2" class="btn-secondary">Close</button>
-            </div>
         </div>
     </div>
 
     <script src="scripts/layout.js"></script>
     <script src="scripts/employee-logs.js"></script>
 </body>
-
 </html>

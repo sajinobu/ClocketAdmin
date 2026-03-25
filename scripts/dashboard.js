@@ -70,7 +70,7 @@
                 const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
                 const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
 
-                const isLate = actualMin > (expectedStartMin + 5);
+                const isLate = actualMin > expectedStartMin;
                 if (isLate) lateArrivals++;
 
                 // Build Events List
@@ -124,7 +124,7 @@
             Object.values(employeeMap).forEach(emp => {
                 if (!clockedInEmails.has(emp.email)) {
                     const expectedStartMin = timeStringToMinutes(emp.work_start_time);
-                    if (currentMins > (expectedStartMin + 5)) {
+                    if (currentMins > (expectedStartMin)) {
                         absentCount++;
                     }
                 }
