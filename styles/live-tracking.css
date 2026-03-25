@@ -248,18 +248,46 @@ html.dark .leaflet-tile-pane {
 /* =========================================
    FIXED: MOBILE RESPONSIVE LAYOUT
    ========================================= */
+
 @media (max-width: 1024px) {
+  /* Remove flex constraints on mobile so items can flow naturally */
   .tracking-container {
     flex-direction: column;
-    overflow: visible; /* Important so mobile can scroll */
+    overflow: visible; 
+    height: auto;
+    min-height: min-content;
+    padding: 0 1rem 2rem 1rem; /* Slightly tighter padding on mobile */
   }
+  
   .map-panel {
     flex: none;
-    height: 400px;
-    min-height: auto;
+    width: 100%;
+    height: 50vh; /* Takes up half the screen on mobile */
+    min-height: 350px;
+    border-radius: 1rem;
   }
+  
   .sidebar-panel {
     flex: none;
-    height: 500px; /* Forces the list to stay visible below the map! */
+    width: 100%;
+    height: 60vh; /* Ensures the list has plenty of room to scroll */
+    min-height: 400px;
+    border-radius: 1rem;
   }
+
+  /* Make sure the page container allows vertical scrolling */
+  main {
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+    /* Even tighter padding for very small phones */
+    .tracking-container {
+        padding: 0 0.5rem 1.5rem 0.5rem;
+    }
+    .px-8 {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
