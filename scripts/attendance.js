@@ -7,7 +7,7 @@
     let activeDate = new Date(todayDate);
     let displayedMonth = new Date(todayDate);
     let activeStatus = 'all';
-    let activeDept = 'all'; // NEW: Track active department
+    let activeDept = 'all'; 
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -23,12 +23,11 @@
 
     const todayStr = formatDate(todayDate);
 
-    // --- SPA MAP RESET ---
     window._logMapInstance = null;
     window._logMapMarker = null;
 
     function timeStringToMinutes(timeStr) {
-        if (!timeStr || timeStr === "Not set") return 9 * 60; // Default 9AM
+        if (!timeStr || timeStr === "Not set") return 9 * 60;
         const [time, modifier] = timeStr.split(' ');
         let [hours, minutes] = time.split(':');
         hours = parseInt(hours, 10);
@@ -88,7 +87,6 @@
 
             const { collection, getDocs, query, where } = window.firebaseUtils;
             
-            // 1. Get ALL Active Employees & Dynamic Departments
             const empSnapshot = await getDocs(collection(window.db, "employees"));
             const employeeMap = {};
             const departmentSet = new Set();
@@ -101,7 +99,6 @@
                 }
             });
 
-            // 2. Populate Department Dropdown
             const deptMenu = document.getElementById('dept-menu');
             if (deptMenu) {
                 deptMenu.innerHTML = `<div class="dropdown-item ${activeDept === 'all' ? 'active' : ''}" data-value="all">All Departments</div>`;
@@ -111,7 +108,6 @@
                 });
             }
 
-            // 3. Get Today's Attendance
             const targetDateStr = formatDate(activeDate); 
             const attQuery = query(collection(window.db, "attendance"), where("date", "==", targetDateStr));
             const attSnapshot = await getDocs(attQuery);
@@ -136,14 +132,12 @@
             const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
             const locationFetchQueue = [];
 
-            // 4. SORT Employees Alphabetically
             const sortedEmployees = Object.values(employeeMap).sort((a, b) => {
                 const nameA = (a.full_name || "").toLowerCase();
                 const nameB = (b.full_name || "").toLowerCase();
                 return nameA.localeCompare(nameB);
             });
 
-            // 5. Render EVERY active employee
             sortedEmployees.forEach((empData) => {
                 const att = attendanceRecordMap[empData.email];
                 const employeeName = empData.full_name;
@@ -165,7 +159,6 @@
                     const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
                     const expectedStartMin = timeStringToMinutes(empData.work_start_time);
 
-                    // Strict Late Check
                     if (actualMin > expectedStartMin) {
                         statusText = "Late";
                         statusClass = "status-late";
@@ -180,7 +173,6 @@
                         clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     }
 
-                    // Photos
                     if (att.clock_in_photo) {
                         inPhotoBtn = `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
                     }
@@ -188,7 +180,6 @@
                         outPhotoBtn = `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
                     }
 
-                    // Location Queue
                     if (att.clock_in_lat && att.clock_in_long) {
                         const locId = `loc-${att.docId || empData.id}`; 
                         locationDisplay = `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
@@ -202,7 +193,6 @@
 
                 const tr = document.createElement('tr');
                 tr.className = 'attendance-row data-row';
-                // Add tags for both status and department for the filter engine
                 tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
                 tr.setAttribute('data-department', empDepartment);
 
@@ -316,6 +306,40 @@
     if (window._attClickListener) document.body.removeEventListener('click', window._attClickListener);
     if (window._attInputListener) document.body.removeEventListener('input', window._attInputListener);
 
+    if (window._attScrollListener) {
+        const oldMain = document.getElementById('main-scroll-area');
+        if (oldMain) oldMain.removeEventListener('scroll', window._attScrollListener);
+    }
+
+    let lastScrollTop = 0;
+    window._ignoreScrollClose = false; 
+
+    // THE FIXED SCROLL LISTENER
+    window._attScrollListener = (e) => {
+        if (window._ignoreScrollClose) return;
+
+        const currentScroll = e.target.scrollTop;
+        
+        // Require a genuine scroll motion downwards (20px delta) to collapse
+        if (currentScroll > lastScrollTop + 20 && currentScroll > 80) {
+            const container = document.getElementById('filter-container');
+            if (container && container.classList.contains('expanded')) {
+                container.classList.remove('expanded');
+                
+                const icon = document.getElementById('filter-toggle-icon');
+                if (icon) icon.style.transform = 'rotate(0deg)';
+                
+                document.querySelectorAll('#filter-container .custom-dropdown.open').forEach(d => d.classList.remove('open'));
+            }
+        }
+        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll; 
+    };
+
+    const mainScrollArea = document.getElementById('main-scroll-area');
+    if (mainScrollArea) {
+        mainScrollArea.addEventListener('scroll', window._attScrollListener);
+    }
+
     window._attClickListener = (e) => {
         if (!document.getElementById('calendar-grid')) return;
         
@@ -323,12 +347,35 @@
         const deptDropdown = document.getElementById('dept-dropdown');
         const dateDropdown = document.getElementById('date-dropdown');
         
-        // Close dropdowns when clicking outside
+        // THE FIXED MOBILE TOGGLE
+        if (e.target.closest('#mobile-filter-toggle')) {
+            const container = document.getElementById('filter-container');
+            const icon = document.getElementById('filter-toggle-icon');
+            
+            if (container) {
+                // 1. Lock the scroll listener immediately
+                window._ignoreScrollClose = true;
+                
+                // 2. Toggle the menu
+                const isExpanded = container.classList.toggle('expanded');
+                
+                if (icon) {
+                    icon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+                }
+                
+                // 3. Wait for the DOM to settle (500ms), update our scroll anchor, and unlock
+                setTimeout(() => { 
+                    if (mainScrollArea) lastScrollTop = mainScrollArea.scrollTop;
+                    window._ignoreScrollClose = false; 
+                }, 500); 
+            }
+            return;
+        }
+        
         if (statusDropdown && !statusDropdown.contains(e.target)) statusDropdown.classList.remove('open');
         if (deptDropdown && !deptDropdown.contains(e.target)) deptDropdown.classList.remove('open');
         if (dateDropdown && !dateDropdown.contains(e.target)) dateDropdown.classList.remove('open');
 
-        // Toggle Status Dropdown
         if (e.target.closest('#status-dropdown .dropdown-trigger')) {
             e.stopPropagation();
             if (dateDropdown) dateDropdown.classList.remove('open'); 
@@ -336,7 +383,6 @@
             statusDropdown.classList.toggle('open');
         }
 
-        // Toggle Dept Dropdown
         if (e.target.closest('#dept-dropdown .dropdown-trigger')) {
             e.stopPropagation();
             if (dateDropdown) dateDropdown.classList.remove('open'); 
@@ -344,7 +390,6 @@
             deptDropdown.classList.toggle('open');
         }
 
-        // Toggle Date Dropdown
         if (e.target.closest('#date-dropdown .dropdown-trigger')) {
             e.stopPropagation();
             if (statusDropdown) statusDropdown.classList.remove('open'); 
@@ -353,7 +398,6 @@
             renderCalendar(); 
         }
 
-        // Handle Status Selection
         const statusItem = e.target.closest('#status-menu .dropdown-item');
         if (statusItem) {
             e.stopPropagation();
@@ -365,7 +409,6 @@
             filterAttendanceTable();
         }
 
-        // Handle Department Selection
         const deptItem = e.target.closest('#dept-menu .dropdown-item');
         if (deptItem) {
             e.stopPropagation();
@@ -377,7 +420,6 @@
             filterAttendanceTable();
         }
 
-        // Handle Calendar Navigation
         if (e.target.closest('#cal-prev')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() - 1); renderCalendar(); }
         if (e.target.closest('#cal-next')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() + 1); renderCalendar(); }
 
@@ -400,12 +442,10 @@
             loadAttendanceData(); 
         }
 
-        // Photo Verification Modal
         const photoModal = document.getElementById('photo-modal');
         const viewPhotoBtn = e.target.closest('.view-photo-btn');
         
         if (viewPhotoBtn && photoModal && !viewPhotoBtn.disabled) {
-            // Safely update text only if elements exist
             const empNameEl = document.getElementById('modal-emp-name');
             const photoTimeEl = document.getElementById('modal-photo-time');
             
@@ -427,7 +467,6 @@
             photoModal.classList.remove('hidden');
         }
 
-        // Map Verification Modal
         const mapModal = document.getElementById('map-modal');
         const viewMapBtn = e.target.closest('.view-map-btn');
         if (viewMapBtn && mapModal) {
@@ -444,28 +483,24 @@
 
             setTimeout(() => {
                 const mapContainer = document.getElementById('log-map-container');
-                const position = [lat, lng]; // Leaflet uses [lat, lng] array
+                const position = [lat, lng];
 
-                // Clear the loading spinner html if it's the first time
                 if (mapContainer.querySelector('.animate-spin')) {
                     mapContainer.innerHTML = '';
                 }
 
                 if (!window._logMapInstance) {
-                    // Initialize Leaflet Map
                     window._logMapInstance = L.map('log-map-container', {
                         center: position, 
                         zoom: 16, 
                         zoomControl: true,
-                        attributionControl: false // Cleaner look
+                        attributionControl: false 
                     });
 
-                    // Add CartoDB Voyager tiles (Neutral theme)
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                         maxZoom: 20
                     }).addTo(window._logMapInstance);
 
-                    // Custom HTML Marker to match brand
                     const iconHtml = `
                         <div style="
                             width: 16px; height: 16px; 
@@ -484,15 +519,13 @@
 
                     window._logMapMarker = L.marker(position, { icon: customIcon }).addTo(window._logMapInstance);
                 } else {
-                    // Update existing map
                     window._logMapInstance.setView(position, 16);
                     window._logMapMarker.setLatLng(position);
                 }
 
-                // CRITICAL FIX: Forces Leaflet to recalculate its size after being unhidden from a modal
                 window._logMapInstance.invalidateSize();
 
-            }, 100); // Small delay ensures modal transition is finishing before rendering
+            }, 100); 
         }
 
         if (e.target.closest('.modal-close-btn, .btn-secondary') || e.target.classList.contains('modal-overlay')) {
