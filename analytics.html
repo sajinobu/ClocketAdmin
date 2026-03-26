@@ -12,9 +12,10 @@
 
   <script type="module" src="scripts/firebase-config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -57,8 +58,8 @@
 
         <div class="px-8 pt-8 pb-3 flex flex-col md:flex-row md:items-end justify-between gap-4 flex-shrink-0">
           <div>
-            <h1 class="page-title text-2xl font-bold text-brand-darkest transition-colors">Analytics & Insights</h1>
-            <p class="page-subtitle text-sm text-brand-dark transition-colors" id="analytics-subtitle">Real-time attendance intelligence</p>
+            <h1 class="text-2xl md:text-[28px] font-bold text-brand-darkest transition-colors mb-1" style="font-family: 'DM Sans', sans-serif, serif;">Analytics & Insights</h1>
+            <p class="text-sm text-gray-500 transition-colors" id="analytics-subtitle">Real-time attendance intelligence</p>
           </div>
 
           <div class="flex items-center gap-3">
@@ -251,35 +252,35 @@
                     </div>
                   </div>
                 </div>
-                <button class="btn-outline-full">View Ranking</button>
+                <button class="btn-outline-full" id="open-ranking-btn">View Ranking</button>
               </div>
 
             </div>
 
           </div>
         </div>
-      </main>
-    </div>
-  </div>
+        
+        <div id="ranking-modal" class="fixed inset-0 z-[10000] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="ranking-modal-backdrop"></div>
+          <div class="relative bg-brand-surface border border-brand-grayLight rounded-2xl shadow-2xl w-full max-w-lg p-0 mx-4 transform scale-95 transition-transform duration-300 overflow-hidden" id="ranking-modal-box">
+            <div class="p-6 border-b border-brand-grayLight flex items-center justify-between bg-brand-grayBg/50">
+              <div>
+                <h3 class="text-xl font-bold text-brand-darkest">Performance Ranking</h3>
+                <p class="text-xs text-brand-dark mt-1" id="ranking-month-text">Top 10 Employees - Current Month</p>
+              </div>
+              <button type="button" id="close-ranking-modal" class="p-2 hover:bg-brand-grayLight rounded-xl transition-colors text-brand-dark">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
 
-  <div id="ranking-modal" class="fixed inset-0 z-[10000] hidden flex items-center justify-center opacity-0 transition-opacity duration-300">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" id="ranking-modal-backdrop"></div>
-    <div class="relative bg-brand-surface border border-brand-grayLight rounded-2xl shadow-2xl w-full max-w-lg p-0 mx-4 transform scale-95 transition-transform duration-300 overflow-hidden" id="ranking-modal-box">
-      <div class="p-6 border-b border-brand-grayLight flex items-center justify-between bg-brand-grayBg/50">
-        <div>
-          <h3 class="text-xl font-bold text-brand-darkest">Performance Ranking</h3>
-          <p class="text-xs text-brand-dark mt-1" id="ranking-month-text">Top 10 Employees - Current Month</p>
+            <div class="max-h-[60vh] overflow-y-auto p-4 space-y-2" id="ranking-list-container">
+              </div>
+            <div class="p-4 bg-brand-grayBg/30 border-t border-brand-grayLight text-center">
+              <p class="text-[10px] text-brand-dark uppercase font-bold tracking-widest">Rankings reset on the 1st of every month</p>
+            </div>
+          </div>
         </div>
-        <button type="button" id="close-ranking-modal" class="p-2 hover:bg-brand-grayLight rounded-xl transition-colors text-brand-dark">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="max-h-[60vh] overflow-y-auto p-4 space-y-2" id="ranking-list-container">
-        </div>
-      <div class="p-4 bg-brand-grayBg/30 border-t border-brand-grayLight text-center">
-        <p class="text-[10px] text-brand-dark uppercase font-bold tracking-widest">Rankings reset on the 1st of every month</p>
-      </div>
+        </main>
     </div>
   </div>
 

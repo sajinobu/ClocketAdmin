@@ -34,7 +34,6 @@
         return d.toISOString().split('T')[0];
     }
 
-    // Mathematical SVG Circumference
     const CIRCUMFERENCE = 251.2;
 
     async function loadAnalyticsData() {
@@ -43,7 +42,6 @@
         try {
             const { collection, getDocs } = window.firebaseUtils;
 
-            // 1. Fetch Employees
             const empSnap = await getDocs(collection(window.db, "employees"));
             employeeData = {};
             empSnap.forEach(doc => {
@@ -57,7 +55,6 @@
                 }
             });
 
-            // 2. Fetch ALL Attendance (we'll filter it in JS for speed)
             const attSnap = await getDocs(collection(window.db, "attendance"));
             allAttendanceData = [];
 
@@ -66,8 +63,10 @@
                 if (data.clock_in_time) allAttendanceData.push(data);
             });
 
-            // Set Subtitle Month
-            document.getElementById('analytics-subtitle').textContent = `Real-time attendance intelligence for ${new Date().toLocaleString('default', { month: 'long', year: 'numeric'})}`;
+            const subtitle = document.getElementById('analytics-subtitle');
+            if (subtitle) {
+                subtitle.textContent = `Real-time attendance intelligence for ${new Date().toLocaleString('default', { month: 'long', year: 'numeric'})}`;
+            }
 
             processAnalytics();
 
@@ -79,13 +78,12 @@
     function processAnalytics() {
         const startDateStr = getPastDateString(currentDateRange);
         
-        // Filter globally for the selected generic range
         const rangeData = allAttendanceData.filter(record => record.date >= startDateStr);
 
         calculateAndRenderKPIs(rangeData);
         renderArrivalDistribution(rangeData);
-        renderLiveWorkforce(); // Live uses TODAY, not the range
-        renderTopPerformers(); // <-- REMOVED rangeData SO IT CALCULATES INDEPENDENTLY
+        renderLiveWorkforce(); 
+        renderTopPerformers(); 
         renderWeeklyTrends(); 
     }
 
@@ -103,22 +101,19 @@
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
 
-            if (actualMin > emp.expectedStartMin) lateCount++; // STRICT CUT-OFF
+            if (actualMin > emp.expectedStartMin) lateCount++; 
 
             totalClockInMinutes += actualMin;
             totalRenderedSeconds += (record.rendered_seconds || 0);
         });
 
-        // 1. On-Time Rate
         const onTimeRate = (((totalRecords - lateCount) / totalRecords) * 100).toFixed(1);
         document.querySelectorAll('.kpi-value')[1].textContent = `${onTimeRate}%`;
         const progressBar = document.getElementById('kpi-ontime-bar');
         if(progressBar) progressBar.style.width = `${onTimeRate}%`;
 
-        // 2. Late Arrivals
         document.querySelectorAll('.kpi-value')[2].textContent = lateCount;
 
-        // 3. Avg Check-in
         const avgMin = Math.floor(totalClockInMinutes / totalRecords);
         let avgHour = Math.floor(avgMin / 60);
         let avgMinsLeft = avgMin % 60;
@@ -126,7 +121,6 @@
         avgHour = avgHour % 12 || 12;
         document.querySelectorAll('.kpi-value')[0].textContent = `${avgHour}:${String(avgMinsLeft).padStart(2, '0')} ${ampm}`;
 
-        // 4. Avg Productive Hours
         const avgSeconds = totalRenderedSeconds / totalRecords;
         const avgHours = (avgSeconds / 3600).toFixed(1);
         document.querySelectorAll('.kpi-value')[3].textContent = `${avgHours}h`;
@@ -160,7 +154,6 @@
                 const heightPct = (count / maxCount) * 100;
                 
                 col.querySelector('span').textContent = count;
-                // Add a small timeout so the transition animations fire!
                 setTimeout(() => {
                     col.querySelector('.distribution-bar').style.height = `${heightPct}%`;
                 }, 100);
@@ -183,12 +176,10 @@
 
         const onSiteCount = activeCount - onBreakCount;
 
-        // UI Text
         document.getElementById('live-total-count').textContent = activeCount;
         document.getElementById('live-onsite-count').textContent = onSiteCount;
         document.getElementById('live-break-count').textContent = onBreakCount;
 
-        // --- MATH FOR DUAL SVG RINGS ---
         const activeRing = document.getElementById('chart-active-ring');
         const breakRing = document.getElementById('chart-break-ring');
 
@@ -200,23 +191,20 @@
             const breakStroke = breakPct * CIRCUMFERENCE;
 
             setTimeout(() => {
-                // Active Ring (Starts at 12 o'clock)
                 activeRing.style.strokeDasharray = `${activeStroke} ${CIRCUMFERENCE}`;
                 
-                // Break Ring (Starts EXACTLY where Active Ring ends using negative offset)
                 breakRing.style.strokeDasharray = `${breakStroke} ${CIRCUMFERENCE}`;
                 breakRing.style.strokeDashoffset = `-${activeStroke}`;
             }, 100);
         }
     }
 
-    // --- NEW: DYNAMIC WEEKLY TRENDS ---
     function getWeekDates(offsetWeeks = 0) {
         const d = new Date();
-        d.setDate(d.getDate() - d.getDay() + 1 + (offsetWeeks * 7)); // Get Monday
+        d.setDate(d.getDate() - d.getDay() + 1 + (offsetWeeks * 7)); 
         
         let days = [];
-        for (let i=0; i<5; i++) { // Mon - Fri
+        for (let i=0; i<5; i++) { 
             const current = new Date(d);
             current.setDate(current.getDate() + i);
             days.push(current.toISOString().split('T')[0]);
@@ -236,11 +224,9 @@
         let htmlString = '';
 
         weekDates.forEach((dateStr, index) => {
-            // Count how many people clocked in on this specific date
             const presentCount = allAttendanceData.filter(log => log.date === dateStr).length;
             const percentage = Math.round((presentCount / totalEmployees) * 100);
 
-            // Warning colors if attendance drops below 90%
             let textClass = 'text-brand-darkest';
             let barClass = 'bg-brand-primary';
             if (percentage < 90 && percentage > 0) {
@@ -266,7 +252,6 @@
 
         container.innerHTML = htmlString;
 
-        // Trigger animations safely
         setTimeout(() => {
             container.querySelectorAll('.progress-fill').forEach(bar => {
                 bar.style.width = bar.getAttribute('data-target');
@@ -275,16 +260,13 @@
     }
 
     function renderTopPerformers() {
-        // 1. Isolate the Current Month
         const todayStr = new Date().toISOString().split('T')[0];
-        const currentMonthPrefix = todayStr.substring(0, 7); // e.g. "2026-03"
+        const currentMonthPrefix = todayStr.substring(0, 7); 
         
-        // Filter the MASTER data, ignoring the range picker
         const monthData = allAttendanceData.filter(record => record.date.startsWith(currentMonthPrefix));
 
         let empStats = {};
         
-        // 2. Calculate Stats against the Month Data
         monthData.forEach(record => {
             const eid = record.employee_id;
             if (!empStats[eid]) empStats[eid] = { total: 0, late: 0, name: '', dept: '' };
@@ -296,12 +278,11 @@
 
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-            if (actualMin > emp.expectedStartMin) empStats[eid].late++; // STRICT CUTOFF
+            if (actualMin > emp.expectedStartMin) empStats[eid].late++; 
         });
 
         let rankingArray = [];
         for (const [eid, stats] of Object.entries(empStats)) {
-            // Prevent division by zero if an employee hasn't clocked in yet this month
             if (stats.total === 0) continue; 
             
             const rate = ((stats.total - stats.late) / stats.total) * 100;
@@ -316,7 +297,6 @@
         rankingArray.sort((a, b) => b.score - a.score);
         window.currentRankingData = rankingArray;
 
-        // 3. Update the UI Dashboard Card
         const listRows = document.querySelectorAll('.list-row');
         for(let i=0; i<listRows.length; i++) {
             if (rankingArray[i]) {
@@ -325,7 +305,6 @@
                 row.querySelector('.text-sm').textContent = rankingArray[i].name;
                 row.querySelector('.text-\\[10px\\]').textContent = `${rankingArray[i].score}% Punctual`;
             } else {
-                // Failsafe if there are fewer than 2 employees
                 const row = listRows[i];
                 row.querySelector('.list-avatar').textContent = "--";
                 row.querySelector('.text-sm').textContent = "Not Enough Data";
@@ -333,7 +312,6 @@
             }
         }
 
-        // 4. Update the Modal Header Text with the dynamic month name
         const monthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
         const rankingMonthText = document.getElementById('ranking-month-text');
         if (rankingMonthText) rankingMonthText.textContent = `Top 10 Employees - ${monthName}`;
@@ -344,6 +322,8 @@
         const box = document.getElementById('ranking-modal-box');
         const container = document.getElementById('ranking-list-container');
         const data = window.currentRankingData || [];
+
+        if (!modal || !box || !container) return;
 
         container.innerHTML = data.slice(0, 10).map((emp, index) => {
             let colorClass = index % 2 === 0 ? 'avatar-teal' : 'avatar-blue';
@@ -376,24 +356,22 @@
     function hideRankingModal() {
         const modal = document.getElementById('ranking-modal');
         const box = document.getElementById('ranking-modal-box');
+        if(!modal || !box) return;
+
         modal.classList.add('opacity-0');
         box.classList.remove('scale-100');
         box.classList.add('scale-95');
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
-    // --- NEW: ACTUAL CSV EXPORT FOR ANALYTICS ---
     function triggerCSVExport() {
-        // 1. Create CSV Headers
         let csvContent = "Employee Name,Department,Days Present,Late Arrivals,On-Time Rate (%),Total Hours Logged\n";
 
-        // 2. Aggregate data per employee based on currently filtered attendanceData
         let empStats = {};
         
-        attendanceData.forEach(record => {
+        allAttendanceData.forEach(record => {
             const eid = record.employee_id;
             
-            // Initialize employee in tracker if they don't exist yet
             if (!empStats[eid]) {
                 const emp = employeeData[eid] || { name: eid, expectedStartMin: 9 * 60, dept: 'Unassigned' };
                 empStats[eid] = { 
@@ -406,11 +384,9 @@
                 };
             }
 
-            // Increment stats
             empStats[eid].totalDays++;
             empStats[eid].totalSeconds += (record.rendered_seconds || 0);
 
-            // Strict Late Check
             if (record.clock_in_time) {
                 const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
                 const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
@@ -420,16 +396,13 @@
             }
         });
 
-        // 3. Build CSV Rows
         for (const [eid, stats] of Object.entries(empStats)) {
             const onTimeRate = stats.totalDays > 0 ? (((stats.totalDays - stats.lateDays) / stats.totalDays) * 100).toFixed(1) : 0;
             const hoursLogged = (stats.totalSeconds / 3600).toFixed(1);
             
-            // Use quotes around strings to prevent commas in names/departments from breaking the CSV layout
             csvContent += `"${stats.name}","${stats.dept}","${stats.totalDays}","${stats.lateDays}","${onTimeRate}%","${hoursLogged}"\n`;
         }
 
-        // 4. Trigger Browser Download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -442,84 +415,6 @@
         link.click();
         document.body.removeChild(link);
     }
-
-    // ==========================================
-    // SPA SAFE EVENT LISTENERS
-    // ==========================================
-    const waitForFirebase = setInterval(() => {
-        if (window.firebaseUtils && window.db) {
-            clearInterval(waitForFirebase);
-            loadAnalyticsData();
-        }
-    }, 50);
-
-    // ALWAYS Purge previous listeners
-    if (window._analyticsClickListener) document.body.removeEventListener('click', window._analyticsClickListener);
-
-    window._analyticsClickListener = (e) => {
-        if (!document.getElementById('trend-dropdown')) return;
-        
-        // Date Range
-        const rangeBtn = e.target.closest('.range-btn');
-        if (rangeBtn) {
-            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-            rangeBtn.classList.add('active');
-            
-            const range = rangeBtn.getAttribute('data-range');
-            if (range === '7d') currentDateRange = 7;
-            if (range === '30d') currentDateRange = 30;
-            if (range === '3m') currentDateRange = 90;
-            
-            processAnalytics();
-        }
-
-        // Weekly Trends Dropdown
-        const trendDropdown = document.getElementById('trend-dropdown');
-        if (trendDropdown && !trendDropdown.contains(e.target)) trendDropdown.classList.remove('open');
-
-        const dropdownTrigger = e.target.closest('#trend-dropdown .dropdown-trigger');
-        if (dropdownTrigger && trendDropdown && trendDropdown.contains(dropdownTrigger)) {
-            e.stopPropagation();
-            trendDropdown.classList.toggle('open');
-        }
-
-        const dropdownItem = e.target.closest('#trend-dropdown .dropdown-item');
-        if (dropdownItem && trendDropdown && trendDropdown.contains(dropdownItem)) {
-            e.stopPropagation();
-            const value = dropdownItem.getAttribute('data-value');
-            
-            trendDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
-            dropdownItem.classList.add('active');
-            document.getElementById('trend-text').textContent = dropdownItem.textContent;
-            trendDropdown.classList.remove('open');
-
-            currentWeeklyTrendFilter = value;
-            renderWeeklyTrends(); // Update JUST the trends UI
-        }
-
-        // --- Export Button ---
-        const exportBtn = e.target.closest('#export-btn');
-        if (exportBtn && !exportBtn.disabled) {
-            const originalIcon = exportBtn.innerHTML;
-            exportBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin text-brand-primary"></i>`;
-            if (window.lucide) lucide.createIcons();
-            exportBtn.disabled = true;
-
-            setTimeout(() => {
-                // FIRE THE ACTUAL CSV EXPORT HERE!
-                triggerCSVExport();
-                
-                exportBtn.innerHTML = originalIcon;
-                exportBtn.disabled = false;
-                showAnalyticsToast("Report exported as CSV successfully!");
-            }, 1500);
-        }
-
-        if (e.target.closest('.btn-outline-full')) showRankingModal();
-        if (e.target.closest('#close-ranking-modal') || e.target.id === 'ranking-modal-backdrop') hideRankingModal();
-    };
-
-    document.body.addEventListener('click', window._analyticsClickListener);
 
     function showAnalyticsToast(message) {
         const existingToast = document.querySelector('.analytics-toast');
@@ -543,4 +438,87 @@
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    // ==========================================
+    // INITIALIZATION & SPA EVENT LISTENERS
+    // ==========================================
+    const waitForFirebase = setInterval(() => {
+        if (window.firebaseUtils && window.db) {
+            clearInterval(waitForFirebase);
+            loadAnalyticsData();
+        }
+    }, 50);
+
+    // FIXED: Safely attach SPA event listeners
+    if (window._analyticsClickListener) {
+        document.body.removeEventListener('click', window._analyticsClickListener);
+    }
+
+    window._analyticsClickListener = (e) => {
+        // Dropdown Controls
+        const trendDropdown = document.getElementById('trend-dropdown');
+        if (trendDropdown && !trendDropdown.contains(e.target)) trendDropdown.classList.remove('open');
+
+        const dropdownTrigger = e.target.closest('#trend-dropdown .dropdown-trigger');
+        if (dropdownTrigger && trendDropdown && trendDropdown.contains(dropdownTrigger)) {
+            e.stopPropagation();
+            trendDropdown.classList.toggle('open');
+        }
+
+        const dropdownItem = e.target.closest('#trend-dropdown .dropdown-item');
+        if (dropdownItem && trendDropdown && trendDropdown.contains(dropdownItem)) {
+            e.stopPropagation();
+            const value = dropdownItem.getAttribute('data-value');
+            
+            trendDropdown.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+            dropdownItem.classList.add('active');
+            document.getElementById('trend-text').textContent = dropdownItem.textContent;
+            trendDropdown.classList.remove('open');
+
+            currentWeeklyTrendFilter = value;
+            renderWeeklyTrends(); 
+        }
+
+        // Date Range Picker
+        const rangeBtn = e.target.closest('.range-btn');
+        if (rangeBtn) {
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            rangeBtn.classList.add('active');
+            
+            const range = rangeBtn.getAttribute('data-range');
+            if (range === '7d') currentDateRange = 7;
+            if (range === '30d') currentDateRange = 30;
+            if (range === '3m') currentDateRange = 90;
+            
+            processAnalytics();
+        }
+
+        // Export CSV
+        const exportBtn = e.target.closest('#export-btn');
+        if (exportBtn && !exportBtn.disabled) {
+            const originalIcon = exportBtn.innerHTML;
+            exportBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin text-brand-primary"></i>`;
+            if (window.lucide) lucide.createIcons();
+            exportBtn.disabled = true;
+
+            setTimeout(() => {
+                triggerCSVExport();
+                exportBtn.innerHTML = originalIcon;
+                exportBtn.disabled = false;
+                showAnalyticsToast("Report exported as CSV successfully!");
+            }, 1500);
+        }
+
+        // FIXED: Modal interactions specifically looking for IDs
+        if (e.target.closest('#open-ranking-btn')) {
+            showRankingModal();
+        }
+        
+        if (e.target.closest('#close-ranking-modal') || e.target.id === 'ranking-modal-backdrop') {
+            hideRankingModal();
+        }
+    };
+
+    document.body.addEventListener('click', window._analyticsClickListener);
+
 })();
