@@ -275,7 +275,7 @@
         const todayStr = new Date().toISOString().split('T')[0];
 
         if (filteredLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">No attendance records found for ${currentFilter}.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">No attendance records found for ${currentFilter}.</td></tr>`;
             pageInfo.textContent = "Showing 0 of 0 logs";
             prevBtn.disabled = true; nextBtn.disabled = true;
             return;
@@ -314,15 +314,46 @@
                 ? `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${log.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>` 
                 : `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
 
+            // --- STATUS BADGE LOGIC ---
             let statusHtml = `<span class="badge" style="background:rgba(34,197,94,0.1); color:#22c55e;">On Time</span>`;
             if (!log.clock_out_time && log.date === todayStr) {
                 statusHtml = `<span class="badge badge-pulse"><span class="status-dot"></span> Active</span>`;
             } else if (log.clock_in_time) {
                 const actualDate = new Date(log.clock_in_time.replace(/-/g, '/'));
                 const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-                if (actualMin > expectedStartMin) { // STRICT CUTOFF
+                if (actualMin > expectedStartMin) { 
                     statusHtml = `<span class="badge" style="background:rgba(234,179,8,0.1); color:#eab308;">Late</span>`;
                 }
+            }
+
+            // --- CHECKOUT LOGIC ---
+            let checkoutHtml = '';
+            if (!log.clock_out_time) {
+                if (log.date === todayStr) {
+                    checkoutHtml = `<span class="badge" style="background:rgba(156,163,175,0.1); color:#6b7280;">Pending</span>`;
+                } else {
+                    checkoutHtml = `<span class="badge badge-missed">Invalid</span>`; 
+                }
+            } else {
+                const outDateObj = new Date(log.clock_out_time.replace(/-/g, '/'));
+                const outDateFormatted = `${outDateObj.getFullYear()}-${String(outDateObj.getMonth()+1).padStart(2,'0')}-${String(outDateObj.getDate()).padStart(2,'0')}`;
+                
+                if (outDateFormatted === log.date) {
+                    checkoutHtml = `<span class="badge badge-active">Valid</span>`;
+                } else {
+                    checkoutHtml = `<span class="badge badge-missed">Invalid</span>`; 
+                }
+            }
+
+            // --- NEW: RENDERED HOURS LOGIC ---
+            let renderedHtml = `<span class="text-gray-400 font-medium">--</span>`;
+            if (log.rendered_seconds) {
+                const hours = Math.floor(log.rendered_seconds / 3600);
+                const minutes = Math.floor((log.rendered_seconds % 3600) / 60);
+                renderedHtml = `<span class="font-bold text-brand-darkest">${hours}h ${minutes}m</span>`;
+            } else if (!log.clock_out_time && log.date === todayStr) {
+                // Fun UI detail for active shifts
+                renderedHtml = `<span class="text-xs text-brand-primary font-bold animate-pulse">Counting...</span>`;
             }
 
             const hasLocation = log.clock_in_lat && log.clock_in_long;
@@ -335,13 +366,16 @@
                    </button>` 
                 : `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
 
+            // --- UPDATED HTML INJECTION (Added Rendered Column) ---
             tbody.innerHTML += `
                 <tr class="log-row">
                     <td class="log-td"><p class="font-bold text-brand-darkest text-sm">${dateDisplay}</p><p class="text-[10px] text-brand-dark uppercase tracking-wider font-bold">${log.date}</p></td>
                     <td class="log-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
                     <td class="log-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
+                    <td class="log-td">${renderedHtml}</td>
                     <td class="log-td">${locationHtml}</td>
                     <td class="log-td">${statusHtml}</td>
+                    <td class="log-td">${checkoutHtml}</td>
                 </tr>
             `;
 
@@ -442,12 +476,14 @@
     }
 
     function triggerCSVExport() {
-        let csvContent = "Date,Clock In,Clock Out,Rendered Hours\n";
+        // Also added the new column to your exported CSV data!
+        let csvContent = "Date,Clock In,Clock Out,Rendered Hours,Checkout Status\n";
         
         filteredLogs.forEach(log => {
             const formatTime = (ts) => ts ? new Date(ts.replace(/-/g,'/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : "--:--";
             const cIn = formatTime(log.clock_in_time);
             const cOut = formatTime(log.clock_out_time);
+            const todayStr = new Date().toISOString().split('T')[0];
             
             let total = "--";
             if (log.rendered_seconds) {
@@ -456,7 +492,16 @@
                 total = `${hours}h ${minutes}m`;
             }
 
-            csvContent += `"${log.date}","${cIn}","${cOut}","${total}"\n`;
+            // CSV Logic for Checkout
+            let checkoutTxt = "Invalid";
+            if (!log.clock_out_time && log.date === todayStr) checkoutTxt = "Pending";
+            else if (log.clock_out_time) {
+                const outDateObj = new Date(log.clock_out_time.replace(/-/g, '/'));
+                const outDateFormatted = `${outDateObj.getFullYear()}-${String(outDateObj.getMonth()+1).padStart(2,'0')}-${String(outDateObj.getDate()).padStart(2,'0')}`;
+                if (outDateFormatted === log.date) checkoutTxt = "Valid";
+            }
+
+            csvContent += `"${log.date}","${cIn}","${cOut}","${total}","${checkoutTxt}"\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
