@@ -1,9 +1,6 @@
 // scripts/live-tracking.js
 
 (() => {
-    // ==========================================
-    // INITIALIZATION & UI SETUP
-    // ==========================================
     if (window.lucide) lucide.createIcons();
 
     setTimeout(() => {
@@ -16,12 +13,21 @@
     }, 100);
 
     // ==========================================
-    // GLOBALS & UTILS
+    // GLOBALS & CLEANUP
     // ==========================================
-    window._liveMapInstance = null; 
-    window._liveMapMarkers = {};    
-    window._currentTileLayer = null;
-    window.userLocationMarker = null;
+    if (window._liveMapMarkers) {
+        Object.values(window._liveMapMarkers).forEach(m => {
+            if (m && typeof m.setMap === 'function') m.setMap(null);
+        });
+    }
+    window._liveMapMarkers = {}; 
+    
+    if (window._infoWindows) {
+        Object.values(window._infoWindows).forEach(iw => {
+            if (iw && typeof iw.close === 'function') iw.close();
+        });
+    }
+    window._infoWindows = {};
 
     function getDurationText(startTimestamp) {
         if (!startTimestamp) return "";
@@ -36,7 +42,8 @@
         return `${hours}h ${mins}m`;
     }
 
-    setInterval(() => {
+    if (window._liveTrackingTimeInterval) clearInterval(window._liveTrackingTimeInterval);
+    window._liveTrackingTimeInterval = setInterval(() => {
         document.querySelectorAll('.time-duration').forEach(el => {
             const ts = parseInt(el.getAttribute('data-timestamp'));
             if (ts) el.textContent = getDurationText(ts);
@@ -44,89 +51,178 @@
     }, 60000);
 
     // ==========================================
-    // LEAFLET MAP INIT & THEMES
+    // MAP INIT (WITH SMOOTH FADE IN)
     // ==========================================
-    function setMapTheme() {
-        if (!window._liveMapInstance) return;
-        
-        if (window._currentTileLayer) {
-            window._liveMapInstance.removeLayer(window._currentTileLayer);
-        }
-
-        const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark-mode');
-        
-        // CartoDB Voyager for Light, Dark Matter for Dark
-        const tileUrl = isDark 
-            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
-        window._currentTileLayer = L.tileLayer(tileUrl, {
-            maxZoom: 19,
-            attribution: false
-        }).addTo(window._liveMapInstance);
-    }
-    
-    function initLeafletMap() {
+    window.initMap = function() {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        // SPA CRITICAL FIX: Destroy the old map instance if it exists!
-        if (window._liveMapInstance) {
-            window._liveMapInstance.off();
-            window._liveMapInstance.remove();
-            window._liveMapInstance = null;
-        }
+        // Start invisible for the smooth SPA transition
+        mapContainer.style.opacity = '0';
+        mapContainer.style.transition = 'opacity 0.7s ease-out';
 
-        const hqCoords = [14.6922, 120.9789]; 
+        const hqCoords = { lat: 14.6922, lng: 120.9789 }; 
         
-        window._liveMapInstance = L.map('map', {
-            zoomControl: false, 
-            attributionControl: false
-        }).setView(hqCoords, 15);
+        window._liveMapInstance = new google.maps.Map(mapContainer, {
+            center: hqCoords,
+            zoom: 15,
+            disableDefaultUI: true, 
+            styles: [] 
+        });
 
-        setMapTheme();
+        // Fade in ONLY when visual tiles are fully downloaded
+        google.maps.event.addListenerOnce(window._liveMapInstance, 'tilesloaded', () => {
+            mapContainer.style.opacity = '1';
+        });
+
         startLiveTracking();
+    };
+
+    // ==========================================
+    // THE FIX: ROUTER-SAFE API LOADER
+    // ==========================================
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        console.log('Live Tracking: Loading Google Maps via Proxy...');
+        loadGoogleMapsProxy();
+    } else {
+        console.log('Live Tracking: Google Maps already loaded in memory.');
+        // SPA Return Visit: Wait 200ms for the layout.js fade animation to finish injecting the DOM
+        setTimeout(window.initMap, 200); 
     }
 
-    // ==========================================
-    // DYNAMIC SCRIPT INJECTION & SPA GUARD
-    // ==========================================
-    function loadLeafletAndInit() {
-        if (typeof L !== 'undefined') {
-            initLeafletMap();
-            return;
-        }
+    function loadGoogleMapsProxy() {
+        // Explicitly attach to 'window' so stringified functions can access them
+        window.CORSproxyURL = [
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/get?url=',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        window.CORSproxyIndex = 0;
+        
+        var args = '';
+        if (typeof language != 'undefined') args += '&language=' + language;
 
-        if (!document.querySelector('link[href*="leaflet.css"]')) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(link);
-        }
-
-        if (!document.querySelector('script[src*="leaflet.js"]')) {
-            const script = document.createElement('script');
-            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            script.onload = () => {
-                initLeafletMap(); 
+        window.sendRequestThroughCROSproxy = function(url, callback) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        try {
+                            if (window.CORSproxyIndex % window.CORSproxyURL.length === 0) {
+                                if (callback) callback(xhttp.responseText);
+                            } else {
+                                var response = JSON.parse(xhttp.responseText);
+                                if (callback && response.contents) callback(response.contents);
+                            }
+                        } catch (e) {
+                            window.CORSproxyIndex++;
+                            window.sendRequestThroughCROSproxy(url, callback);
+                        }
+                    } else {
+                        window.CORSproxyIndex++;
+                        if (window.CORSproxyIndex < window.CORSproxyURL.length * 3) {
+                            window.sendRequestThroughCROSproxy(url, callback);
+                        } else {
+                            window.showMapError();
+                        }
+                    }
+                }
             };
+            xhttp.onerror = function() {
+                window.CORSproxyIndex++;
+                if (window.CORSproxyIndex < window.CORSproxyURL.length * 3) {
+                    window.sendRequestThroughCROSproxy(url, callback);
+                } else {
+                    window.showMapError();
+                }
+            };
+            xhttp.open("GET", window.CORSproxyURL[window.CORSproxyIndex % window.CORSproxyURL.length] + encodeURIComponent(url), true);
+            xhttp.send();
+        };
+
+        window.showMapError = function() {
+            var mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                mapContainer.style.opacity = '1';
+                mapContainer.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;">
+                        <p style="margin-top: 16px;">Unable to load Google Maps via proxy.</p>
+                    </div>
+                `;
+            }
+        };
+
+        var bypass = function (googleAPIcomponentJS, googleAPIcomponentURL) {
+            if (googleAPIcomponentURL.toString().indexOf("common.js") != -1) {
+                var removeFailureAlert = function(googleAPIcomponentURL) {
+                    // Call the globally bound window function
+                    window.sendRequestThroughCROSproxy(googleAPIcomponentURL, (responseText) => {
+                        var anotherAppendChildToHeadJSRegex = /\.head;.*src=(.*?);/;
+                        var anotherAppendChildToHeadJS = responseText.match(anotherAppendChildToHeadJSRegex);
+                        if (!anotherAppendChildToHeadJS) {
+                            var script = document.createElement('script');
+                            script.innerHTML = responseText;
+                            document.head.appendChild(script);
+                            return;
+                        }
+                        var googleAPItrustedScriptURL = anotherAppendChildToHeadJS[1];
+                        var bypassQuotaServicePayload = anotherAppendChildToHeadJS[0].replace(
+                            googleAPItrustedScriptURL, 
+                            googleAPItrustedScriptURL + '.toString().indexOf("QuotaService.RecordEvent")!=-1?"":' + googleAPItrustedScriptURL
+                        );
+                        var script = document.createElement('script');
+                        script.innerHTML = responseText
+                            .replace(new RegExp(/;if\(![a-z]+?\).*Failure.*?\}/), ";")
+                            .replace(new RegExp(/(\|\|\(\(\)=\>\{\}\);\S+\?\S+?\()/), "$1true||")
+                            .replace(anotherAppendChildToHeadJSRegex, bypassQuotaServicePayload);
+                        document.head.appendChild(script);
+                    });
+                }
+                googleAPIcomponentJS.innerHTML = '(' + removeFailureAlert.toString() + ')("' + googleAPIcomponentURL.toString() + '")';
+            } else if (googleAPIcomponentURL.toString().indexOf("map.js") != -1) {
+                var hijackMapJS = function(googleAPIcomponentURL) {
+                    // Call the globally bound window function
+                    window.sendRequestThroughCROSproxy(googleAPIcomponentURL, (responseText) => {
+                        var script = document.createElement('script');
+                        script.innerHTML = responseText.replace(new RegExp(/if\(\w+!==1&&\w+!==2\)/), "if(false)");
+                        document.head.appendChild(script);
+                    });
+                }
+                googleAPIcomponentJS.innerHTML = '(' + hijackMapJS.toString() + ')("' + googleAPIcomponentURL.toString() + '")';
+            } else {
+                googleAPIcomponentJS.src = googleAPIcomponentURL;
+            }
+        };
+
+        var createAndExecutePayload = function (googleAPIjs) {
+            var script = document.createElement('script');
+            var appendChildToHeadJS = googleAPIjs.match(/(\w+)\.src=(_.*?);/);
+            if (!appendChildToHeadJS) {
+                script.innerHTML = googleAPIjs;
+                document.head.appendChild(script);
+                return;
+            }
+            var googleAPIcomponentJS = appendChildToHeadJS[1];
+            var googleAPIcomponentURL = appendChildToHeadJS[2];
+            script.innerHTML = googleAPIjs.replace(
+                appendChildToHeadJS[0], 
+                '(' + bypass.toString() + ')(' + googleAPIcomponentJS + ', ' + googleAPIcomponentURL + ');'
+            );
             document.head.appendChild(script);
-        }
+        };
+
+        // Trigger the fetch using the window bound proxy request
+        window.sendRequestThroughCROSproxy(
+            'https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap' + args, 
+            (googleAPIjs) => {
+                createAndExecutePayload(googleAPIjs);
+            }
+        );
     }
 
-    // Initialize Map Flow
-    loadLeafletAndInit();
-
     // ==========================================
-    // THEME OBSERVER & REAL-TIME TRACKING
+    // CORE LOGIC: FETCH & RENDER
     // ==========================================
-    
-    // Watch for Dark Mode class changes to instantly swap map tiles
-    if (window._themeObserverLive) window._themeObserverLive.disconnect();
-    window._themeObserverLive = new MutationObserver(() => setMapTheme());
-    window._themeObserverLive.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    window._themeObserverLive.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
     async function startLiveTracking() {
         if (!window.db || !window.firebaseUtils || !window.rtdb) {
             setTimeout(startLiveTracking, 100);
@@ -144,18 +240,15 @@
 
             const locationsRef = ref(window.rtdb, 'active_locations');
             
-            // Clean up old listeners
             if (window._liveTrackingUnsubscribe) window._liveTrackingUnsubscribe();
 
             window._liveTrackingUnsubscribe = onValue(locationsRef, (snapshot) => {
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
-                // Clear existing markers
-                if (window._liveMapMarkers) {
-                    Object.values(window._liveMapMarkers).forEach(m => m.remove());
-                }
+                Object.values(window._liveMapMarkers).forEach(m => m.setMap(null));
                 window._liveMapMarkers = {};
+                window._infoWindows = {};
 
                 const staffList = document.getElementById('staff-list');
                 if (staffList) staffList.innerHTML = '';
@@ -176,7 +269,6 @@
                     }
 
                     if (status === "online") onlineCount++;
-
                     renderEmployeeRecord(emp, status, lat, lng, liveData);
                 });
 
@@ -200,27 +292,27 @@
         const name = emp.full_name || "Unknown Employee";
         const team = emp.assigned_team || "Unassigned";
         
-        let statusColorHex = "475569"; // Slate 600
+        let statusColorHex = "475569"; 
         let displayStatus = "Offline";
         let dotColorClass = "bg-slate-600";
         let bgClass = "bg-[rgba(71,85,105,0.1)] text-slate-700";
-        let markerSize = 12; 
-        let zIndexOffset = 1; 
+        let markerScale = 6; 
+        let markerZIndex = 1; 
 
         if (status === "online") {
-            statusColorHex = "10B981"; // Emerald 500
+            statusColorHex = "10B981"; 
             displayStatus = "Active";
             dotColorClass = "bg-emerald-500";
             bgClass = "bg-[rgba(16,185,129,0.1)] text-emerald-600";
-            markerSize = 18; 
-            zIndexOffset = 1000; 
+            markerScale = 9; 
+            markerZIndex = 10; 
         } else if (status === "break") {
-            statusColorHex = "F59E0B"; // Amber 500
+            statusColorHex = "F59E0B"; 
             displayStatus = "On Break";
             dotColorClass = "bg-amber-500";
             bgClass = "bg-[rgba(245,158,11,0.1)] text-amber-600";
-            markerSize = 18; 
-            zIndexOffset = 1000; 
+            markerScale = 9; 
+            markerZIndex = 10; 
         }
 
         const statusTime = liveData ? (liveData.status_time || liveData.timestamp) : null;
@@ -238,37 +330,40 @@
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
             : nameParts[0].substring(0, 2).toUpperCase();
 
-        // 1. STRICT FLOAT PARSING: Prevents Leaflet from crashing on bad data
-        const parsedLat = parseFloat(lat);
-        const parsedLng = parseFloat(lng);
-
-        if (!isNaN(parsedLat) && !isNaN(parsedLng) && window._liveMapInstance) {
-            
-            const customIcon = L.divIcon({
-                className: '', // Prevents Leaflet from hijacking our custom HTML
-                html: `<div style="width: ${markerSize}px; height: ${markerSize}px; background-color: #${statusColorHex}; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.4);"></div>`,
-                iconSize: [markerSize, markerSize],
-                iconAnchor: [markerSize/2, markerSize/2],
-                popupAnchor: [0, -(markerSize/2)] 
+        if (lat && lng && window._liveMapInstance) {
+            const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map: window._liveMapInstance,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: markerScale,
+                    fillColor: `#${statusColorHex}`,
+                    fillOpacity: 1, 
+                    strokeWeight: 2,
+                    strokeColor: "#ffffff" 
+                },
+                title: `${name} - ${displayStatus}`,
+                zIndex: markerZIndex 
             });
 
-            const marker = L.marker([parsedLat, parsedLng], { 
-                icon: customIcon,
-                zIndexOffset: zIndexOffset
-            }).addTo(window._liveMapInstance);
-
             const popupContent = `
-                <div style="min-width: 120px;">
-                    <p style="font-weight: 700; color: var(--brand-darkest); font-size: 14px; margin: 0 0 4px 0;">${name}</p>
+                <div style="font-family: 'DM Sans', sans-serif; padding: 4px; min-width: 120px;">
+                    <p style="font-weight: 700; color: #0f172a; font-size: 14px; margin: 0 0 4px 0;">${name}</p>
                     <p style="font-size: 10px; color: #${statusColorHex}; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 0;">${displayStatus} • ${team}${infoWindowTimeText}</p>
                 </div>
             `;
 
-            marker.bindPopup(popupContent, { className: 'custom-brand-popup' });
+            const infoWindow = new google.maps.InfoWindow({ content: popupContent });
+
+            marker.addListener("click", () => {
+                Object.values(window._infoWindows).forEach(iw => iw.close());
+                infoWindow.open({ anchor: marker, map: window._liveMapInstance });
+            });
+
             window._liveMapMarkers[emp.email] = marker;
+            window._infoWindows[emp.email] = infoWindow;
         }
 
-        // 2. Render Sidebar List
         const staffList = document.getElementById('staff-list');
         if (!staffList) return;
 
@@ -294,32 +389,43 @@
         card.addEventListener('click', () => {
             const marker = window._liveMapMarkers[emp.email];
             if (marker && window._liveMapInstance) {
-                window._liveMapInstance.flyTo(marker.getLatLng(), 17, { duration: 1.5 });
-                marker.openPopup();
+                window._liveMapInstance.panTo(marker.getPosition());
+                window._liveMapInstance.setZoom(17);
+                google.maps.event.trigger(marker, 'click');
             } else {
                 showToast(`No location data available for ${name}`, false);
             }
         });
 
-        if (status !== "offline") staffList.prepend(card);
-        else staffList.appendChild(card);
+        if (status !== "offline") {
+            staffList.prepend(card);
+        } else {
+            staffList.appendChild(card);
+        }
         
         if (window.lucide) lucide.createIcons();
     }
 
     // ==========================================
-    // GLOBAL DOM EVENT LISTENERS
+    // EVENT LISTENERS & UI
     // ==========================================
-    if (window._liveTrackingClickListener) document.body.removeEventListener('click', window._liveTrackingClickListener);
+    if (window._liveTrackingClickHandler) {
+        document.body.removeEventListener('click', window._liveTrackingClickHandler);
+    }
     
-    window._liveTrackingClickListener = (e) => {
-        if (!window._liveMapInstance) return;
+    window._liveTrackingClickHandler = (e) => {
+        if (!document.getElementById('map')) return;
 
-        if (e.target.closest('#map-zoom-in')) window._liveMapInstance.zoomIn();
-        if (e.target.closest('#map-zoom-out')) window._liveMapInstance.zoomOut();
+        if (e.target.closest('#map-zoom-in') && window._liveMapInstance) {
+            window._liveMapInstance.setZoom(window._liveMapInstance.getZoom() + 1);
+        }
+        if (e.target.closest('#map-zoom-out') && window._liveMapInstance) {
+            window._liveMapInstance.setZoom(window._liveMapInstance.getZoom() - 1);
+        }
 
         const recenterBtn = e.target.closest('#map-recenter');
-        if (recenterBtn) {
+        if (recenterBtn && window._liveMapInstance) {
+            
             if (recenterBtn.classList.contains('pointer-events-none')) return;
 
             if (!navigator.geolocation) {
@@ -328,30 +434,33 @@
             }
 
             const originalIcon = recenterBtn.innerHTML;
+            
             recenterBtn.classList.add('pointer-events-none', 'opacity-70');
             recenterBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
             if (window.lucide) lucide.createIcons();
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const latLng = [position.coords.latitude, position.coords.longitude];
-                    
-                    window._liveMapInstance.flyTo(latLng, 16, { duration: 1.5 });
+                    const userCoords = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    window._liveMapInstance.panTo(userCoords);
+                    window._liveMapInstance.setZoom(16);
 
                     if (window.userLocationMarker) {
-                        window.userLocationMarker.setLatLng(latLng);
+                        window.userLocationMarker.setPosition(userCoords);
                     } else {
-                        const userIcon = L.divIcon({
-                            className: 'user-location-marker',
-                            html: `<div class="user-location-dot"></div>`,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
+                        window.userLocationMarker = new google.maps.Marker({
+                            position: userCoords,
+                            map: window._liveMapInstance,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 6,
+                                fillColor: "#818cf8", 
+                                fillOpacity: 1,
+                                strokeWeight: 2,
+                                strokeColor: "#ffffff"
+                            },
+                            zIndex: 999
                         });
-                        
-                        window.userLocationMarker = L.marker(latLng, { 
-                            icon: userIcon, 
-                            zIndexOffset: 9999 
-                        }).addTo(window._liveMapInstance);
                     }
                     
                     recenterBtn.classList.remove('pointer-events-none', 'opacity-70');
@@ -364,21 +473,23 @@
                     if (window.lucide) lucide.createIcons();
                     
                     let errorMsg = "Unable to retrieve your location.";
-                    if (error.code === 1) errorMsg = "Location access denied.";
-                    if (error.code === 2) errorMsg = "Location unavailable.";
-                    if (error.code === 3) errorMsg = "Location request timed out.";
+                    if (error.code === 1) errorMsg = "Location access denied. Please allow it in browser settings.";
+                    if (error.code === 2) errorMsg = "Location unavailable right now.";
+                    if (error.code === 3) errorMsg = "Location request timed out. Please try again.";
+                    
                     showToast(errorMsg, false);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
     };
-    
-    document.body.addEventListener('click', window._liveTrackingClickListener);
+    document.body.addEventListener('click', window._liveTrackingClickHandler);
 
-    if (window._liveTrackingInputListener) document.body.removeEventListener('input', window._liveTrackingInputListener);
+    if (window._liveTrackingInputHandler) {
+        document.body.removeEventListener('input', window._liveTrackingInputHandler);
+    }
     
-    window._liveTrackingInputListener = (e) => {
+    window._liveTrackingInputHandler = (e) => {
         if (e.target.id === 'staff-search') {
             const term = e.target.value.toLowerCase().trim();
             const staffCards = document.querySelectorAll('.staff-card');
@@ -396,8 +507,7 @@
             });
         }
     };
-    
-    document.body.addEventListener('input', window._liveTrackingInputListener);
+    document.body.addEventListener('input', window._liveTrackingInputHandler);
 
     function showToast(message, isSuccess = true) {
         const existingToast = document.querySelector('.live-track-toast');

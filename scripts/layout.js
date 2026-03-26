@@ -167,11 +167,11 @@ function initializeGlobalUI() {
 // ==========================================
 function setupRouter() {
     // 1. Handle normal link clicks
-    document.body.addEventListener('click', (e) => {
+    document.body.addEventListener('click', async (e) => { 
         const link = e.target.closest('a');
         if (link && link.href && link.host === window.location.host && link.pathname.endsWith('.html')) {
             e.preventDefault();
-            navigateTo(link.href);
+            navigateTo(link.href); // Let the SPA handle everything seamlessly
         }
     });
 
