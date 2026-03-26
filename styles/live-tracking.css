@@ -301,10 +301,6 @@
     background: var(--brand-gray-bg);
 }
 
-/* THE MAGIC TRICK: Leaflet Dark Mode Tiles */
-html.dark .leaflet-tile-pane {
-  filter: invert(90%) hue-rotate(195deg) saturate(30%) brightness(110%) contrast(105%) !important;
-}
 
 /* Prevent the markers and popups from being inverted in dark mode */
 html.dark .leaflet-marker-pane,

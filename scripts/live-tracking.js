@@ -18,11 +18,11 @@
     // ==========================================
     // GLOBALS & UTILS
     // ==========================================
-    window._liveMapInstance = null; // Map instance
-    window._liveMapMarkers = {};    // Store Leaflet markers by email
+    window._liveMapInstance = null; 
+    window._liveMapMarkers = {};    
+    window._currentTileLayer = null;
     window.userLocationMarker = null;
 
-    // Helper to turn milliseconds into "2h 15m" or "45m"
     function getDurationText(startTimestamp) {
         if (!startTimestamp) return "";
         const diffMs = Date.now() - startTimestamp;
@@ -36,7 +36,6 @@
         return `${hours}h ${mins}m`;
     }
 
-    // Background clock that updates the duration text every 60 seconds
     setInterval(() => {
         document.querySelectorAll('.time-duration').forEach(el => {
             const ts = parseInt(el.getAttribute('data-timestamp'));
@@ -45,45 +44,89 @@
     }, 60000);
 
     // ==========================================
-    // MAP INIT (LEAFLET)
+    // LEAFLET MAP INIT & THEMES
     // ==========================================
+    function setMapTheme() {
+        if (!window._liveMapInstance) return;
+        
+        if (window._currentTileLayer) {
+            window._liveMapInstance.removeLayer(window._currentTileLayer);
+        }
+
+        const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark-mode');
+        
+        // CartoDB Voyager for Light, Dark Matter for Dark
+        const tileUrl = isDark 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+        window._currentTileLayer = L.tileLayer(tileUrl, {
+            maxZoom: 19,
+            attribution: false
+        }).addTo(window._liveMapInstance);
+    }
+    
     function initLeafletMap() {
         const mapContainer = document.getElementById('map');
-        if (!mapContainer || window._liveMapInstance) return;
+        if (!mapContainer) return;
 
-        // Default coordinates (HQ)
+        // SPA CRITICAL FIX: Destroy the old map instance if it exists!
+        if (window._liveMapInstance) {
+            window._liveMapInstance.off();
+            window._liveMapInstance.remove();
+            window._liveMapInstance = null;
+        }
+
         const hqCoords = [14.6922, 120.9789]; 
         
-        // Initialize map
         window._liveMapInstance = L.map('map', {
-            center: hqCoords,
-            zoom: 15,
-            zoomControl: false, // Disable default zoom controls to use custom buttons
-            attributionControl: false // Cleaner look without the default text
-        });
+            zoomControl: false, 
+            attributionControl: false
+        }).setView(hqCoords, 15);
 
-        // Add CartoDB Voyager TileLayer (Neutral theme)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            maxZoom: 20
-        }).addTo(window._liveMapInstance);
-
+        setMapTheme();
         startLiveTracking();
     }
 
-    // Initialize map when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLeafletMap);
-    } else {
-        initLeafletMap();
+    // ==========================================
+    // DYNAMIC SCRIPT INJECTION & SPA GUARD
+    // ==========================================
+    function loadLeafletAndInit() {
+        if (typeof L !== 'undefined') {
+            initLeafletMap();
+            return;
+        }
+
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(link);
+        }
+
+        if (!document.querySelector('script[src*="leaflet.js"]')) {
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.onload = () => {
+                initLeafletMap(); 
+            };
+            document.head.appendChild(script);
+        }
     }
 
-    if (window.liveTrackingSPAInitialized) return;
-    window.liveTrackingSPAInitialized = true;
+    // Initialize Map Flow
+    loadLeafletAndInit();
 
     // ==========================================
-    // CORE LOGIC: FETCH & RENDER
+    // THEME OBSERVER & REAL-TIME TRACKING
     // ==========================================
+    
+    // Watch for Dark Mode class changes to instantly swap map tiles
+    if (window._themeObserverLive) window._themeObserverLive.disconnect();
+    window._themeObserverLive = new MutationObserver(() => setMapTheme());
+    window._themeObserverLive.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    window._themeObserverLive.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
     async function startLiveTracking() {
         if (!window.db || !window.firebaseUtils || !window.rtdb) {
             setTimeout(startLiveTracking, 100);
@@ -101,12 +144,17 @@
 
             const locationsRef = ref(window.rtdb, 'active_locations');
             
-            onValue(locationsRef, (snapshot) => {
+            // Clean up old listeners
+            if (window._liveTrackingUnsubscribe) window._liveTrackingUnsubscribe();
+
+            window._liveTrackingUnsubscribe = onValue(locationsRef, (snapshot) => {
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
-                // Clear existing markers from the map
-                Object.values(window._liveMapMarkers).forEach(m => window._liveMapInstance.removeLayer(m));
+                // Clear existing markers
+                if (window._liveMapMarkers) {
+                    Object.values(window._liveMapMarkers).forEach(m => m.remove());
+                }
                 window._liveMapMarkers = {};
 
                 const staffList = document.getElementById('staff-list');
@@ -156,23 +204,25 @@
         let displayStatus = "Offline";
         let dotColorClass = "bg-slate-600";
         let bgClass = "bg-[rgba(71,85,105,0.1)] text-slate-700";
-        let zIndexOffset = 0;
+        let markerSize = 12; 
+        let zIndexOffset = 1; 
 
         if (status === "online") {
             statusColorHex = "10B981"; // Emerald 500
             displayStatus = "Active";
             dotColorClass = "bg-emerald-500";
             bgClass = "bg-[rgba(16,185,129,0.1)] text-emerald-600";
-            zIndexOffset = 1000;
+            markerSize = 18; 
+            zIndexOffset = 1000; 
         } else if (status === "break") {
             statusColorHex = "F59E0B"; // Amber 500
             displayStatus = "On Break";
             dotColorClass = "bg-amber-500";
             bgClass = "bg-[rgba(245,158,11,0.1)] text-amber-600";
-            zIndexOffset = 1000;
+            markerSize = 18; 
+            zIndexOffset = 1000; 
         }
 
-        // Determine Time Duration
         const statusTime = liveData ? (liveData.status_time || liveData.timestamp) : null;
         let timeHTML = "";
         let infoWindowTimeText = "";
@@ -188,45 +238,37 @@
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
             : nameParts[0].substring(0, 2).toUpperCase();
 
-        // Render Marker on Leaflet Map
-        if (lat && lng && window._liveMapInstance) {
-            
-            // Custom HTML Icon using Leaflet DivIcon
-            const markerHtml = `
-                <div style="
-                    width: 16px; 
-                    height: 16px; 
-                    background-color: #${statusColorHex}; 
-                    border: 2px solid white; 
-                    border-radius: 50%; 
-                    box-shadow: 0 0 5px rgba(0,0,0,0.3);
-                "></div>
-            `;
+        // 1. STRICT FLOAT PARSING: Prevents Leaflet from crashing on bad data
+        const parsedLat = parseFloat(lat);
+        const parsedLng = parseFloat(lng);
 
-            const icon = L.divIcon({
-                className: 'custom-leaflet-marker',
-                html: markerHtml,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8],
-                popupAnchor: [0, -10]
+        if (!isNaN(parsedLat) && !isNaN(parsedLng) && window._liveMapInstance) {
+            
+            const customIcon = L.divIcon({
+                className: '', // Prevents Leaflet from hijacking our custom HTML
+                html: `<div style="width: ${markerSize}px; height: ${markerSize}px; background-color: #${statusColorHex}; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.4);"></div>`,
+                iconSize: [markerSize, markerSize],
+                iconAnchor: [markerSize/2, markerSize/2],
+                popupAnchor: [0, -(markerSize/2)] 
             });
 
-            const marker = L.marker([lat, lng], { 
-                icon: icon,
-                zIndexOffset: zIndexOffset 
+            const marker = L.marker([parsedLat, parsedLng], { 
+                icon: customIcon,
+                zIndexOffset: zIndexOffset
             }).addTo(window._liveMapInstance);
-            
+
             const popupContent = `
-                <div style="font-family: 'DM Sans', sans-serif; padding: 4px; min-width: 120px;">
+                <div style="min-width: 120px;">
                     <p style="font-weight: 700; color: var(--brand-darkest); font-size: 14px; margin: 0 0 4px 0;">${name}</p>
                     <p style="font-size: 10px; color: #${statusColorHex}; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 0;">${displayStatus} • ${team}${infoWindowTimeText}</p>
                 </div>
             `;
 
-            marker.bindPopup(popupContent);
+            marker.bindPopup(popupContent, { className: 'custom-brand-popup' });
             window._liveMapMarkers[emp.email] = marker;
         }
 
+        // 2. Render Sidebar List
         const staffList = document.getElementById('staff-list');
         if (!staffList) return;
 
@@ -252,7 +294,6 @@
         card.addEventListener('click', () => {
             const marker = window._liveMapMarkers[emp.email];
             if (marker && window._liveMapInstance) {
-                // Leaflet equivalent to panTo is flyTo or setView
                 window._liveMapInstance.flyTo(marker.getLatLng(), 17, { duration: 1.5 });
                 marker.openPopup();
             } else {
@@ -260,33 +301,25 @@
             }
         });
 
-        if (status !== "offline") {
-            staffList.prepend(card);
-        } else {
-            staffList.appendChild(card);
-        }
+        if (status !== "offline") staffList.prepend(card);
+        else staffList.appendChild(card);
         
         if (window.lucide) lucide.createIcons();
     }
 
     // ==========================================
-    // EVENT LISTENERS & UI
+    // GLOBAL DOM EVENT LISTENERS
     // ==========================================
-    document.body.addEventListener('click', (e) => {
-        if (!document.getElementById('map') || !window._liveMapInstance) return;
+    if (window._liveTrackingClickListener) document.body.removeEventListener('click', window._liveTrackingClickListener);
+    
+    window._liveTrackingClickListener = (e) => {
+        if (!window._liveMapInstance) return;
 
-        // Custom Map Zoom Controls
-        if (e.target.closest('#map-zoom-in')) {
-            window._liveMapInstance.zoomIn();
-        }
-        if (e.target.closest('#map-zoom-out')) {
-            window._liveMapInstance.zoomOut();
-        }
+        if (e.target.closest('#map-zoom-in')) window._liveMapInstance.zoomIn();
+        if (e.target.closest('#map-zoom-out')) window._liveMapInstance.zoomOut();
 
-        // Recenter / Geolocation
         const recenterBtn = e.target.closest('#map-recenter');
         if (recenterBtn) {
-            
             if (recenterBtn.classList.contains('pointer-events-none')) return;
 
             if (!navigator.geolocation) {
@@ -295,69 +328,57 @@
             }
 
             const originalIcon = recenterBtn.innerHTML;
-            
-            // Lock the button visually
             recenterBtn.classList.add('pointer-events-none', 'opacity-70');
             recenterBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
             if (window.lucide) lucide.createIcons();
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const userCoords = [position.coords.latitude, position.coords.longitude];
+                    const latLng = [position.coords.latitude, position.coords.longitude];
                     
-                    window._liveMapInstance.flyTo(userCoords, 16, { duration: 1.5 });
-
-                    // Custom user location dot matching your CSS
-                    const userIconHtml = `
-                        <div class="user-location-dot" style="
-                            width: 12px; height: 12px; 
-                            background: #818cf8; 
-                            border: 2px solid white; 
-                            border-radius: 50%; 
-                            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-                        "></div>
-                    `;
+                    window._liveMapInstance.flyTo(latLng, 16, { duration: 1.5 });
 
                     if (window.userLocationMarker) {
-                        window.userLocationMarker.setLatLng(userCoords);
+                        window.userLocationMarker.setLatLng(latLng);
                     } else {
                         const userIcon = L.divIcon({
-                            className: 'custom-user-marker',
-                            html: userIconHtml,
-                            iconSize: [12, 12],
-                            iconAnchor: [6, 6]
+                            className: 'user-location-marker',
+                            html: `<div class="user-location-dot"></div>`,
+                            iconSize: [24, 24],
+                            iconAnchor: [12, 12]
                         });
-                        window.userLocationMarker = L.marker(userCoords, { 
-                            icon: userIcon,
-                            zIndexOffset: 2000 
+                        
+                        window.userLocationMarker = L.marker(latLng, { 
+                            icon: userIcon, 
+                            zIndexOffset: 9999 
                         }).addTo(window._liveMapInstance);
                     }
                     
-                    // Unlock the button
                     recenterBtn.classList.remove('pointer-events-none', 'opacity-70');
                     recenterBtn.innerHTML = originalIcon;
                     if (window.lucide) lucide.createIcons();
                 },
                 (error) => {
-                    // Unlock the button
                     recenterBtn.classList.remove('pointer-events-none', 'opacity-70');
                     recenterBtn.innerHTML = originalIcon;
                     if (window.lucide) lucide.createIcons();
                     
                     let errorMsg = "Unable to retrieve your location.";
-                    if (error.code === 1) errorMsg = "Location access denied. Please allow it in browser settings.";
-                    if (error.code === 2) errorMsg = "Location unavailable right now.";
-                    if (error.code === 3) errorMsg = "Location request timed out. Please try again.";
-                    
+                    if (error.code === 1) errorMsg = "Location access denied.";
+                    if (error.code === 2) errorMsg = "Location unavailable.";
+                    if (error.code === 3) errorMsg = "Location request timed out.";
                     showToast(errorMsg, false);
                 },
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
-    });
+    };
+    
+    document.body.addEventListener('click', window._liveTrackingClickListener);
 
-    // Search filter
-    document.body.addEventListener('input', (e) => {
+    if (window._liveTrackingInputListener) document.body.removeEventListener('input', window._liveTrackingInputListener);
+    
+    window._liveTrackingInputListener = (e) => {
         if (e.target.id === 'staff-search') {
             const term = e.target.value.toLowerCase().trim();
             const staffCards = document.querySelectorAll('.staff-card');
@@ -374,9 +395,10 @@
                 }
             });
         }
-    });
+    };
+    
+    document.body.addEventListener('input', window._liveTrackingInputListener);
 
-    // Toast notifications
     function showToast(message, isSuccess = true) {
         const existingToast = document.querySelector('.live-track-toast');
         if (existingToast) existingToast.remove();
