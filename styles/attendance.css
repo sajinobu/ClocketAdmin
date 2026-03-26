@@ -27,10 +27,9 @@
 }
 
 .filter-content {
-  display: none; /* Hidden on mobile by default */
+  display: none; 
 }
 
-/* Mobile Expand States */
 .filter-container.expanded .filter-content {
   display: flex;
   margin-top: 1rem;
@@ -53,7 +52,7 @@
     display: none !important;
   }
   .filter-content {
-    display: flex !important; /* Force visible on desktop */
+    display: flex !important; 
     margin-top: 0;
     border-top: none;
     padding-top: 0;
@@ -264,52 +263,6 @@
 
 .hidden { display: none !important; }
 
-/* =========================================
-   LEAFLET MAP & CONTROLS FIXES
-   ========================================= */
-#log-map-container {
-  background-color: var(--brand-gray-bg);
-}
-
-/* Fixes the gigantic dark controls by stripping global styles */
-.leaflet-bar a {
-    background-color: #FFFFFF !important;
-    color: #1A1A1A !important;
-    width: 32px !important;
-    height: 32px !important;
-    line-height: 32px !important;
-    border-radius: 8px !important;
-    border: 1px solid var(--brand-gray-light) !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-decoration: none !important;
-}
-.leaflet-bar a:hover {
-    background-color: var(--brand-gray-bg) !important;
-}
-
-html.dark .leaflet-tile-pane {
-  filter: invert(90%) hue-rotate(195deg) saturate(30%) brightness(110%) contrast(105%) !important;
-}
-
-html.dark .leaflet-marker-pane,
-html.dark .leaflet-popup-pane,
-html.dark .leaflet-control-container {
-  filter: invert(100%) hue-rotate(-195deg) saturate(333%) brightness(91%) contrast(95%);
-}
-
-html.dark .leaflet-bar a {
-    background-color: var(--brand-surface) !important;
-    color: #FFFFFF !important;
-    border-color: rgba(255,255,255,0.1) !important;
-}
-
-html.dark .leaflet-popup-content-wrapper, 
-html.dark .leaflet-popup-tip {
-  background-color: #1e293b !important; 
-  color: #f1f5f9 !important; 
-  border-color: #334155; 
-}
+/* Hide Google Maps Default UI */
+.gm-ui-hover-effect { display: none !important; }
+#log-map-container { background-color: var(--brand-gray-bg); }
