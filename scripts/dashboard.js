@@ -266,24 +266,42 @@
     window.dashboardSPAInitialized = true;
 
     // --- EVENT DELEGATION LISTENERS ---
-    document.body.addEventListener('click', (e) => {
+    // ==========================================
+    // SPA SAFE EVENT DELEGATION
+    // ==========================================
+    
+    // 1. Purge any stale listeners from previous visits to the Dashboard
+    if (window._dashboardClickListener) {
+        document.body.removeEventListener('click', window._dashboardClickListener);
+    }
+
+    // 2. Define the exact click logic
+    window._dashboardClickListener = (e) => {
         const feedModal = document.getElementById('feed-modal');
         if (!feedModal) return;
 
+        // Open Modal
         if (e.target.closest('#view-more-feed-btn')) {
             e.preventDefault();
             feedModal.classList.remove('hidden');
+            return;
         }
 
+        // Close Modal
         if (e.target.closest('#close-feed-modal') || e.target === feedModal) {
             e.preventDefault();
             feedModal.classList.add('hidden');
+            return;
         }
 
+        // Handle links inside the modal (so the modal closes when navigating)
         const modalLink = e.target.closest('#feed-modal a');
         if (modalLink) {
             feedModal.classList.add('hidden');
         }
-    });
+    };
+
+    // 3. Attach the fresh, single listener to the body
+    document.body.addEventListener('click', window._dashboardClickListener);
 
 })();

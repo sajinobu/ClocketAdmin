@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Clocket</title>
   
+  <link rel="stylesheet" href="styles/styles.css">
   <link rel="stylesheet" href="styles/layout.css">
   <link rel="stylesheet" href="styles/dashboard.css">
 
@@ -185,25 +186,27 @@
           </section>
 
         </div>
+
+        <div id="feed-modal" class="modal-overlay hidden">
+          <div class="modal-box bg-brand-surface border border-brand-grayLight" style="max-width: 28rem;">
+            <div class="modal-header">
+              <h3 class="widget-title"><div class="live-dot"></div> Activity Stream</h3>
+              <button id="close-feed-modal" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="modal-body">
+              <div class="relative border-l-2 border-brand-grayLight ml-3 space-y-8 pb-4 mt-4" id="modal-activity-feed">
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+              <a href="live-tracking.html" class="btn-primary w-full">Open Live Tracking Map</a>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   </div>
 
-  <div id="feed-modal" class="modal-overlay hidden">
-    <div class="modal-box bg-brand-surface border border-brand-grayLight" style="max-width: 28rem;">
-      <div class="modal-header">
-        <h3 class="widget-title"><div class="live-dot"></div> Activity Stream</h3>
-        <button id="close-feed-modal" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="relative border-l-2 border-brand-grayLight ml-3 space-y-8 pb-4 mt-4" id="modal-activity-feed">
-          </div>
-      </div>
-      <div class="modal-footer" style="justify-content: center;">
-        <a href="live-tracking.html" class="btn-primary w-full">Open Live Tracking Map</a>
-      </div>
-    </div>
-  </div>
+  
 
   <script src="scripts/layout.js"></script>
   <script src="scripts/dashboard.js"></script>
