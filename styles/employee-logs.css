@@ -40,10 +40,6 @@
   justify-content: center;
 }
 
-/* =========================================
-   EMPLOYEE LOGS SPECIFIC STYLES
-   ========================================= */
-
 /* --- Buttons --- */
 .btn-icon {
   padding: 0.5rem;
@@ -208,7 +204,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  margin-left: -0.5rem; /* center it */
+  margin-left: -0.5rem; 
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
@@ -218,8 +214,8 @@
   transition: border-color 0.3s ease;
 }
 
-.marker-teal { background-color: #14b8a6; } /* Tailwind teal-500 */
-.marker-amber { background-color: #fbbf24; } /* Tailwind amber-400 */
+.marker-teal { background-color: #14b8a6; } 
+.marker-amber { background-color: #fbbf24; } 
 
 .timeline-tooltip {
   position: absolute;
@@ -548,34 +544,6 @@
   display: none !important; 
 }
 
-/* =========================================
-   LEAFLET BLUE-GRAY DARK MODE & POPUPS
-   ========================================= */
-
-#log-map-container {
-  background-color: var(--brand-gray-bg);
-}
-
-html.dark .leaflet-tile-pane {
-  filter: invert(90%) hue-rotate(195deg) saturate(30%) brightness(110%) contrast(105%) !important;
-}
-
-html.dark .leaflet-marker-pane,
-html.dark .leaflet-popup-pane,
-html.dark .leaflet-control-container {
-  filter: none !important; /* Prevents double-inversion bugs */
-}
-
-/* Ensure any popups match your brand styling */
-.leaflet-popup-content-wrapper {
-  background-color: var(--brand-surface) !important;
-  border: 1px solid var(--brand-gray-light);
-  border-radius: 1rem !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-.leaflet-popup-tip {
-  background-color: var(--brand-surface) !important;
-  border-top: 1px solid var(--brand-gray-light);
-  border-left: 1px solid var(--brand-gray-light);
-}
+/* Hide Google Maps Default UI */
+.gm-ui-hover-effect { display: none !important; }
+#log-map-container { background-color: var(--brand-gray-bg); }

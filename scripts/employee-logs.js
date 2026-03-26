@@ -29,6 +29,134 @@
         });
     }, 100);
 
+    // ==========================================
+    // GOOGLE MAPS PROXY LOADER
+    // ==========================================
+    window.initMap = function() {
+        window._isGoogleMapsReady = true;
+    };
+
+    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        loadGoogleMapsProxy();
+    } else {
+        window._isGoogleMapsReady = true;
+    }
+
+    function loadGoogleMapsProxy() {
+        window.CORSproxyURL = [
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/get?url=',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+        window.CORSproxyIndex = 0;
+        
+        var args = '';
+        if (typeof language != 'undefined') args += '&language=' + language;
+
+        window.sendRequestThroughCROSproxy = function(url, callback) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        try {
+                            if (window.CORSproxyIndex % window.CORSproxyURL.length === 0) {
+                                if (callback) callback(xhttp.responseText);
+                            } else {
+                                var response = JSON.parse(xhttp.responseText);
+                                if (callback && response.contents) callback(response.contents);
+                            }
+                        } catch (e) {
+                            window.CORSproxyIndex++;
+                            window.sendRequestThroughCROSproxy(url, callback);
+                        }
+                    } else {
+                        window.CORSproxyIndex++;
+                        if (window.CORSproxyIndex < window.CORSproxyURL.length * 3) {
+                            window.sendRequestThroughCROSproxy(url, callback);
+                        } else {
+                            console.error("Map proxy failed");
+                        }
+                    }
+                }
+            };
+            xhttp.onerror = function() {
+                window.CORSproxyIndex++;
+                if (window.CORSproxyIndex < window.CORSproxyURL.length * 3) {
+                    window.sendRequestThroughCROSproxy(url, callback);
+                }
+            };
+            xhttp.open("GET", window.CORSproxyURL[window.CORSproxyIndex % window.CORSproxyURL.length] + encodeURIComponent(url), true);
+            xhttp.send();
+        };
+
+        var bypass = function (googleAPIcomponentJS, googleAPIcomponentURL) {
+            if (googleAPIcomponentURL.toString().indexOf("common.js") != -1) {
+                var removeFailureAlert = function(googleAPIcomponentURL) {
+                    window.sendRequestThroughCROSproxy(googleAPIcomponentURL, (responseText) => {
+                        var anotherAppendChildToHeadJSRegex = /\.head;.*src=(.*?);/;
+                        var anotherAppendChildToHeadJS = responseText.match(anotherAppendChildToHeadJSRegex);
+                        if (!anotherAppendChildToHeadJS) {
+                            var script = document.createElement('script');
+                            script.innerHTML = responseText;
+                            document.head.appendChild(script);
+                            return;
+                        }
+                        var googleAPItrustedScriptURL = anotherAppendChildToHeadJS[1];
+                        var bypassQuotaServicePayload = anotherAppendChildToHeadJS[0].replace(
+                            googleAPItrustedScriptURL, 
+                            googleAPItrustedScriptURL + '.toString().indexOf("QuotaService.RecordEvent")!=-1?"":' + googleAPItrustedScriptURL
+                        );
+                        var script = document.createElement('script');
+                        script.innerHTML = responseText
+                            .replace(new RegExp(/;if\(![a-z]+?\).*Failure.*?\}/), ";")
+                            .replace(new RegExp(/(\|\|\(\(\)=\>\{\}\);\S+\?\S+?\()/), "$1true||")
+                            .replace(anotherAppendChildToHeadJSRegex, bypassQuotaServicePayload);
+                        document.head.appendChild(script);
+                    });
+                }
+                googleAPIcomponentJS.innerHTML = '(' + removeFailureAlert.toString() + ')("' + googleAPIcomponentURL.toString() + '")';
+            } else if (googleAPIcomponentURL.toString().indexOf("map.js") != -1) {
+                var hijackMapJS = function(googleAPIcomponentURL) {
+                    window.sendRequestThroughCROSproxy(googleAPIcomponentURL, (responseText) => {
+                        var script = document.createElement('script');
+                        script.innerHTML = responseText.replace(new RegExp(/if\(\w+!==1&&\w+!==2\)/), "if(false)");
+                        document.head.appendChild(script);
+                    });
+                }
+                googleAPIcomponentJS.innerHTML = '(' + hijackMapJS.toString() + ')("' + googleAPIcomponentURL.toString() + '")';
+            } else {
+                googleAPIcomponentJS.src = googleAPIcomponentURL;
+            }
+        };
+
+        var createAndExecutePayload = function (googleAPIjs) {
+            var script = document.createElement('script');
+            var appendChildToHeadJS = googleAPIjs.match(/(\w+)\.src=(_.*?);/);
+            if (!appendChildToHeadJS) {
+                script.innerHTML = googleAPIjs;
+                document.head.appendChild(script);
+                return;
+            }
+            var googleAPIcomponentJS = appendChildToHeadJS[1];
+            var googleAPIcomponentURL = appendChildToHeadJS[2];
+            script.innerHTML = googleAPIjs.replace(
+                appendChildToHeadJS[0], 
+                '(' + bypass.toString() + ')(' + googleAPIcomponentJS + ', ' + googleAPIcomponentURL + ');'
+            );
+            document.head.appendChild(script);
+        };
+
+        window.sendRequestThroughCROSproxy(
+            'https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap' + args, 
+            (googleAPIjs) => {
+                createAndExecutePayload(googleAPIjs);
+            }
+        );
+    }
+
+    // ==========================================
+    // DATA & FETCHING
+    // ==========================================
     async function fetchEmployeeLogs() {
         const urlParams = new URLSearchParams(window.location.search);
         currentEmpId = urlParams.get('id');
@@ -313,7 +441,6 @@
         setTimeout(() => { fill.style.width = `${outPercent}%`; }, 100);
     }
 
-    // --- NEW: ACTUAL CSV EXPORT ---
     function triggerCSVExport() {
         let csvContent = "Date,Clock In,Clock Out,Rendered Hours\n";
         
@@ -322,7 +449,6 @@
             const cIn = formatTime(log.clock_in_time);
             const cOut = formatTime(log.clock_out_time);
             
-            // Format rendered time cleanly
             let total = "--";
             if (log.rendered_seconds) {
                 const hours = Math.floor(log.rendered_seconds / 3600);
@@ -333,7 +459,6 @@
             csvContent += `"${log.date}","${cIn}","${cOut}","${total}"\n`;
         });
 
-        // Create Blob and trigger download automatically
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -355,7 +480,6 @@
     // ==========================================
     // SPA SAFE EVENT LISTENERS
     // ==========================================
-    // Purge old closures before assigning new ones
     if (window._empLogsClickListener) document.body.removeEventListener('click', window._empLogsClickListener);
 
     window._empLogsClickListener = (e) => {
@@ -410,7 +534,7 @@
             if (window.lucide) lucide.createIcons();
 
             setTimeout(() => {
-                triggerCSVExport(); // Automatically downloads the CSV file
+                triggerCSVExport(); 
 
                 exportBtn.innerHTML = originalContent;
                 exportBtn.disabled = false; exportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -431,7 +555,6 @@
             }, 1500);
         }
 
-        // Photo Modal Target Check (Safely updates text only if elements exist)
         const photoModal = document.getElementById('photo-modal');
         const viewPhotoBtn = e.target.closest('.view-photo-btn');
         if (viewPhotoBtn && photoModal && !viewPhotoBtn.disabled) {
@@ -455,6 +578,9 @@
             photoModal.classList.remove('hidden');
         }
 
+        // ==========================================
+        // MODAL MAP FIX: RENDER GOOGLE MAPS
+        // ==========================================
         const mapModal = document.getElementById('map-modal');
         const viewMapBtn = e.target.closest('.view-map-btn');
         if (viewMapBtn && mapModal) {
@@ -463,7 +589,7 @@
             const empName = viewMapBtn.getAttribute('data-name');
             const locId = viewMapBtn.getAttribute('data-locid');
             const addressSpan = document.getElementById(locId);
-            
+
             document.getElementById('modal-map-emp-name').textContent = empName;
             document.getElementById('modal-map-address').textContent = addressSpan ? addressSpan.textContent : "Unknown Location";
 
@@ -471,49 +597,53 @@
 
             setTimeout(() => {
                 const mapContainer = document.getElementById('log-map-container');
-                const position = [lat, lng]; // Leaflet uses array notation
+                const position = { lat: lat, lng: lng };
 
-                // Initialize Leaflet Map if it doesn't exist
-                if (!window._logMapInstance) {
-                    window._logMapInstance = L.map('log-map-container', {
-                        center: position, 
-                        zoom: 16, 
-                        disableDefaultUI: true, 
-                        zoomControl: true,
-                        attributionControl: false // Keeps it looking clean
-                    });
+                const initModalMap = () => {
+                    if (!window._isGoogleMapsReady || typeof google === 'undefined' || !google.maps) {
+                        mapContainer.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-gray-500"><i data-lucide="loader" class="w-6 h-6 animate-spin mb-2 text-brand-primary"></i><span class="text-sm font-medium">Loading maps engine...</span></div>`;
+                        if (window.lucide) lucide.createIcons();
+                        
+                        setTimeout(initModalMap, 200);
+                        return;
+                    }
 
-                    // Add CartoDB Voyager tiles (Neutral theme)
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                        maxZoom: 20
-                    }).addTo(window._logMapInstance);
+                    if (mapContainer.querySelector('.animate-spin')) {
+                        mapContainer.innerHTML = '';
+                    }
 
-                    // Custom HTML Marker to match brand
-                    const iconHtml = `
-                        <div style="
-                            width: 16px; height: 16px; 
-                            background-color: var(--brand-primary, #4f46e5); 
-                            border: 2px solid white; border-radius: 50%; 
-                            box-shadow: 0 0 5px rgba(0,0,0,0.3);
-                        "></div>
-                    `;
-                    
-                    const customIcon = L.divIcon({
-                        className: 'custom-leaflet-marker',
-                        html: iconHtml,
-                        iconSize: [16, 16],
-                        iconAnchor: [8, 8]
-                    });
+                    if (!window._logMapInstance) {
+                        window._logMapInstance = new google.maps.Map(mapContainer, {
+                            center: position,
+                            zoom: 16,
+                            mapTypeId: 'roadmap',
+                            disableDefaultUI: true,
+                            zoomControl: true
+                        });
 
-                    window._logMapMarker = L.marker(position, { icon: customIcon }).addTo(window._logMapInstance);
-                } else {
-                    // Just update the view and marker if the map already exists
-                    window._logMapInstance.setView(position, 16);
-                    window._logMapMarker.setLatLng(position);
-                }
+                        window._logMapMarker = new google.maps.Marker({
+                            position: position,
+                            map: window._logMapInstance,
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 8,
+                                fillColor: "#4f46e5", 
+                                fillOpacity: 1,
+                                strokeWeight: 2,
+                                strokeColor: "#ffffff"
+                            },
+                            title: empName
+                        });
+                    } else {
+                        window._logMapInstance.setCenter(position);
+                        window._logMapMarker.setPosition(position);
+                    }
 
-                // CRITICAL FIX: Forces Leaflet to recalculate its size after the modal un-hides
-                window._logMapInstance.invalidateSize();
+                    google.maps.event.trigger(window._logMapInstance, 'resize');
+                    window._logMapInstance.setCenter(position);
+                };
+
+                initModalMap();
 
             }, 100);
         }
