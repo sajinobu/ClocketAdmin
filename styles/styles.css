@@ -2,27 +2,6 @@
    GLOBAL LAYOUT & LOGIN STYLES
    ========================================= */
 
-/* :root {
-  --brand-darkest: #000523;
-  --brand-darker: #000533;
-  --brand-dark: #000b66;
-  --brand-primary: #001aff;
-  --brand-secondary: #007bff;
-  --brand-accent: #00d1ff;
-  --brand-accent-light: #57e8ff;
-  --brand-gray-light: #f1f1f1;
-  --brand-gray-bg: #f8fafc;
-} */
-
-/* --- HEADER STYLES --- */
-/*.site-header {
-  background-color: #ffffff;
-  border-bottom: 1px solid var(--brand-gray-light);
-  padding: 1.25rem 1rem;
-  flex-shrink: 0;
-  width: 100%;
-}*/
-
 @media (min-width: 768px) {
   .site-header { padding: 1.25rem 2rem; }
 }

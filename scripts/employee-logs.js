@@ -15,13 +15,6 @@
     window._logMapInstance = null;
     window._logMapMarker = null;
 
-    if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        const mapScript = document.createElement('script');
-        mapScript.src = "https://cdn.jsdelivr.net/gh/somanchiu/Keyless-Google-Maps-API@v7.1/mapsJavaScriptAPI.js";
-        mapScript.async = true; mapScript.defer = true;
-        document.head.appendChild(mapScript);
-    }
-
     setTimeout(() => {
         let fromPage = 'attendance';
         const urlParams = new URLSearchParams(window.location.search);
@@ -478,24 +471,50 @@
 
             setTimeout(() => {
                 const mapContainer = document.getElementById('log-map-container');
-                const position = { lat, lng };
+                const position = [lat, lng]; // Leaflet uses array notation
 
-                // Always instantiate properly
+                // Initialize Leaflet Map if it doesn't exist
                 if (!window._logMapInstance) {
-                    window._logMapInstance = new google.maps.Map(mapContainer, {
-                        center: position, zoom: 16, disableDefaultUI: true, zoomControl: true
+                    window._logMapInstance = L.map('log-map-container', {
+                        center: position, 
+                        zoom: 16, 
+                        disableDefaultUI: true, 
+                        zoomControl: true,
+                        attributionControl: false // Keeps it looking clean
                     });
-                    window._logMapMarker = new google.maps.Marker({
-                        position: position, map: window._logMapInstance,
-                        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: "#4f46e5", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff" },
-                        title: empName
+
+                    // Add CartoDB Voyager tiles (Neutral theme)
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 20
+                    }).addTo(window._logMapInstance);
+
+                    // Custom HTML Marker to match brand
+                    const iconHtml = `
+                        <div style="
+                            width: 16px; height: 16px; 
+                            background-color: var(--brand-primary, #4f46e5); 
+                            border: 2px solid white; border-radius: 50%; 
+                            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+                        "></div>
+                    `;
+                    
+                    const customIcon = L.divIcon({
+                        className: 'custom-leaflet-marker',
+                        html: iconHtml,
+                        iconSize: [16, 16],
+                        iconAnchor: [8, 8]
                     });
+
+                    window._logMapMarker = L.marker(position, { icon: customIcon }).addTo(window._logMapInstance);
                 } else {
-                    window._logMapInstance.setCenter(position);
-                    window._logMapInstance.setZoom(16);
-                    window._logMapMarker.setPosition(position);
-                    window._logMapMarker.setTitle(empName);
+                    // Just update the view and marker if the map already exists
+                    window._logMapInstance.setView(position, 16);
+                    window._logMapMarker.setLatLng(position);
                 }
+
+                // CRITICAL FIX: Forces Leaflet to recalculate its size after the modal un-hides
+                window._logMapInstance.invalidateSize();
+
             }, 100);
         }
 
