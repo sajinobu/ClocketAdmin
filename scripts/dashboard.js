@@ -158,7 +158,6 @@
         const feedContainer = document.getElementById('live-activity-feed');
         if (!feedContainer) return;
         
-        // Prevent flickering by building string first
         let htmlStr = '';
 
         if (events.length === 0) {
@@ -252,22 +251,8 @@
         modalContainer.innerHTML = htmlStr;
     }
 
-    // --- LIVE POLLING SYSTEM ---
-    // Fetch data immediately on load, then silently refresh every 30 seconds
-    const waitForFirebase = setInterval(() => {
-        if (window.db && window.firebaseUtils) {
-            clearInterval(waitForFirebase);
-            updateDashboardStats(); // First load
-            setInterval(updateDashboardStats, 30000); // Silent live refresh every 30 seconds
-        }
-    }, 50);
-
-    if (window.dashboardSPAInitialized) return;
-    window.dashboardSPAInitialized = true;
-
-    // --- EVENT DELEGATION LISTENERS ---
     // ==========================================
-    // SPA SAFE EVENT DELEGATION
+    // SPA SAFE EVENT DELEGATION (MOVED HERE)
     // ==========================================
     
     // 1. Purge any stale listeners from previous visits to the Dashboard
@@ -294,7 +279,7 @@
             return;
         }
 
-        // Handle links inside the modal (so the modal closes when navigating)
+        // Handle links inside the modal
         const modalLink = e.target.closest('#feed-modal a');
         if (modalLink) {
             feedModal.classList.add('hidden');
@@ -303,5 +288,23 @@
 
     // 3. Attach the fresh, single listener to the body
     document.body.addEventListener('click', window._dashboardClickListener);
+
+    // ==========================================
+    // LIVE POLLING SYSTEM & SPA GUARD
+    // ==========================================
+    // Fetch data immediately on load, then silently refresh every 30 seconds
+    const waitForFirebase = setInterval(() => {
+        if (window.db && window.firebaseUtils) {
+            clearInterval(waitForFirebase);
+            updateDashboardStats(); 
+            
+            if (window._dashboardInterval) clearInterval(window._dashboardInterval);
+            window._dashboardInterval = setInterval(updateDashboardStats, 30000); 
+        }
+    }, 50);
+
+    // GUARD: Ensure scripts don't run duplicates, but listeners stay fresh!
+    if (window.dashboardSPAInitialized) return;
+    window.dashboardSPAInitialized = true;
 
 })();
