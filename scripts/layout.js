@@ -1,5 +1,5 @@
 // ==========================================
-// THEME INITIALIZATION (Runs immediately)
+// THEME & DISPLAY INITIALIZATION (Runs immediately)
 // ==========================================
 if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
@@ -7,10 +7,30 @@ if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && w
     document.documentElement.classList.remove('dark');
 }
 
+// Apply Compact Mode on initial load
+if (localStorage.getItem('clocket_compact_mode') === 'true') {
+    document.body.classList.add('compact-mode');
+}
+
 // ==========================================
 // CORE LAYOUT INITIALIZATION
 // ==========================================
+
+// Function to inject global favicon
+function setGlobalFavicon() {
+    if (!document.querySelector("link[rel~='icon']")) {
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.type = 'image/png';
+        link.href = 'logo.png';
+        document.head.appendChild(link);
+    }
+}
+
 async function loadLayout() {
+
+    setGlobalFavicon();
+    
     try {
         const headerPlaceholder = document.getElementById('header-placeholder');
         const sidebarPlaceholder = document.getElementById('sidebar-placeholder');
@@ -52,7 +72,6 @@ function updateThemeIcon() {
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     if (themeToggleBtn) {
         const isDark = document.documentElement.classList.contains('dark');
-        // FIXED: Removed hardcoded colors. The SVG will inherit 'text-brand-darkest' from the button!
         themeToggleBtn.innerHTML = isDark 
             ? '<i data-lucide="sun" class="w-5 h-5"></i>' 
             : '<i data-lucide="moon" class="w-5 h-5"></i>';
@@ -309,6 +328,12 @@ async function navigateTo(url, pushState = true) {
             document.body.className = doc.body.className;
             document.body.classList.add('fade-out'); // Keep hidden while loading layout
             
+            // --- FIX: Re-apply Compact Mode after a full body swap ---
+            if (localStorage.getItem('clocket_compact_mode') === 'true') {
+                document.body.classList.add('compact-mode');
+            }
+            // ---------------------------------------------------------
+            
             isGlobalUIInitialized = false; 
 
             if (newHasLayout) {
@@ -365,7 +390,6 @@ function updateActiveLinks() {
 }
 
 function executePageScript(doc) {
-    // FIXED: Added 'body ' to the selector so it ignores the <head> scripts!
     const pageScript = doc.querySelector('body script[src^="scripts/"]:not([src*="layout.js"])');
     
     if (pageScript) {

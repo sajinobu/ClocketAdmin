@@ -397,3 +397,25 @@ header-left {
 }
 
 .login-btn:hover { background-color: var(--brand-dark); }
+
+/* =========================================
+   COMPACT MODE OVERRIDES
+   ========================================= */
+body.compact-mode .table-td,
+body.compact-mode .table-th,
+body.compact-mode .log-td,
+body.compact-mode .log-th {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+
+body.compact-mode .dashboard-card,
+body.compact-mode .info-card,
+body.compact-mode .settings-panel {
+    padding: 1.25rem !important;
+}
+
+body.compact-mode .empty-state {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}

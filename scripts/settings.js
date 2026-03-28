@@ -1,3 +1,5 @@
+// scripts/settings.js
+
 (() => {
     // ==========================================
     // 1. RUN EVERY TIME (UI Initialization)
@@ -15,6 +17,13 @@
         }
     }, 100);
 
+    // --- PRE-LOAD SETTINGS (Moved above the SPA guard!) ---
+    // This ensures the toggle visually updates every time you open the Settings page
+    const compactToggle = document.getElementById('toggle-compact-mode');
+    if (compactToggle) {
+        compactToggle.checked = localStorage.getItem('clocket_compact_mode') === 'true';
+    }
+
     // ==========================================
     // 2. SPA EVENT GUARD (Run Only Once)
     // ==========================================
@@ -27,46 +36,89 @@
     
     // Toggle Switches (Change Event)
     document.body.addEventListener('change', (e) => {
-        // NEW PAGE GUARD: Only run if the settings toggles exist
-        if (!document.getElementById('toggle-email')) return;
-
-        if (e.target.id === 'toggle-email') {
-            const status = e.target.checked ? "enabled" : "disabled";
-            showSettingsToast(`Email notifications have been ${status}.`);
-        }
-        
-        if (e.target.id === 'toggle-2fa') {
-            const status = e.target.checked ? "enabled" : "disabled";
-            showSettingsToast(`Two-Factor Authentication is now ${status}.`);
+        if (e.target.id === 'toggle-compact-mode') {
+            const isEnabled = e.target.checked;
+            localStorage.setItem('clocket_compact_mode', isEnabled);
+            
+            // Instantly apply or remove the class to the body
+            if (isEnabled) {
+                document.body.classList.add('compact-mode');
+            } else {
+                document.body.classList.remove('compact-mode');
+            }
+            
+            showSettingsToast(isEnabled ? "Compact mode enabled." : "Compact mode disabled.");
         }
     });
 
     // Buttons (Click Event)
-    document.body.addEventListener('click', (e) => {
-        // NEW PAGE GUARD: Only run if the download button exists
-        if (!document.getElementById('download-data-btn')) return;
-
+    document.body.addEventListener('click', async (e) => {
         const downloadBtn = e.target.closest('#download-data-btn');
         
         if (downloadBtn && !downloadBtn.disabled) {
+            if (!window.auth || !window.db || !window.firebaseUtils) {
+                showSettingsToast("System is still loading. Please try again in a moment.");
+                return;
+            }
+
+            const currentUser = window.auth.currentUser;
+            if (!currentUser) {
+                showSettingsToast("Error: No authenticated user found.");
+                return;
+            }
+
             const originalContent = downloadBtn.innerHTML;
             
-            // Set to loading state
-            downloadBtn.innerHTML = `
-                <i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Preparing Archive...
-            `;
+            downloadBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Preparing Archive...`;
             downloadBtn.disabled = true;
-            
             if (window.lucide) lucide.createIcons();
 
-            // Simulate server preparation delay
-            setTimeout(() => {
+            try {
+                const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
+
+                const profileRef = doc(window.db, "employees", currentUser.email);
+                const profileSnap = await getDoc(profileRef);
+                const profileData = profileSnap.exists() ? profileSnap.data() : { error: "Profile not found" };
+
+                const attQuery = query(collection(window.db, "attendance"), where("employee_id", "==", currentUser.email));
+                const attSnap = await getDocs(attQuery);
+                const attendanceHistory = [];
+                
+                attSnap.forEach(docSnap => {
+                    attendanceHistory.push(docSnap.data());
+                });
+
+                attendanceHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                const exportData = {
+                    exportDate: new Date().toISOString(),
+                    accountInfo: {
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                    },
+                    profile: profileData,
+                    attendanceRecords: attendanceHistory
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `Clocket_DataExport_${currentUser.email}.json`);
+                
+                document.body.appendChild(downloadAnchorNode); 
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+
+                showSettingsToast("Your data archive has been successfully downloaded.");
+
+            } catch (error) {
+                console.error("Data Export Error:", error);
+                showSettingsToast("Failed to compile your data. Please check console.");
+            } finally {
                 downloadBtn.innerHTML = originalContent;
                 downloadBtn.disabled = false;
                 if (window.lucide) lucide.createIcons();
-                
-                showSettingsToast("Your data archive (ZIP) has started downloading.");
-            }, 1800);
+            }
         }
     });
 
@@ -94,12 +146,10 @@
         document.body.appendChild(toast);
         if (window.lucide) lucide.createIcons();
 
-        // Animate In
         requestAnimationFrame(() => {
             toast.classList.remove('translate-y-20', 'opacity-0');
         });
 
-        // Animate Out & Remove automatically
         setTimeout(() => {
             toast.classList.add('translate-y-20', 'opacity-0');
             setTimeout(() => toast.remove(), 500);
