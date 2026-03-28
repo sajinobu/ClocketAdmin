@@ -30,9 +30,6 @@
             return;
         }
 
-        // =========================================================================
-        // FIX: Pre-populate the href attributes so the SPA Router handles them natively
-        // =========================================================================
         const editBtn = document.querySelector('a[href*="employee-edit-profile"]');
         if (editBtn) {
             let editUrl = `employee-edit-profile.html?id=${empId}&from=${fromPage}`;
@@ -57,7 +54,6 @@
             }
             backBtn.href = returnUrl;
         }
-        // =========================================================================
 
         try {
             const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
@@ -93,7 +89,6 @@
                     document.getElementById('profile-hire-date').textContent = dateOnly;
                 }
 
-                // --- POPULATE WORK SCHEDULE ---
                 const shiftStart = emp.work_start_time || "Not set";
                 const shiftEnd = emp.work_end_time || "Not set";
                 
@@ -110,10 +105,23 @@
                         ? emp.working_days.join(', ') 
                         : "Not assigned";
                 }
+
+                // --- NEW: Account Status Pill Check ---
+                const isInactiveAccount = emp.account_status === "inactive" || emp.account_status === "disabled";
+                const statusBadge = document.getElementById('profile-live-status');
+                const statusText = document.getElementById('profile-live-text');
+
+                if (isInactiveAccount) {
+                    statusBadge.className = "status-badge status-inactive-account";
+                    statusText.textContent = "Inactive Account";
+                    statusBadge.style.display = "inline-flex";
+                }
+                // --------------------------------------
                 
                 if (window.lucide) lucide.createIcons();
 
-                await loadRecentAttendance(emp.email, shiftStart);
+                // Pass the inactive flag to prevent the attendance log from overwriting it
+                await loadRecentAttendance(emp.email, shiftStart, isInactiveAccount);
 
             } else {
                 document.getElementById('profile-name').textContent = "Employee Not Found in Database";
@@ -125,14 +133,13 @@
     }
 
     // --- RECENT ATTENDANCE & STATS LOGIC ---
-    async function loadRecentAttendance(employeeEmail, expectedStartTimeStr) {
+    async function loadRecentAttendance(employeeEmail, expectedStartTimeStr, isInactiveAccount) {
         const tbody = document.querySelector('.log-table tbody');
         if (!tbody) return;
 
         try {
             const { collection, getDocs, query, where } = window.firebaseUtils;
             
-            // Query attendance by this employee's email
             const attQuery = query(collection(window.db, "attendance"), where("employee_id", "==", employeeEmail));
             const attSnap = await getDocs(attQuery);
 
@@ -144,7 +151,7 @@
             let totalClockInMins = 0;
             let validClockIns = 0;
 
-            let expectedStartMin = 9 * 60; // default 9AM
+            let expectedStartMin = 9 * 60; 
             if (expectedStartTimeStr && expectedStartTimeStr !== "Not set") {
                 const [time, modifier] = expectedStartTimeStr.split(' ');
                 let [hours, minutes] = time.split(':');
@@ -171,10 +178,8 @@
                 }
             });
 
-            // Update DOM Elements
             const statValues = document.querySelectorAll('.stat-value');
             if (statValues.length >= 3) {
-                // Avg Check-in
                 if (validClockIns > 0) {
                     const avgMin = Math.floor(totalClockInMins / validClockIns);
                     let avgHour = Math.floor(avgMin / 60);
@@ -186,7 +191,6 @@
                     statValues[0].textContent = "--:--";
                 }
 
-                // On-Time Rate
                 if (validClockIns > 0) {
                     const rate = (((validClockIns - lateCount) / validClockIns) * 100).toFixed(1);
                     statValues[1].textContent = `${rate}%`;
@@ -194,10 +198,33 @@
                     statValues[1].textContent = "0%";
                 }
 
-                // Hours Logged
                 const totalHours = (totalRenderedSeconds / 3600).toFixed(1);
                 statValues[2].textContent = `${totalHours}h`;
             }
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const todayLog = logs.find(l => l.date === todayStr);
+
+            // --- NEW: Calculate Dynamic Live Status ---
+            if (!isInactiveAccount) {
+                const statusBadge = document.getElementById('profile-live-status');
+                const statusText = document.getElementById('profile-live-text');
+                
+                if (statusBadge && statusText) {
+                    if (!todayLog || todayLog.clock_out_time) {
+                        statusBadge.className = "status-badge status-offline";
+                        statusText.textContent = "Offline";
+                    } else if (todayLog.on_break) {
+                        statusBadge.className = "status-badge status-break";
+                        statusText.textContent = "On Break";
+                    } else {
+                        statusBadge.className = "status-badge status-active";
+                        statusText.textContent = "Online";
+                    }
+                    statusBadge.style.display = "inline-flex";
+                }
+            }
+            // -----------------------------------------
 
             logs.sort((a, b) => new Date(b.date) - new Date(a.date));
             logs = logs.slice(0, 1);
@@ -208,8 +235,6 @@
                 tbody.innerHTML = `<tr><td colspan="5" class="log-td text-center text-gray-500 py-6">No recent attendance records found.</td></tr>`;
                 return;
             }
-
-            const todayStr = new Date().toISOString().split('T')[0];
 
             logs.forEach(log => {
                 const logDate = new Date(log.date);
@@ -267,4 +292,71 @@
             loadEmployeeProfile();
         }
     }, 50);
+
+    if (window.employeeProfileSPAInitialized) return;
+    window.employeeProfileSPAInitialized = true;
+
+    // --- BULLETPROOF ROUTING LISTENERS ---
+    // --- BULLETPROOF ROUTING LISTENERS ---
+    document.body.addEventListener('click', (e) => {
+        if (!document.getElementById('profile-name')) return;
+        
+        // 1. Back Button
+        const backBtn = e.target.closest('#dynamic-back-btn, #cancel-btn');
+        if (backBtn) {
+            e.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            const fromPage = urlParams.get('from') || 'management';
+            
+            let returnUrl = 'management.html?tab=employees'; 
+            
+            if (fromPage === 'team-details') {
+                const teamId = urlParams.get('teamId');
+                returnUrl = teamId ? `team-details.html?id=${teamId}` : 'management.html?tab=teams';
+            } 
+            else if (fromPage !== 'management') {
+                returnUrl = `${fromPage}.html`;
+            }
+
+            // Use SPA Router!
+            if (typeof navigateTo === 'function') navigateTo(returnUrl);
+            else window.location.href = returnUrl;
+            return;
+        }
+
+        // 2. Forward Links (Edit Profile & View Logs)
+        const forwardBtn = e.target.closest('a[href*="employee-edit-profile"], a[href*="employee-logs"]');
+        if (forwardBtn) {
+            e.preventDefault();
+            const currentParams = new URLSearchParams(window.location.search);
+            const empId = currentParams.get('id');
+            const fromParam = currentParams.get('from') || 'management';
+            const teamId = currentParams.get('teamId');
+
+            // Figure out base URL from the button's href attribute
+            let targetUrl = forwardBtn.getAttribute('href').split('?')[0]; 
+            targetUrl += `?id=${empId}&from=${fromParam}`;
+            if (teamId) targetUrl += `&teamId=${teamId}`;
+
+            // Use SPA Router!
+            if (typeof navigateTo === 'function') navigateTo(targetUrl);
+            else window.location.href = targetUrl;
+            return;
+        }
+        
+        // 3. View Logs Button
+        const logBtn = e.target.closest('a[href*="employee-logs"]');
+        if (logBtn) {
+            e.preventDefault();
+            const currentParams = new URLSearchParams(window.location.search);
+            const empId = currentParams.get('id');
+            const fromParam = currentParams.get('from') || 'management';
+            const teamId = currentParams.get('teamId');
+
+            let targetUrl = `employee-logs.html?id=${empId}&from=${fromParam}`;
+            if (teamId) targetUrl += `&teamId=${teamId}`;
+
+            window.location.href = targetUrl;
+        }
+    });
 })();
