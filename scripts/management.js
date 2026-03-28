@@ -88,9 +88,29 @@
 
                 let statusClass = "status-active";
                 let statusText = "Active";
+                let isInactive = false;
+
                 if (emp.account_status === "inactive" || emp.account_status === "disabled") {
                     statusClass = "bg-gray-100 text-gray-500 border-gray-200"; 
                     statusText = "Inactive";
+                    isInactive = true;
+                }
+
+                // --- NEW: Only show the Delete button if the employee is NOT inactive ---
+                // --- NEW: Toggle between Delete and Reactivate based on status ---
+                let dynamicActionBtnHtml = "";
+                if (isInactive) {
+                    dynamicActionBtnHtml = `
+                        <button class="menu-item text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 restore-employee-btn" data-name="${emp.full_name}" data-id="${docSnap.id}">
+                          <i data-lucide="refresh-cw" class="w-4 h-4"></i> Reactivate
+                        </button>
+                    `;
+                } else {
+                    dynamicActionBtnHtml = `
+                        <button class="menu-item menu-item-danger delete-employee-btn" data-name="${emp.full_name}" data-id="${docSnap.id}">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                        </button>
+                    `;
                 }
 
                 const tr = document.createElement('tr');
@@ -116,9 +136,7 @@
                         <a href="employee-edit-profile.html?from=management&id=${docSnap.id}" class="menu-item">
                           <i data-lucide="pencil" class="w-4 h-4"></i> Modify
                         </a>
-                        <button class="menu-item menu-item-danger delete-employee-btn" data-name="${emp.full_name}" data-id="${docSnap.id}">
-                          <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                        </button>
+                        ${dynamicActionBtnHtml}
                       </div>
                     </td>
                 `;
@@ -408,6 +426,39 @@
             applyTeamFilters();
         }
 
+        // --- REACTIVATE EMPLOYEE ---
+        const restoreBtn = e.target.closest('.restore-employee-btn');
+        if (restoreBtn) {
+            const empId = restoreBtn.getAttribute('data-id');
+            const empName = restoreBtn.getAttribute('data-name');
+            
+            // Show loading spinner on the button
+            const originalText = restoreBtn.innerHTML;
+            restoreBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Reactivating...`;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                const employeeRef = doc(window.db, "employees", empId);
+                
+                // Update Firestore
+                await updateDoc(employeeRef, {
+                    account_status: "active"
+                });
+                
+                showManagementToast(`Successfully reactivated "${empName}"`);
+                
+                // Reload the table so their row turns back to normal
+                loadEmployeesFromFirebase(); 
+                
+            } catch (error) {
+                console.error("Error reactivating employee:", error);
+                showCustomAlert("Error", `Failed to reactivate ${empName}.`);
+                restoreBtn.innerHTML = originalText;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
         // --- OPEN DELETE MODAL ---
         const deleteBtn = e.target.closest('.delete-employee-btn, .disband-btn');
         if (deleteBtn) {
@@ -437,6 +488,7 @@
         }
 
         // --- CONFIRM DELETE (FIREBASE BATCH EXECUTION) ---
+        // --- CONFIRM DELETE (FIREBASE BATCH EXECUTION) ---
         const confirmDeleteBtn = e.target.closest('#confirm-delete');
         if (confirmDeleteBtn) {
             const dm = document.getElementById('delete-modal');
@@ -453,7 +505,8 @@
                 if(window.lucide) lucide.createIcons();
 
                 try {
-                    const { doc, deleteDoc, getDoc, collection, query, where, getDocs, writeBatch } = window.firebaseUtils;
+                    // Make sure to include updateDoc in the destructured utils!
+                    const { doc, deleteDoc, updateDoc, getDoc, collection, query, where, getDocs, writeBatch } = window.firebaseUtils;
 
                     if (type === 'team') {
                         // 1. Fetch team data before deleting to know who was inside it
@@ -483,8 +536,12 @@
                         batch.delete(teamRef);
                         await batch.commit(); // Execute everything simultaneously!
                     } else {
-                        // Delete Employee normally
-                        await deleteDoc(doc(window.db, "employees", itemId));
+                        // --- NEW: SOF-DELETE LOGIC FOR EMPLOYEES ---
+                        // Instead of deleting the document entirely, we update the status field.
+                        const employeeRef = doc(window.db, "employees", itemId);
+                        await updateDoc(employeeRef, {
+                            account_status: "inactive"
+                        });
                     }
 
                     // Animate row disappearance
@@ -493,9 +550,14 @@
                     row.style.transform = 'translateX(20px)';
                     
                     setTimeout(() => {
-                        row.remove();
-                        if (type === 'employee') applyEmployeeFilters();
-                        else applyTeamFilters();
+                        // Instead of totally removing the row from the DOM, we can reload 
+                        // the table to ensure the newly "inactive" user renders correctly with greyed-out styles
+                        if (type === 'employee') {
+                            loadEmployeesFromFirebase();
+                        } else {
+                            row.remove();
+                            applyTeamFilters();
+                        }
                         
                         showManagementToast(`Successfully removed "${itemName}"`);
                     }, 300);
@@ -523,6 +585,9 @@
         if (e.target.id === 'teams-search-input') applyTeamFilters();
     });
 
+    // --- NEW: Listen for the toggle switch click ---
+    document.getElementById('toggle-inactive-emp')?.addEventListener('change', applyEmployeeFilters);
+
     // ==========================================
     // 4. CORE FILTER FUNCTIONS
     // ==========================================
@@ -537,8 +602,11 @@
 
         const searchText = empSearch.value.toLowerCase().trim();
         const deptValue = filterDeptInput ? filterDeptInput.value : "";
+        
+        // This now perfectly matches "active" or "inactive" from the dropdown
         const statusValue = filterStatusInput ? filterStatusInput.value.toLowerCase() : "";
         
+        // Hide inactive by default UNLESS the user explicitly selects "All Statuses" or "Inactive"
         const isFiltered = searchText !== "" || deptValue !== "" || statusValue !== "";
 
         const rows = document.querySelectorAll('#employee-table-body .data-row:not(#no-results-row)');
@@ -548,11 +616,18 @@
             const name = row.querySelector('.font-bold')?.textContent.toLowerCase() || '';
             const email = row.querySelectorAll('.table-td')[2]?.textContent.toLowerCase() || '';
             const rowDept = row.querySelectorAll('.table-td')[1]?.textContent.trim();
-            const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim();
+            const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim(); // "active" or "inactive"
 
             const matchesSearch = name.includes(searchText) || email.includes(searchText);
             const matchesDept = deptValue === "" || rowDept === deptValue;
-            const matchesStatus = statusValue === "" || (rowStatus && rowStatus.includes(statusValue));
+            
+            // Fixed logic: "All Statuses" shows absolutely everyone
+            let matchesStatus = false;
+            if (statusValue === "") {
+                matchesStatus = true; 
+            } else {
+                matchesStatus = rowStatus === statusValue;
+            }
 
             if (matchesSearch && matchesDept && matchesStatus) {
                 row.style.display = '';

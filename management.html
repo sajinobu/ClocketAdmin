@@ -83,7 +83,7 @@
                     <input type="text" id="emp-search-input" placeholder="Search employees..."
                       class="input-field employees-search">
                   </div>
-                  <button id="open-filter-modal" class="btn-icon">
+                  <button id="open-filter-modal" class="btn-icon flex-shrink-0">
                     <i data-lucide="sliders-horizontal" class="w-5 h-5"></i>
                     <span id="filter-badge"
                       class="hidden absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full border-2 border-brand-surface"></span>
@@ -250,7 +250,7 @@
               </div>
 
               <div>
-                <label class="block text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Status</label>
+                <label class="block text-xs font-bold text-brand-dark uppercase tracking-wider mb-2">Account Status</label>
                 <div class="custom-dropdown form-variant w-full">
                   <div class="dropdown-trigger">
                     <span id="filter-status-text">All Statuses</span>
@@ -259,8 +259,7 @@
                   <div class="dropdown-menu">
                     <div class="dropdown-item active" data-value="">All Statuses</div>
                     <div class="dropdown-item" data-value="Active">Active</div>
-                    <div class="dropdown-item" data-value="On Break">On Break</div>
-                    <div class="dropdown-item" data-value="On Leave">On Leave</div>
+                    <div class="dropdown-item" data-value="Inactive">Inactive</div>
                   </div>
                 </div>
                 <input type="hidden" id="filter-status" value="">

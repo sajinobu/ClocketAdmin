@@ -1,7 +1,6 @@
 // scripts/employee-edit-profile.js
 
 (() => {
-    // 1. RUN EVERY TIME
     if (window.lucide) lucide.createIcons();
 
     let currentEmpId = null;
@@ -27,7 +26,6 @@
         });
     }, 100);
 
-    // Helper: Convert HTML time (18:00) to 12-hour format (06:00 PM) for saving
     function format12HourTime(time24) {
         if (!time24) return "";
         let [hours, minutes] = time24.split(':');
@@ -38,7 +36,6 @@
         return `${strHours}:${minutes} ${ampm}`;
     }
 
-    // Helper: Convert 12-hour format (06:00 PM) back to HTML time (18:00) for loading
     function format24HourTime(time12) {
         if (!time12) return "";
         const [time, modifier] = time12.split(' ');
@@ -108,6 +105,8 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         currentEmpId = urlParams.get('id');
+        const fromPage = urlParams.get('from') || 'management';
+        const teamId = urlParams.get('teamId');
 
         if (!currentEmpId) {
             alert("No employee ID provided.");
@@ -115,10 +114,25 @@
             return;
         }
 
+        // =========================================================================
+        // FIX: Pre-populate the href attributes so the SPA Router handles them natively
+        // =========================================================================
+        const backBtn = document.getElementById('dynamic-back-btn');
+        const cancelBtn = document.getElementById('dynamic-cancel-btn');
+        
+        let returnUrl = 'management.html?tab=employees';
+        if (currentEmpId) {
+            returnUrl = `employee-profile.html?id=${currentEmpId}&from=${fromPage}`;
+            if (teamId) returnUrl += `&teamId=${teamId}`;
+        }
+        
+        if (backBtn) backBtn.href = returnUrl;
+        if (cancelBtn) cancelBtn.href = returnUrl;
+        // =========================================================================
+
         try {
             const { doc, getDoc, collection, getDocs } = window.firebaseUtils;
 
-            // Fetch Teams
             const teamsRef = collection(window.db, "teams");
             const teamsSnap = await getDocs(teamsRef);
             
@@ -130,7 +144,6 @@
                 dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
             });
 
-            // Fetch Employee
             const empRef = doc(window.db, "employees", currentEmpId);
             const empSnap = await getDoc(empRef);
 
@@ -186,7 +199,6 @@
 
                 updateTeamDropdown(emp.department, emp.assigned_team || "");
 
-                // --- LOAD WORK SCHEDULE ---
                 const startInput = document.getElementById('edit-work-start');
                 const endInput = document.getElementById('edit-work-end');
                 
@@ -202,7 +214,6 @@
                         checkbox.checked = emp.working_days.includes(checkbox.value);
                     });
                 }
-                // --------------------------
 
             } else {
                 alert("Employee not found.");
@@ -245,26 +256,6 @@
 
     document.body.addEventListener('click', (e) => {
         if (!document.getElementById('edit-employee-form')) return;
-        
-        const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
-        if (routeBtn) {
-            e.preventDefault();
-            const currentParams = new URLSearchParams(window.location.search);
-            const safeEmpId = currentParams.get('id');
-            const currentFrom = currentParams.get('from') || 'management';
-            const teamId = currentParams.get('teamId'); 
-            
-            let finalUrl = 'management.html?tab=employees';
-            
-            if (safeEmpId) {
-                finalUrl = `employee-profile.html?id=${safeEmpId}&from=${currentFrom}`;
-                if (teamId) finalUrl += `&teamId=${teamId}`;
-            }
-
-            // CHANGE THIS LINE TO USE SPA ROUTER
-            if (typeof navigateTo === 'function') navigateTo(finalUrl);
-            else window.location.href = finalUrl; 
-        }
 
         const cameraBtn = e.target.closest('.btn-camera');
         if (cameraBtn) {
@@ -340,7 +331,6 @@
                 const jobTitle = document.getElementById('edit-job-title').value.trim();
                 const systemRole = document.querySelector('input[name="system-role"]:checked').value;
 
-                // --- GATHER WORK SCHEDULE ---
                 const rawStartTime = document.getElementById('edit-work-start')?.value || "09:00";
                 const rawEndTime = document.getElementById('edit-work-end')?.value || "18:00";
                 
@@ -349,7 +339,6 @@
 
                 const checkedDaysNodes = document.querySelectorAll('input[name="edit-work-days"]:checked');
                 const workingDaysArray = Array.from(checkedDaysNodes).map(node => node.value);
-                // ----------------------------
 
                 const { doc, writeBatch, collection, query, where, getDocs, getDoc } = window.firebaseUtils;
                 const batch = writeBatch(window.db);
@@ -368,7 +357,6 @@
                     system_role: systemRole,
                     updated_at: new Date().toISOString(),
                     
-                    // Add schedule updates
                     work_start_time: formattedStartTime,
                     work_end_time: formattedEndTime,
                     working_days: workingDaysArray
@@ -418,9 +406,7 @@
                     }
                 }
 
-                // 3. Commit the transaction
                 await batch.commit();
-
                 showSuccessToast(`Profile for ${fullName} has been successfully updated.`);
                 
                 setTimeout(() => {
@@ -436,7 +422,6 @@
                         if (teamId) finalUrl += `&teamId=${teamId}`;
                     }
 
-                    // CHANGE THIS LINE TO USE SPA ROUTER
                     if (typeof navigateTo === 'function') navigateTo(finalUrl);
                     else window.location.href = finalUrl; 
                 }, 2000);

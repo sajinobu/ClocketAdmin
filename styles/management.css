@@ -458,3 +458,16 @@
 }
 
 .hidden { display: none !important; }
+
+.toggle-bg, .dot {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#toggle-inactive-emp:checked ~ .toggle-bg {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+#toggle-inactive-emp:checked ~ .dot {
+  transform: translateX(1.25rem); /* Slides the dot 20px to the right */
+}

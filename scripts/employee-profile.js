@@ -22,11 +22,42 @@
     async function loadEmployeeProfile() {
         const urlParams = new URLSearchParams(window.location.search);
         const empId = urlParams.get('id');
+        const fromPage = urlParams.get('from') || 'management';
+        const teamId = urlParams.get('teamId');
 
         if (!empId) {
             document.getElementById('profile-name').textContent = "Error: No Employee Selected";
             return;
         }
+
+        // =========================================================================
+        // FIX: Pre-populate the href attributes so the SPA Router handles them natively
+        // =========================================================================
+        const editBtn = document.querySelector('a[href*="employee-edit-profile"]');
+        if (editBtn) {
+            let editUrl = `employee-edit-profile.html?id=${empId}&from=${fromPage}`;
+            if (teamId) editUrl += `&teamId=${teamId}`;
+            editBtn.href = editUrl;
+        }
+
+        const logBtn = document.getElementById('view-log-btn');
+        if (logBtn) {
+            let logUrl = `employee-logs.html?id=${empId}&from=${fromPage}`;
+            if (teamId) logUrl += `&teamId=${teamId}`;
+            logBtn.href = logUrl;
+        }
+
+        const backBtn = document.getElementById('dynamic-back-btn');
+        if (backBtn) {
+            let returnUrl = 'management.html?tab=employees'; 
+            if (fromPage === 'team-details') {
+                returnUrl = teamId ? `team-details.html?id=${teamId}` : 'management.html?tab=teams';
+            } else if (fromPage !== 'management') {
+                returnUrl = `${fromPage}.html`;
+            }
+            backBtn.href = returnUrl;
+        }
+        // =========================================================================
 
         try {
             const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
@@ -82,9 +113,6 @@
                 
                 if (window.lucide) lucide.createIcons();
 
-                // ==========================================
-                // NEW: FETCH RECENT ATTENDANCE LOGS
-                // ==========================================
                 await loadRecentAttendance(emp.email, shiftStart);
 
             } else {
@@ -96,7 +124,6 @@
         }
     }
 
-    // --- RECENT ATTENDANCE LOGIC ---
     // --- RECENT ATTENDANCE & STATS LOGIC ---
     async function loadRecentAttendance(employeeEmail, expectedStartTimeStr) {
         const tbody = document.querySelector('.log-table tbody');
@@ -112,15 +139,11 @@
             let logs = [];
             attSnap.forEach(doc => logs.push(doc.data()));
 
-            // ==========================================
-            // NEW: CALCULATE EMPLOYEE STATS (Before Slicing)
-            // ==========================================
             let totalRenderedSeconds = 0;
             let lateCount = 0;
             let totalClockInMins = 0;
             let validClockIns = 0;
 
-            // Figure out their expected start time in minutes
             let expectedStartMin = 9 * 60; // default 9AM
             if (expectedStartTimeStr && expectedStartTimeStr !== "Not set") {
                 const [time, modifier] = expectedStartTimeStr.split(' ');
@@ -133,7 +156,6 @@
             }
 
             logs.forEach(log => {
-                // 1. Sum up total hours logged
                 totalRenderedSeconds += (log.rendered_seconds || 0);
 
                 if (log.clock_in_time) {
@@ -141,10 +163,8 @@
                     const actualDate = new Date(log.clock_in_time.replace(/-/g, '/'));
                     const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
                     
-                    // 2. Sum up clock-in times for the average
                     totalClockInMins += actualMin;
 
-                    // 3. Count late days (5 min grace period)
                     if (actualMin > expectedStartMin + 5) {
                         lateCount++;
                     }
@@ -178,13 +198,8 @@
                 const totalHours = (totalRenderedSeconds / 3600).toFixed(1);
                 statValues[2].textContent = `${totalHours}h`;
             }
-            // ==========================================
 
-
-            // Sort logs natively in JavaScript
             logs.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Grab ONLY the 1 most recent record for the table
             logs = logs.slice(0, 1);
 
             tbody.innerHTML = '';
@@ -197,13 +212,11 @@
             const todayStr = new Date().toISOString().split('T')[0];
 
             logs.forEach(log => {
-                // Format Date
                 const logDate = new Date(log.date);
                 const dateDisplay = (log.date === todayStr) 
                     ? "Today" 
                     : logDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-                // Format Times
                 const formatTime = (timeStr) => {
                     if (!timeStr) return "--";
                     const d = new Date(timeStr.replace(/-/g, '/'));
@@ -215,7 +228,6 @@
                 const clockOut = formatTime(log.clock_out_time);
                 const total = log.rendered_time || "--";
 
-                // Determine Status
                 let statusText = "On Time";
                 let statusClass = "status-active"; 
 
@@ -232,7 +244,6 @@
                     }
                 }
 
-                // Inject Row
                 tbody.innerHTML += `
                     <tr class="log-row">
                       <td class="log-td font-medium text-[var(--brand-darkest)]">${dateDisplay}</td>
@@ -256,71 +267,4 @@
             loadEmployeeProfile();
         }
     }, 50);
-
-    if (window.employeeProfileSPAInitialized) return;
-    window.employeeProfileSPAInitialized = true;
-
-    // --- BULLETPROOF ROUTING LISTENERS ---
-    // --- BULLETPROOF ROUTING LISTENERS ---
-    document.body.addEventListener('click', (e) => {
-        if (!document.getElementById('profile-name')) return;
-        
-        // 1. Back Button
-        const backBtn = e.target.closest('#dynamic-back-btn, #cancel-btn');
-        if (backBtn) {
-            e.preventDefault();
-            const urlParams = new URLSearchParams(window.location.search);
-            const fromPage = urlParams.get('from') || 'management';
-            
-            let returnUrl = 'management.html?tab=employees'; 
-            
-            if (fromPage === 'team-details') {
-                const teamId = urlParams.get('teamId');
-                returnUrl = teamId ? `team-details.html?id=${teamId}` : 'management.html?tab=teams';
-            } 
-            else if (fromPage !== 'management') {
-                returnUrl = `${fromPage}.html`;
-            }
-
-            // Use SPA Router!
-            if (typeof navigateTo === 'function') navigateTo(returnUrl);
-            else window.location.href = returnUrl;
-            return;
-        }
-
-        // 2. Forward Links (Edit Profile & View Logs)
-        const forwardBtn = e.target.closest('a[href*="employee-edit-profile"], a[href*="employee-logs"]');
-        if (forwardBtn) {
-            e.preventDefault();
-            const currentParams = new URLSearchParams(window.location.search);
-            const empId = currentParams.get('id');
-            const fromParam = currentParams.get('from') || 'management';
-            const teamId = currentParams.get('teamId');
-
-            // Figure out base URL from the button's href attribute
-            let targetUrl = forwardBtn.getAttribute('href').split('?')[0]; 
-            targetUrl += `?id=${empId}&from=${fromParam}`;
-            if (teamId) targetUrl += `&teamId=${teamId}`;
-
-            // Use SPA Router!
-            if (typeof navigateTo === 'function') navigateTo(targetUrl);
-            else window.location.href = targetUrl;
-            return;
-        }
-        
-        // 3. View Logs Button
-        const logBtn = e.target.closest('a[href*="employee-logs"]');
-        if (logBtn) {
-            e.preventDefault();
-            const currentParams = new URLSearchParams(window.location.search);
-            const empId = currentParams.get('id');
-            const fromParam = currentParams.get('from') || 'management';
-            const teamId = currentParams.get('teamId');
-
-            let targetUrl = `employee-logs.html?id=${empId}&from=${fromParam}`;
-            if (teamId) targetUrl += `&teamId=${teamId}`;
-
-            window.location.href = targetUrl;
-        }
-    });
 })();
