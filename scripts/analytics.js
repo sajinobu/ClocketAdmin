@@ -42,25 +42,34 @@
         try {
             const { collection, getDocs } = window.firebaseUtils;
 
+            // 1. Fetch Employees & Filter Out Inactive
             const empSnap = await getDocs(collection(window.db, "employees"));
             employeeData = {};
+            
             empSnap.forEach(doc => {
                 const data = doc.data();
-                if(data.account_status === 'active') {
+                const status = data.account_status || "active"; // Default to active if missing
+                
+                // ONLY add them to our lookup if they are not explicitly inactive
+                if (status !== 'inactive' && data.email) {
                     employeeData[data.email] = {
-                        name: data.full_name || data.first_name + " " + data.last_name,
+                        name: data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || "Unknown",
                         expectedStartMin: timeStringToMinutes(data.work_start_time),
                         dept: data.department || "Unassigned"
                     };
                 }
             });
 
+            // 2. Fetch Attendance & Filter Out Inactive Records
             const attSnap = await getDocs(collection(window.db, "attendance"));
             allAttendanceData = [];
 
             attSnap.forEach(doc => {
                 const data = doc.data();
-                if (data.clock_in_time) allAttendanceData.push(data);
+                // --- FIX: Only push the attendance record if the employee is in our ACTIVE employee list! ---
+                if (data.clock_in_time && employeeData[data.employee_id]) {
+                    allAttendanceData.push(data);
+                }
             });
 
             const subtitle = document.getElementById('analytics-subtitle');
@@ -77,7 +86,6 @@
 
     function processAnalytics() {
         const startDateStr = getPastDateString(currentDateRange);
-        
         const rangeData = allAttendanceData.filter(record => record.date >= startDateStr);
 
         calculateAndRenderKPIs(rangeData);
@@ -89,19 +97,24 @@
 
     function calculateAndRenderKPIs(dataSubset) {
         let totalRecords = dataSubset.length;
-        if (totalRecords === 0) return;
+        if (totalRecords === 0) {
+            document.querySelectorAll('.kpi-value').forEach(el => el.textContent = "--");
+            const progressBar = document.getElementById('kpi-ontime-bar');
+            if(progressBar) progressBar.style.width = `0%`;
+            return;
+        }
 
         let lateCount = 0;
         let totalRenderedSeconds = 0;
         let totalClockInMinutes = 0;
 
         dataSubset.forEach(record => {
-            const emp = employeeData[record.employee_id] || { expectedStartMin: 9 * 60 };
+            const emp = employeeData[record.employee_id]; // Guaranteed to exist because of our new filter
             
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
 
-            if (actualMin > emp.expectedStartMin) lateCount++; 
+            if (actualMin > emp.expectedStartMin + 5) lateCount++; // Added 5 min grace period
 
             totalClockInMinutes += actualMin;
             totalRenderedSeconds += (record.rendered_seconds || 0);
@@ -131,12 +144,12 @@
         let maxCount = 0;
 
         dataSubset.forEach(record => {
-            const emp = employeeData[record.employee_id] || { expectedStartMin: 9 * 60 };
+            const emp = employeeData[record.employee_id];
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const h = actualDate.getHours();
             const actualMin = (h * 60) + actualDate.getMinutes();
 
-            if (actualMin > emp.expectedStartMin) hours['late']++;
+            if (actualMin > emp.expectedStartMin + 5) hours['late']++;
             else if (h <= 7) hours['7']++;
             else if (h === 8) hours['8']++;
             else if (h === 9) hours['9']++;
@@ -269,16 +282,15 @@
         
         monthData.forEach(record => {
             const eid = record.employee_id;
-            if (!empStats[eid]) empStats[eid] = { total: 0, late: 0, name: '', dept: '' };
+            const emp = employeeData[eid]; // Guaranteed to be active
             
-            const emp = employeeData[eid] || { name: eid, expectedStartMin: 9 * 60, dept: 'Unassigned' };
-            empStats[eid].name = emp.name;
-            empStats[eid].dept = emp.dept;
+            if (!empStats[eid]) empStats[eid] = { total: 0, late: 0, name: emp.name, dept: emp.dept };
+            
             empStats[eid].total++;
 
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-            if (actualMin > emp.expectedStartMin) empStats[eid].late++; 
+            if (actualMin > emp.expectedStartMin + 5) empStats[eid].late++; 
         });
 
         let rankingArray = [];
@@ -373,7 +385,7 @@
             const eid = record.employee_id;
             
             if (!empStats[eid]) {
-                const emp = employeeData[eid] || { name: eid, expectedStartMin: 9 * 60, dept: 'Unassigned' };
+                const emp = employeeData[eid];
                 empStats[eid] = { 
                     name: emp.name, 
                     dept: emp.dept, 
@@ -390,7 +402,7 @@
             if (record.clock_in_time) {
                 const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
                 const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-                if (actualMin > empStats[eid].expected) {
+                if (actualMin > empStats[eid].expected + 5) {
                     empStats[eid].lateDays++;
                 }
             }
@@ -449,7 +461,7 @@
         }
     }, 50);
 
-    // FIXED: Safely attach SPA event listeners
+    // Safely attach SPA event listeners
     if (window._analyticsClickListener) {
         document.body.removeEventListener('click', window._analyticsClickListener);
     }
@@ -509,7 +521,6 @@
             }, 1500);
         }
 
-        // FIXED: Modal interactions specifically looking for IDs
         if (e.target.closest('#open-ranking-btn')) {
             showRankingModal();
         }

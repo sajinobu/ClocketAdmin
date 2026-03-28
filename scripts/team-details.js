@@ -53,6 +53,16 @@
             const leadName = team.team_lead && team.team_lead !== "Unassigned" ? team.team_lead : "Unassigned";
             if (leadName !== "Unassigned" && !memberNames.includes(leadName)) memberNames.push(leadName);
 
+            // --- FIX: Combine Team Members AND Team Leader for Table/Stats ---
+            let combinedMembers = team.members ? [...team.members] : [];
+            if (leadName !== "Unassigned" && !combinedMembers.some(m => m.name === leadName)) {
+                // Add the leader to the front of the array so they appear at the top of the table
+                combinedMembers.unshift({
+                    name: leadName,
+                    department: team.department || "Unassigned"
+                });
+            }
+
             // 2. FETCH EMPLOYEES DATA
             const employeesRef = collection(window.db, "employees");
             const empSnapshot = await getDocs(employeesRef);
@@ -164,7 +174,7 @@
 
             // Update Stats Display
             let activeMembersCount = 0;
-            team.members?.forEach(m => {
+            combinedMembers.forEach(m => {
                 if (employeeDataMap[m.name]?.status !== "inactive") activeMembersCount++;
             });
 
@@ -198,13 +208,13 @@
             const noMembersRow = document.getElementById('no-members-row');
             document.querySelectorAll('.member-row').forEach(r => r.remove());
 
-            if (!team.members || team.members.length === 0) {
+            if (combinedMembers.length === 0) {
                 if (noMembersRow) {
                     noMembersRow.style.display = '';
                     noMembersRow.querySelector('p').textContent = "No members assigned to this team.";
                 }
             } else {
-                team.members.forEach((member) => {
+                combinedMembers.forEach((member) => {
                     const mData = employeeDataMap[member.name];
                     const mPicture = mData ? mData.picture : defaultAvatar;
                     const mStatus = mData ? mData.status : "active";
@@ -243,9 +253,12 @@
                         }
                     }
 
+                    // Optional: Add a small visual indicator for the leader row
+                    const isLeaderFlag = member.name === leadName ? `<span class="text-xs ml-2 px-2 py-0.5 bg-brand-grayBg text-brand-darkest rounded-full font-bold border border-brand-grayLight">Lead</span>` : "";
+
                     const tr = document.createElement('tr');
                     tr.className = 'data-row member-row';
-                    tr.setAttribute('data-status', mStatus); // Custom attribute for filtering
+                    tr.setAttribute('data-status', mStatus); 
                     
                     tr.innerHTML = `
                         <td class="table-td text-left">
@@ -254,7 +267,10 @@
                                     <div class="member-avatar" style="position:absolute; inset:0; border: 2px solid ${mStatus === 'inactive' ? '#9CA3AF' : 'var(--brand-primary)'}; background: white; color: var(--brand-primary); font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px;">${member.name.substring(0,2).toUpperCase()}</div>
                                     <img src="${mPicture}" class="w-9 h-9 rounded-full object-cover border-2 border-white bg-white" style="position:absolute; inset:0; border-color: ${mStatus === 'inactive' ? '#9CA3AF' : 'var(--brand-primary)'}; z-index:10;" onerror="this.style.display='none'">
                                 </div>
-                                <p class="member-name font-medium text-brand-darkest ${mStatus === 'inactive' ? 'opacity-50' : ''}">${member.name}</p>
+                                <div class="flex items-center">
+                                    <p class="member-name font-medium text-brand-darkest ${mStatus === 'inactive' ? 'opacity-50' : ''}">${member.name}</p>
+                                    ${isLeaderFlag}
+                                </div>
                             </div>
                         </td>
                         <td class="table-td text-left text-brand-dark transition-colors ${mStatus === 'inactive' ? 'opacity-50' : ''}">${member.department || "N/A"}</td>
