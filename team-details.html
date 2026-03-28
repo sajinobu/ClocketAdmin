@@ -119,22 +119,34 @@
             </div>
 
             <div class="table-panel">
-              <div class="table-header">
+              <div class="table-header flex-col sm:flex-row gap-4 items-start sm:items-center">
                 <h3 class="table-title">Team Members</h3>
-                <div class="search-wrapper">
-                    <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="member-search" placeholder="Search members..." class="search-input">
+                
+                <div class="flex items-center gap-4 w-full sm:w-auto">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <div class="relative flex items-center">
+                      <input type="checkbox" id="toggle-past-members" class="sr-only">
+                      <div class="block bg-gray-200 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 w-10 h-5 rounded-full toggle-bg"></div>
+                      <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full shadow-sm"></div>
+                    </div>
+                    <span class="text-sm font-medium text-brand-dark whitespace-nowrap">Past Members</span>
+                  </label>
+
+                  <div class="search-wrapper flex-1 sm:flex-none">
+                      <i data-lucide="search" class="search-icon"></i>
+                      <input type="text" id="member-search" placeholder="Search members..." class="search-input w-full">
+                  </div>
                 </div>
               </div>
 
               <div class="table-wrapper">
-                <table class="data-table">
+                <table class="data-table w-full">
                   <thead>
                     <tr>
-                      <th class="table-th">Employee</th>
-                      <th class="table-th">Department</th>
-                      <th class="table-th">Status</th>
-                      <th class="table-th">Today's Time</th>
+                      <th class="table-th text-left">Employee</th>
+                      <th class="table-th text-left">Department</th>
+                      <th class="table-th text-left">Status</th>
+                      <th class="table-th text-center">Today's Time</th>
                       <th class="table-th text-right">Action</th>
                     </tr>
                   </thead>

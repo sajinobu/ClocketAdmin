@@ -200,7 +200,6 @@
 }
 
 /* --- Data Table --- */
-/* --- Data Table --- */
 .table-panel {
   background-color: var(--brand-surface);
   border-radius: 1.5rem;
@@ -338,4 +337,20 @@
   padding: 2.5rem 1.5rem;
   text-align: center;
   color: var(--brand-dark);
+}
+
+/* =========================================
+   TOGGLE SWITCH STYLES
+   ========================================= */
+.toggle-bg, .dot {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#toggle-past-members:checked ~ .toggle-bg {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+}
+
+#toggle-past-members:checked ~ .dot {
+  transform: translateX(1.25rem);
 }

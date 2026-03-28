@@ -168,17 +168,22 @@
 
             const { collection, getDocs } = window.firebaseUtils;
 
+            // 1. Fetch Employees & Map Statuses
             const empSnapshot = await getDocs(collection(window.db, "employees"));
-            const employeeAvatarMap = {};
+            const employeeDataMap = {};
             
             empSnapshot.forEach(empDoc => {
                 const data = empDoc.data();
                 const fullName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
                 if (fullName) {
-                    employeeAvatarMap[fullName] = (data.profile_picture && data.profile_picture !== "coming soon") ? data.profile_picture : defaultAvatar;
+                    employeeDataMap[fullName] = {
+                        picture: (data.profile_picture && data.profile_picture !== "coming soon") ? data.profile_picture : defaultAvatar,
+                        status: data.account_status || "active" // Default to active if missing
+                    };
                 }
             });
 
+            // 2. Fetch Teams
             const querySnapshot = await getDocs(collection(window.db, "teams"));
             
             const loader = document.getElementById('teams-loading-row');
@@ -195,9 +200,30 @@
                 const team = docSnap.data();
                 
                 const leadName = team.team_lead && team.team_lead !== "Unassigned" ? team.team_lead : "Unassigned";
-                const leadAvatar = employeeAvatarMap[leadName] || defaultAvatar;
+                const leadData = employeeDataMap[leadName];
+                const leadAvatar = leadData ? leadData.picture : defaultAvatar;
 
-                const memberCount = team.members ? team.members.length : 0;
+                // --- NEW: Calculate Active Members (Deduplicates Leader & Excludes Inactive) ---
+                const activeMembersSet = new Set();
+                
+                // Add leader if they exist and are not inactive
+                if (leadName !== "Unassigned" && (!leadData || leadData.status !== "inactive")) {
+                    activeMembersSet.add(leadName);
+                }
+                
+                // Add members if they are not inactive
+                if (team.members && Array.isArray(team.members)) {
+                    team.members.forEach(m => {
+                        const mData = employeeDataMap[m.name];
+                        if (!mData || mData.status !== "inactive") {
+                            activeMembersSet.add(m.name);
+                        }
+                    });
+                }
+                
+                // Final pristine count!
+                const memberCount = activeMembersSet.size;
+                // -----------------------------------------------------------------------------
 
                 const tr = document.createElement('tr');
                 tr.className = 'data-row';
