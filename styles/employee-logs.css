@@ -544,6 +544,9 @@
   display: none !important; 
 }
 
-/* Hide Google Maps Default UI */
-.gm-ui-hover-effect { display: none !important; }
+/* Fix Leaflet Font and Background */
+.leaflet-container {
+  font-family: inherit;
+  background: transparent !important;
+}
 #log-map-container { background-color: var(--brand-gray-bg); }

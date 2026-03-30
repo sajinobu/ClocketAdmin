@@ -291,3 +291,17 @@ html.dark .leaflet-tile-pane {
         padding-right: 1rem;
     }
 }
+
+/* Fix Leaflet Font and Background */
+.leaflet-container {
+  font-family: inherit;
+  background: transparent !important;
+}
+
+/* Ensure controls sit above the map but below modals */
+#map {
+  z-index: 0;
+}
+.map-controls {
+  z-index: 1000;
+}
