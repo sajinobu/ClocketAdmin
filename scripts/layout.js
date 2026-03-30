@@ -452,38 +452,57 @@ async function updateSidebarProfile() {
     }
 }
 
-// Initial Load Bootstrapper
+// ==========================================
+// INITIAL LOAD BOOTSTRAPPER & SESSION GUARD
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Wait a split second for firebase-config.js to attach to the window
     const checkFirebase = setInterval(() => {
         if (window.auth && window.firebaseUtils) {
             clearInterval(checkFirebase);
             
-            const { onAuthStateChanged } = window.firebaseUtils;
+            const { onAuthStateChanged, doc, getDoc, signOut } = window.firebaseUtils;
             let isInitialLoad = true;
 
             // 2. THE SESSION GUARD: Listen for Firebase to verify the token
             onAuthStateChanged(window.auth, async (user) => {
-                const currentPath = window.location.pathname.split('/').pop() || 'login.html';
-                // Check if they are on the login page (adjust 'index.html' if your login page is named differently)
+                const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+                // Note: adjusted to include your index.html as the login page
                 const isLoginPage = currentPath === 'login.html' || currentPath === 'index.html' || currentPath === '';
 
                 if (user) {
                     // --- SCENARIO A: USER IS LOGGED IN ---
-                    if (isLoginPage) {
-                        // If they go to the login page while logged in, bounce them to the dashboard!
-                        window.location.href = 'dashboard.html'; 
-                    } else if (isInitialLoad) {
-                        // Standard page load: Load the UI safely
-                        await loadLayout();
-                        setupRouter();
-                        isInitialLoad = false;
+                    try {
+                        // RE-VERIFY ROLE ON EVERY PAGE LOAD
+                        const userDocRef = doc(window.db, "employees", user.email);
+                        const userDocSnap = await getDoc(userDocRef);
+
+                        if (userDocSnap.exists() && userDocSnap.data().system_role === "Admin") {
+                            // User is a valid Admin
+                            if (isLoginPage) {
+                                // Bounce them to the dashboard if they are on the login page!
+                                window.location.href = 'dashboard.html'; 
+                            } else if (isInitialLoad) {
+                                // Standard page load: Load the UI safely
+                                await loadLayout();
+                                setupRouter();
+                                isInitialLoad = false;
+                            }
+                        } else {
+                            // FAILED: User exists in Auth, but is not an Admin in Firestore
+                            await signOut(window.auth);
+                            throw new Error("Unauthorized session token destroyed.");
+                        }
+                    } catch (error) {
+                        console.error("Session verification failed:", error);
+                        // Kick them back to login if they fail the check
+                        if (!isLoginPage) window.location.href = 'index.html';
                     }
                 } else {
                     // --- SCENARIO B: USER IS LOGGED OUT ---
                     if (!isLoginPage) {
                         // If they try to access the dashboard while logged out, kick them to login!
-                        window.location.href = 'login.html'; 
+                        window.location.href = 'index.html'; 
                     } else if (isInitialLoad) {
                         // Let the login page render normally
                         setupRouter(); 
