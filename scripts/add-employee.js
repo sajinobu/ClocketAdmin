@@ -63,9 +63,10 @@
         if (selectedDept && dynamicTeamsData[selectedDept] && dynamicTeamsData[selectedDept].length > 0) {
             teamSelect.disabled = false;
             
+            // Explicitly give the admin the option to leave it unassigned
             const defaultOpt = document.createElement('option');
             defaultOpt.value = "";
-            defaultOpt.textContent = `Select ${selectedDept} Team`;
+            defaultOpt.textContent = "None / Unassigned";
             teamSelect.appendChild(defaultOpt);
 
             dynamicTeamsData[selectedDept].forEach(team => {
@@ -76,10 +77,11 @@
                 teamSelect.appendChild(opt);
             });
         } else {
+            // Even if no teams exist, or no dept is selected, default to a blank/unassigned state
             teamSelect.disabled = true;
             const opt = document.createElement('option');
             opt.value = "";
-            opt.textContent = selectedDept ? `No teams in ${selectedDept}` : "Please select a department first";
+            opt.textContent = selectedDept ? `No teams in ${selectedDept} (Unassigned)` : "None / Unassigned";
             teamSelect.appendChild(opt);
         }
     }
@@ -205,7 +207,7 @@
                 const addressNode = document.getElementById('address');
                 const address = addressNode ? addressNode.value.trim() : "";
 
-                // --- NEW: Gather Work Schedule Data ---
+                // --- Gather Work Schedule Data ---
                 const rawStartTime = document.getElementById('work-start').value;
                 const rawEndTime = document.getElementById('work-end').value;
                 
@@ -234,7 +236,7 @@
                 batch.set(empRef, {
                     account_status: "active",
                     address: address, 
-                    assigned_team: teamName || "Unassigned",
+                    assigned_team: teamName || "Unassigned", // Leaves unassigned if blank
                     contact_number: phone,
                     created_at: currentTime,
                     created_by: currentAdminEmail,
@@ -254,13 +256,14 @@
                     system_role: systemRole, 
                     updated_at: currentTime,
                     
-                    // The new schedule fields!
+                    // The schedule fields
                     work_start_time: formattedStartTime,
                     work_end_time: formattedEndTime,
                     working_days: workingDaysArray
                 });
 
                 // 5. Update Team Document in Batch (If a team was chosen)
+                // This block is naturally bypassed if teamId/teamName is blank
                 if (teamId && teamName) {
                     const teamRef = doc(window.db, "teams", teamId);
                     const teamSnap = await getDoc(teamRef);
