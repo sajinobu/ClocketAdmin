@@ -22,7 +22,6 @@
     }
     window._liveMapMarkers = {}; 
     
-    // Leaflet handles popups automatically, so we don't need a global infoWindow object
     window._infoWindows = {};
 
     function getDurationText(startTimestamp) {
@@ -47,7 +46,7 @@
     }, 60000);
 
     // ==========================================
-    // MAP INIT (LEAFLET)
+    // MAP INIT (LEAFLET - SPA SAFE)
     // ==========================================
     window.initMap = function() {
         const mapContainer = document.getElementById('map');
@@ -61,31 +60,76 @@
         mapContainer.style.opacity = '0';
         mapContainer.style.transition = 'opacity 0.7s ease-out';
 
-        // Leaflet uses [lat, lng] arrays
         const hqCoords = [14.6922, 120.9789]; 
         
         window._liveMapInstance = L.map('map', {
-            zoomControl: false, // Disable default zoom to use your custom buttons
-            attributionControl: false // Optional: hides the 'Leaflet' text
+            zoomControl: false, 
+            attributionControl: false 
         }).setView(hqCoords, 15);
 
-        // Add standard OpenStreetMap tiles
-        // Use CartoDB Positron for a clean, minimalist map
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 20,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
         }).addTo(window._liveMapInstance);
 
-        // Fade in map
+        // Fade in map and force resize calculation
         window._liveMapInstance.whenReady(() => {
-            mapContainer.style.opacity = '1';
+            setTimeout(() => {
+                window._liveMapInstance.invalidateSize();
+                mapContainer.style.opacity = '1';
+            }, 100);
         });
 
         startLiveTracking();
     };
 
-    // Initialize immediately (no proxy needed!)
-    setTimeout(window.initMap, 200); 
+    // ==========================================
+    // BULLETPROOF SPA INITIALIZATION
+    // ==========================================
+    function loadLeafletAndInit() {
+        // If Leaflet is already loaded in memory, just wait for the DOM element
+        if (window.L) {
+            waitForMapElement();
+            return;
+        }
+
+        // Inject Leaflet CSS if it doesn't exist
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(link);
+        }
+
+        // Inject Leaflet JS and wait for it to finish downloading
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = () => {
+            waitForMapElement(); // Only look for the map AFTER the library is ready
+        };
+        document.head.appendChild(script);
+    }
+
+    function waitForMapElement() {
+        let mapCheckCount = 0;
+        const waitForMap = setInterval(() => {
+            // Ensure BOTH the DOM element and the Leaflet library exist
+            if (document.getElementById('map') && window.L) {
+                clearInterval(waitForMap);
+                window.initMap();
+            }
+            
+            mapCheckCount++;
+            // Give up after 5 seconds (50 checks) to prevent infinite memory loops
+            if (mapCheckCount > 50) {
+                clearInterval(waitForMap);
+                console.error("Map initialization failed: #map element not found in DOM.");
+            }
+        }, 100);
+    }
+
+    // Kick off the loading process
+    loadLeafletAndInit();
 
     // ==========================================
     // CORE LOGIC: FETCH & RENDER
@@ -113,7 +157,6 @@
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
-                // Clear existing Leaflet markers
                 Object.values(window._liveMapMarkers).forEach(m => {
                     if (window._liveMapInstance) window._liveMapInstance.removeLayer(m);
                 });
@@ -197,7 +240,6 @@
             : nameParts[0].substring(0, 2).toUpperCase();
 
         if (lat && lng && window._liveMapInstance) {
-            // Create Leaflet Circle Marker
             const marker = L.circleMarker([lat, lng], {
                 radius: markerScale,
                 fillColor: `#${statusColorHex}`,
@@ -213,10 +255,9 @@
                 </div>
             `;
 
-            // Bind Popup
             marker.bindPopup(popupContent, { 
                 closeButton: false,
-                offset: L.point(0, -markerScale) // Offset popup so it doesn't cover the dot
+                offset: L.point(0, -markerScale) 
             });
 
             window._liveMapMarkers[emp.email] = marker;
@@ -247,7 +288,6 @@
         card.addEventListener('click', () => {
             const marker = window._liveMapMarkers[emp.email];
             if (marker && window._liveMapInstance) {
-                // Fly to marker and open popup
                 window._liveMapInstance.flyTo(marker.getLatLng(), 17, { duration: 0.5 });
                 marker.openPopup();
             } else {
