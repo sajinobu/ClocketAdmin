@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
 // FIXED: Added getDocs, getDoc, updateDoc, deleteDoc, setDoc, writeBatch to the imports
-import { getFirestore, collection, getDocs, query, where, doc, getDoc, onSnapshot, updateDoc, deleteDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, onSnapshot, updateDoc, deleteDoc, setDoc, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
@@ -37,6 +37,7 @@ window.firebaseUtils = {
     setDoc,
     query,
     where,
+    deleteField,
     writeBatch,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,

@@ -114,6 +114,7 @@
         }
 
         filteredLogs.forEach(log => {
+            // Simply read from the database fields!
             totalSeconds += (log.rendered_seconds || 0);
             validDays++;
 
@@ -122,7 +123,7 @@
             if (log.clock_in_time) {
                 const actualDate = new Date(log.clock_in_time.replace(/-/g, '/'));
                 const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-                if (actualMin > expectedStartMin) lateCount++; // STRICT CUTOFF
+                if (actualMin > expectedStartMin) lateCount++; 
             }
         });
 
@@ -150,7 +151,7 @@
         const todayStr = new Date().toISOString().split('T')[0];
 
         if (filteredLogs.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">No attendance records found for ${currentFilter}.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" class="text-center py-10 text-gray-500">No attendance records found for ${currentFilter}.</td></tr>`;
             pageInfo.textContent = "Showing 0 of 0 logs";
             prevBtn.disabled = true; nextBtn.disabled = true;
             return;
@@ -177,8 +178,12 @@
             
             const formatTime = (ts) => ts ? new Date(ts.replace(/-/g,'/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : "--:--";
 
+            // Direct DB fields
             const clockIn = formatTime(log.clock_in_time);
             const clockOut = formatTime(log.clock_out_time);
+            const otInTime = formatTime(log.OT_clock_in_time);
+            const otOutTime = formatTime(log.OT_clock_out_time);
+            
             const employeeName = employeeData.full_name;
 
             const inPhotoBtn = log.clock_in_photo 
@@ -212,7 +217,6 @@
             } else {
                 const outDateObj = new Date(log.clock_out_time.replace(/-/g, '/'));
                 const outDateFormatted = `${outDateObj.getFullYear()}-${String(outDateObj.getMonth()+1).padStart(2,'0')}-${String(outDateObj.getDate()).padStart(2,'0')}`;
-                
                 if (outDateFormatted === log.date) {
                     checkoutHtml = `<span class="badge badge-active">Valid</span>`;
                 } else {
@@ -220,9 +224,19 @@
                 }
             }
 
-            // --- NEW: RENDERED HOURS LOGIC ---
+            // --- OT HOURS FORMATTING ---
+            let otHtml = `<span class="text-gray-400 font-medium">--</span>`;
+            if (log.overtime_seconds > 0) {
+                const otH = Math.floor(log.overtime_seconds / 3600);
+                const otM = Math.floor((log.overtime_seconds % 3600) / 60);
+                otHtml = `<span class="font-bold text-amber-600">${otH}h ${otM}m</span>`;
+            } else if (log.overtime_seconds === 0 && log.clock_out_time) {
+                otHtml = `<span class="text-gray-400 font-medium">0h 0m</span>`;
+            }
+
+            // --- RENDERED HOURS FORMATTING ---
             let renderedHtml = `<span class="text-gray-400 font-medium">--</span>`;
-            if (log.rendered_seconds) {
+            if (log.clock_out_time && log.rendered_seconds !== undefined) {
                 const hours = Math.floor(log.rendered_seconds / 3600);
                 const minutes = Math.floor((log.rendered_seconds % 3600) / 60);
                 renderedHtml = `<span class="font-bold text-brand-darkest">${hours}h ${minutes}m</span>`;
@@ -245,6 +259,9 @@
                     <td class="log-td"><p class="font-bold text-brand-darkest text-sm">${dateDisplay}</p><p class="text-[10px] text-brand-dark uppercase tracking-wider font-bold">${log.date}</p></td>
                     <td class="log-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
                     <td class="log-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
+                    <td class="log-td"><p class="text-sm font-medium text-brand-darkest">${otInTime}</p></td>
+                    <td class="log-td"><p class="text-sm font-medium text-brand-darkest">${otOutTime}</p></td>
+                    <td class="log-td">${otHtml}</td>
                     <td class="log-td">${renderedHtml}</td>
                     <td class="log-td">${locationHtml}</td>
                     <td class="log-td">${statusHtml}</td>
@@ -328,10 +345,16 @@
 
         const formatTooltip = (dateStr) => new Date(dateStr.replace(/-/g, '/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-        const inPercent = getLeftPercent(todayLog.clock_in_time);
+        // Ensure timeline bar covers the absolute earliest time
+        const actualStart = todayLog.OT_clock_in_time || todayLog.clock_in_time;
+        const inPercent = getLeftPercent(actualStart);
         let outPercent = inPercent; 
 
-        track.innerHTML += `<div class="timeline-marker marker-teal group" style="left: ${inPercent}%;"><div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">In: ${formatTooltip(todayLog.clock_in_time)}</div></div></div>`;
+        if (todayLog.OT_clock_in_time) {
+            track.innerHTML += `<div class="timeline-marker marker-amber group" style="left: ${getLeftPercent(todayLog.OT_clock_in_time)}%;"><div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">OT In: ${formatTooltip(todayLog.OT_clock_in_time)}</div></div></div>`;
+        }
+
+        track.innerHTML += `<div class="timeline-marker marker-teal group" style="left: ${getLeftPercent(todayLog.clock_in_time)}%;"><div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">In: ${formatTooltip(todayLog.clock_in_time)}</div></div></div>`;
 
         if (todayLog.breaks && todayLog.breaks.length > 0) {
             todayLog.breaks.forEach((b) => {
@@ -343,25 +366,41 @@
         if (todayLog.clock_out_time) {
             outPercent = getLeftPercent(todayLog.clock_out_time);
             track.innerHTML += `<div class="timeline-marker marker-teal group" style="left: ${outPercent}%;"><div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">Out: ${formatTooltip(todayLog.clock_out_time)}</div></div></div>`;
+            
+            if (todayLog.OT_clock_out_time) {
+                outPercent = getLeftPercent(todayLog.OT_clock_out_time);
+                track.innerHTML += `<div class="timeline-marker marker-amber group" style="left: ${outPercent}%;"><div class="timeline-tooltip"><div class="tooltip-arrow"></div><div class="tooltip-text">OT Out: ${formatTooltip(todayLog.OT_clock_out_time)}</div></div></div>`;
+            }
         }
 
         setTimeout(() => { fill.style.width = `${outPercent}%`; }, 100);
     }
 
     function triggerCSVExport() {
-        let csvContent = "Date,Clock In,Clock Out,Rendered Hours,Checkout Status\n";
+        let csvContent = "Date,Clock In,Clock Out,OT In,OT Out,OT Hours,Rendered Hours,Checkout Status\n";
         
         filteredLogs.forEach(log => {
             const formatTime = (ts) => ts ? new Date(ts.replace(/-/g,'/')).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : "--:--";
+            
             const cIn = formatTime(log.clock_in_time);
             const cOut = formatTime(log.clock_out_time);
+            const oIn = formatTime(log.OT_clock_in_time);
+            const oOut = formatTime(log.OT_clock_out_time);
+            
             const todayStr = new Date().toISOString().split('T')[0];
             
-            let total = "--";
-            if (log.rendered_seconds) {
-                const hours = Math.floor(log.rendered_seconds / 3600);
-                const minutes = Math.floor((log.rendered_seconds % 3600) / 60);
-                total = `${hours}h ${minutes}m`;
+            let totalOT = "--";
+            if (log.overtime_seconds !== undefined) {
+                const otH = Math.floor(log.overtime_seconds / 3600);
+                const otM = Math.floor((log.overtime_seconds % 3600) / 60);
+                totalOT = `${otH}h ${otM}m`;
+            }
+
+            let totalRendered = "--";
+            if (log.rendered_seconds !== undefined && log.clock_out_time) {
+                const h = Math.floor(log.rendered_seconds / 3600);
+                const m = Math.floor((log.rendered_seconds % 3600) / 60);
+                totalRendered = `${h}h ${m}m`;
             }
 
             let checkoutTxt = "Invalid";
@@ -372,7 +411,7 @@
                 if (outDateFormatted === log.date) checkoutTxt = "Valid";
             }
 
-            csvContent += `"${log.date}","${cIn}","${cOut}","${total}","${checkoutTxt}"\n`;
+            csvContent += `"${log.date}","${cIn}","${cOut}","${oIn}","${oOut}","${totalOT}","${totalRendered}","${checkoutTxt}"\n`;
         });
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
