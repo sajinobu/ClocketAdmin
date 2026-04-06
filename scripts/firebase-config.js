@@ -3,7 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 // FIXED: Added getDocs, getDoc, updateDoc, deleteDoc, setDoc, writeBatch to the imports
 import { getFirestore, collection, getDocs, query, where, doc, getDoc, onSnapshot, updateDoc, deleteDoc, setDoc, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+// FIXED: Added sendPasswordResetEmail to the imports
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // RTDB Imports
 import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
@@ -43,6 +44,7 @@ window.firebaseUtils = {
     createUserWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
+    sendPasswordResetEmail, // <-- ADDED HERE
     ref,      
     onValue,  
     get,       

@@ -27,7 +27,6 @@
         if (!window.db || !window.firebaseUtils) return;
 
         try {
-            // We use standard getDocs which we know works safely in your app
             const { collection, getDocs, query, where } = window.firebaseUtils;
             
             const now = new Date();
@@ -76,6 +75,9 @@
                 // Build Events List
                 const empName = emp.full_name;
                 const initials = getInitials(empName);
+                
+                // Extract profile picture if available
+                const profilePic = (emp.profile_picture && emp.profile_picture !== "coming soon") ? emp.profile_picture : null;
 
                 // Event: Clock In
                 feedEvents.push({
@@ -84,6 +86,7 @@
                     type: isLate ? 'late' : 'clock-in',
                     name: empName,
                     initials: initials,
+                    profilePic: profilePic,
                     desc: isLate ? `Clocked In (${actualMin - expectedStartMin}m Late)` : `Clocked In for shift`
                 });
 
@@ -95,7 +98,7 @@
                             feedEvents.push({
                                 timeObj: bStart,
                                 timeStr: bStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                                type: 'break-start', name: empName, initials: initials, desc: `Started break`
+                                type: 'break-start', name: empName, initials: initials, profilePic: profilePic, desc: `Started break`
                             });
                         }
                         if (b.end) {
@@ -103,7 +106,7 @@
                             feedEvents.push({
                                 timeObj: bEnd,
                                 timeStr: bEnd.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                                type: 'break-end', name: empName, initials: initials, desc: `Resumed work`
+                                type: 'break-end', name: empName, initials: initials, profilePic: profilePic, desc: `Resumed work`
                             });
                         }
                     });
@@ -115,7 +118,7 @@
                     feedEvents.push({
                         timeObj: cOut,
                         timeStr: cOut.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-                        type: 'clock-out', name: empName, initials: initials, desc: `Clocked out for the day`
+                        type: 'clock-out', name: empName, initials: initials, profilePic: profilePic, desc: `Clocked out for the day`
                     });
                 }
             });
@@ -170,27 +173,40 @@
             let iconColor = 'text-brand-secondary group-hover:text-brand-primary';
             let avatarClass = 'avatar-brand';
             let textClass = 'text-brand-darkest';
+            let borderColor = 'var(--brand-primary)'; // For actual images
 
             if (ev.type === 'late') {
                 icon = 'alert-circle';
                 iconColor = 'text-yellow-500 group-hover:text-yellow-600';
                 avatarClass = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
                 textClass = 'text-yellow-700 font-medium';
+                borderColor = '#eab308'; // yellow-500
             } else if (ev.type === 'break-start') {
                 icon = 'coffee';
                 avatarClass = 'bg-amber-100 text-amber-700 border border-amber-200';
+                borderColor = '#f59e0b'; // amber-500
             } else if (ev.type === 'break-end') {
                 icon = 'play-circle';
                 avatarClass = 'bg-blue-100 text-blue-700 border border-blue-200';
+                borderColor = '#3b82f6'; // blue-500
             } else if (ev.type === 'clock-out') {
                 icon = 'log-out';
                 avatarClass = 'bg-gray-100 text-gray-600 border border-gray-200';
+                borderColor = '#9ca3af'; // gray-400
+            }
+
+            // Determine if we show Image or Initials
+            let avatarHTML = '';
+            if (ev.profilePic) {
+                avatarHTML = `<img src="${ev.profilePic}" alt="${ev.name}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-white shadow-sm" style="border: 2px solid ${borderColor};">`;
+            } else {
+                avatarHTML = `<div class="avatar-circle ${avatarClass}">${ev.initials}</div>`;
             }
 
             htmlStr += `
                 <a href="live-tracking.html" class="dashboard-row bordered group">
                   <div class="row-info">
-                    <div class="avatar-circle ${avatarClass}">${ev.initials}</div>
+                    ${avatarHTML}
                     <div>
                       <p class="row-title">${ev.name}</p>
                       <p class="row-subtitle ${textClass}">${ev.timeStr} • ${ev.desc}</p>
@@ -252,7 +268,7 @@
     }
 
     // ==========================================
-    // SPA SAFE EVENT DELEGATION (MOVED HERE)
+    // SPA SAFE EVENT DELEGATION
     // ==========================================
     
     // 1. Purge any stale listeners from previous visits to the Dashboard

@@ -188,6 +188,67 @@ function setupRouter() {
     // 1. Handle normal link clicks
     document.body.addEventListener('click', async (e) => { 
         const link = e.target.closest('a');
+
+        // --- NEW: FORGOT PASSWORD LOGIC ---
+        if (link && link.classList.contains('login-forgot')) {
+            e.preventDefault();
+            
+            // Prevent double clicks
+            if (link.style.pointerEvents === 'none') return; 
+
+            const emailInput = document.getElementById('email');
+            const email = emailInput ? emailInput.value.trim() : '';
+            const errorDiv = document.getElementById('login-error');
+            
+            // Require the user to type their email first
+            if (!email) {
+                errorDiv.className = 'text-yellow-600 dark:text-yellow-500 text-sm font-bold text-center mb-4 transition-opacity';
+                errorDiv.textContent = "⚠️ Please enter your email address first.";
+                if (emailInput) emailInput.focus();
+                return;
+            }
+
+            try {
+                link.textContent = 'Sending...';
+                link.style.pointerEvents = 'none';
+                errorDiv.classList.add('hidden');
+
+                // Ensure sendPasswordResetEmail is destructured from your utils
+                const { sendPasswordResetEmail } = window.firebaseUtils;
+                
+                if (!sendPasswordResetEmail) {
+                    throw new Error("sendPasswordResetEmail is not exported in firebase-config.js");
+                }
+
+                // Send the email
+                await sendPasswordResetEmail(window.auth, email);
+
+                // Show Success Message
+                errorDiv.className = 'text-green-600 dark:text-green-400 text-sm font-bold text-center mb-4 transition-opacity';
+                errorDiv.textContent = `✓ Reset link sent to ${email}`;
+                
+            } catch (error) {
+                console.error("Password reset error:", error);
+                
+                // Show Error Message
+                errorDiv.className = 'text-red-500 text-sm font-bold text-center mb-4 transition-opacity';
+                
+                if (error.code === 'auth/invalid-email') {
+                    errorDiv.textContent = "❌ Invalid email format.";
+                } else if (error.code === 'auth/user-not-found') {
+                    errorDiv.textContent = "❌ No account found with this email.";
+                } else {
+                    errorDiv.textContent = "❌ Failed to send reset email. Please try again.";
+                }
+            } finally {
+                // Reset the link UI
+                link.textContent = 'Forgot Password?';
+                link.style.pointerEvents = 'auto';
+            }
+            return;
+        }
+        // ----------------------------------
+
         if (link && link.href && link.host === window.location.host && link.pathname.endsWith('.html')) {
             e.preventDefault();
             navigateTo(link.href); // Let the SPA handle everything seamlessly
@@ -214,7 +275,9 @@ function setupRouter() {
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i>`;
             if (window.lucide) lucide.createIcons();
-            errorDiv.classList.add('hidden');
+            
+            // Reset error div classes for standard login errors
+            errorDiv.className = 'hidden text-red-500 text-sm font-bold text-center mb-4 transition-opacity';
             errorDiv.textContent = "";
 
             try {
@@ -235,7 +298,6 @@ function setupRouter() {
                     const userData = userDocSnap.data();
                     
                     // 3. CHECK THE ROLE
-                    // You can allow "Manager" here too later if you want them to access the portal
                     if (userData.system_role === "Admin") {
                         // SUCCESS! Route to the dashboard
                         navigateTo(targetUrl);

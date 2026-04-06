@@ -24,27 +24,6 @@
     
     window._infoWindows = {};
 
-    function getDurationText(startTimestamp) {
-        if (!startTimestamp) return "";
-        const diffMs = Date.now() - startTimestamp;
-        const diffMins = Math.floor(diffMs / 60000);
-        
-        if (diffMins < 1) return "just now";
-        if (diffMins < 60) return `${diffMins}m`;
-        
-        const hours = Math.floor(diffMins / 60);
-        const mins = diffMins % 60;
-        return `${hours}h ${mins}m`;
-    }
-
-    if (window._liveTrackingTimeInterval) clearInterval(window._liveTrackingTimeInterval);
-    window._liveTrackingTimeInterval = setInterval(() => {
-        document.querySelectorAll('.time-duration').forEach(el => {
-            const ts = parseInt(el.getAttribute('data-timestamp'));
-            if (ts) el.textContent = getDurationText(ts);
-        });
-    }, 60000);
-
     // ==========================================
     // MAP INIT (LEAFLET - SPA SAFE)
     // ==========================================
@@ -157,6 +136,9 @@
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
+                // --- NEW: Calculate the start of today (midnight) in ms ---
+                const startOfToday = new Date().setHours(0, 0, 0, 0);
+
                 Object.values(window._liveMapMarkers).forEach(m => {
                     if (window._liveMapInstance) window._liveMapInstance.removeLayer(m);
                 });
@@ -168,8 +150,14 @@
                 let onlineCount = 0;
 
                 allEmployees.forEach(emp => {
-                    const liveData = rtdbDataArray.find(loc => loc.email === emp.email);
+                    let liveData = rtdbDataArray.find(loc => loc.email === emp.email);
                     
+                    // --- NEW: Filter out stale data ---
+                    // If the user's timestamp is from yesterday or earlier, discard the data
+                    if (liveData && liveData.timestamp < startOfToday) {
+                        liveData = undefined;
+                    }
+
                     let status = "offline";
                     let lat = null;
                     let lng = null;
@@ -224,16 +212,6 @@
             markerScale = 9; 
         }
 
-        const statusTime = liveData ? (liveData.status_time || liveData.timestamp) : null;
-        let timeHTML = "";
-        let infoWindowTimeText = "";
-        
-        if (statusTime) {
-            const timeString = getDurationText(statusTime);
-            timeHTML = `<span class="opacity-40 ml-1 mr-1">•</span><span class="time-duration font-bold" data-timestamp="${statusTime}">${timeString}</span>`;
-            infoWindowTimeText = ` • ${timeString}`;
-        }
-
         const nameParts = name.split(" ");
         const initials = nameParts.length > 1
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
@@ -251,7 +229,7 @@
             const popupContent = `
                 <div style="font-family: 'DM Sans', sans-serif; padding: 4px; min-width: 120px;">
                     <p style="font-weight: 700; font-size: 14px; margin: 0 0 4px 0;">${name}</p>
-                    <p style="font-size: 10px; color: #${statusColorHex}; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 0;">${displayStatus} • ${team}${infoWindowTimeText}</p>
+                    <p style="font-size: 10px; color: #${statusColorHex}; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin: 0;">${displayStatus} • ${team}</p>
                 </div>
             `;
 
@@ -279,7 +257,7 @@
               <p class="staff-card-name">${name}</p>
               <div class="flex items-center gap-1 mt-0.5">
                 <span class="w-1.5 h-1.5 ${dotColorClass} rounded-full flex-shrink-0"></span>
-                <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">${displayStatus} • ${team}${timeHTML}</span>
+                <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">${displayStatus} • ${team}</span>
               </div>
             </div>
             <i data-lucide="map-pin" class="staff-card-arrow opacity-0 group-hover:opacity-100 transition-opacity w-4 h-4 text-brand-dark"></i>

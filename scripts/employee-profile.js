@@ -359,4 +359,61 @@
             window.location.href = targetUrl;
         }
     });
+
+    // --- NEW: FULLSCREEN IMAGE VIEWER ---
+    function setupImageViewer() {
+        const avatarImg = document.getElementById('profile-avatar');
+        if (!avatarImg) return;
+
+        avatarImg.addEventListener('click', () => {
+            // Don't try to zoom if it's still loading
+            if (!avatarImg.src) return;
+
+            // Create Overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-300';
+            overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+            overlay.style.opacity = '0';
+
+            // Create Image
+            const img = document.createElement('img');
+            img.src = avatarImg.src;
+            img.className = 'max-w-[90%] max-h-[90%] object-contain rounded-lg shadow-2xl transform scale-95 transition-transform duration-300';
+            
+            // Create Close Button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '<i data-lucide="x" class="w-8 h-8 text-white"></i>';
+            closeBtn.className = 'absolute top-6 right-6 text-white hover:text-gray-300 transition-colors p-2';
+            
+            overlay.appendChild(img);
+            overlay.appendChild(closeBtn);
+            document.body.appendChild(overlay);
+            
+            if (window.lucide) window.lucide.createIcons();
+
+            // Animate In
+            requestAnimationFrame(() => {
+                overlay.style.opacity = '1';
+                img.classList.remove('scale-95');
+                img.classList.add('scale-100');
+            });
+
+            // Close Logic
+            const closeViewer = () => {
+                overlay.style.opacity = '0';
+                img.classList.remove('scale-100');
+                img.classList.add('scale-95');
+                setTimeout(() => overlay.remove(), 300);
+            };
+
+            // Close when clicking outside the image or on the X
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeViewer();
+            });
+            closeBtn.addEventListener('click', closeViewer);
+        });
+    }
+
+    // Call the setup function when the script runs
+    setupImageViewer();
 })();
