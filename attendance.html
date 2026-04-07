@@ -13,9 +13,11 @@
   <script type="module" src="scripts/firebase-config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
 
   <script>
     tailwind.config = {
@@ -43,7 +45,7 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 </head>
 
@@ -55,31 +57,37 @@
       <div id="sidebar-placeholder"></div>
 
       <main class="flex-1 overflow-auto bg-brand-grayBg relative transition-colors duration-300" id="main-scroll-area">
-        
         <div class="px-4 sm:px-6 md:px-8 py-6 sm:py-8 flex flex-col gap-4">
-          
           <div>
-            <h1 class="text-2xl md:text-[24px] font-bold text-brand-darkest mb-1 transition-colors" style="font-family: 'DM Sans', sans-serif, serif;">
+            <h1 class="text-2xl md:text-[24px] font-bold text-brand-darkest mb-1 transition-colors"
+              style="font-family: &quot;DM Sans&quot;, sans-serif, serif">
               Daily Attendance Logs
             </h1>
-            <p class="text-sm text-gray-500">Review employee clock-ins, photos, and time entries</p>
+            <p class="text-sm text-gray-500">
+              Review employee clock-ins, photos, and time entries
+            </p>
           </div>
 
           <div class="filter-container" id="filter-container">
-            <div class="mobile-filter-toggle flex sm:hidden justify-between items-center w-full cursor-pointer" id="mobile-filter-toggle">
+            <div class="mobile-filter-toggle flex sm:hidden justify-between items-center w-full cursor-pointer"
+              id="mobile-filter-toggle">
               <span class="font-bold text-sm text-brand-darkest flex items-center gap-2">
                 <i data-lucide="filter" class="w-4 h-4"></i> Filters & Search
               </span>
-              <i data-lucide="chevron-down" class="w-4 h-4 text-brand-dark transition-transform duration-300" id="filter-toggle-icon"></i>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-brand-dark transition-transform duration-300"
+                id="filter-toggle-icon"></i>
             </div>
-            
-            <div class="filter-content flex-col sm:flex-row items-center gap-4 w-full flex-wrap xl:flex-nowrap" id="filter-content">
+
+            <div class="filter-content flex-col sm:flex-row items-center gap-4 w-full flex-wrap xl:flex-nowrap"
+              id="filter-content">
               <div class="custom-dropdown" id="date-dropdown" style="min-width: 180px">
                 <div class="dropdown-trigger">
-                  <i data-lucide="calendar" class="w-4 h-4"></i>
-                  <span id="date-text">Today</span>
-                  <i data-lucide="chevron-down" class="w-4 h-4 ml-auto"></i>
+                  <i data-lucide="calendar" class="w-4 h-4 shrink-0"></i>
+                  <span id="date-text"
+                    class="whitespace-nowrap overflow-hidden text-ellipsis text-[13px] sm:text-sm">Today</span>
+                  <i data-lucide="chevron-down" class="w-4 h-4 ml-auto shrink-0"></i>
                 </div>
+
                 <div class="dropdown-menu calendar-menu" id="calendar-menu" style="min-width: 320px !important">
                   <div class="calendar-header">
                     <button id="cal-prev" class="cal-btn">
@@ -120,15 +128,31 @@
                   <div class="dropdown-item active" data-value="all">
                     All Statuses
                   </div>
-                  <div class="dropdown-item" data-value="on-time">On Time</div>
+                  <div class="dropdown-item" data-value="on-time">
+                    On Time
+                  </div>
                   <div class="dropdown-item" data-value="late">Late</div>
                   <div class="dropdown-item" data-value="absent">Absent</div>
                 </div>
               </div>
-              
-              <div class="input-group-search mt-2 sm:mt-0 w-full sm:w-auto">
-                <input type="text" id="search-input" placeholder="Search by name..." class="search-input" />
-                <i data-lucide="search" class="search-icon"></i>
+
+              <div class="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                <div class="input-group-search w-full">
+                  <input type="text" id="search-input" placeholder="Search by name..." class="search-input" />
+                  <i data-lucide="search" class="search-icon"></i>
+                </div>
+
+                <label id="all-time-toggle-container"
+                  class="hidden items-center gap-2.5 cursor-pointer transition-opacity duration-300 opacity-0 shrink-0 border border-brand-grayLight bg-brand-surface px-4 py-[0.625rem] rounded-[0.75rem] shadow-sm hover:border-brand-primary/40 transition-colors">
+                  <div class="relative flex items-center">
+                    <input type="checkbox" id="all-time-checkbox" class="sr-only peer" />
+                    <div
+                      class="w-9 h-5 bg-[var(--brand-gray-light)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--brand-primary)] border border-transparent">
+                    </div>
+                  </div>
+                  <span class="text-[0.875rem] font-bold text-brand-darkest whitespace-nowrap"
+                    style="font-family: &quot;DM Sans&quot;, sans-serif">All Records</span>
+                </label>
               </div>
             </div>
           </div>
@@ -151,7 +175,8 @@
                   <tr id="no-results-row" class="hidden">
                     <td colspan="6" class="table-td text-center py-12">
                       <div class="flex flex-col items-center justify-center">
-                        <div class="w-12 h-12 bg-brand-grayBg text-brand-dark rounded-full flex items-center justify-center mb-3">
+                        <div
+                          class="w-12 h-12 bg-brand-grayBg text-brand-dark rounded-full flex items-center justify-center mb-3">
                           <i data-lucide="search-x" class="w-6 h-6"></i>
                         </div>
                         <p class="empty-state-title text-sm font-bold text-brand-darkest">
@@ -167,14 +192,17 @@
               </table>
             </div>
           </div>
-
-        </div> 
+        </div>
         <div id="photo-modal" class="hidden modal-overlay">
           <div class="modal-box">
             <div class="modal-header">
-              <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="scan-face"
-                  class="w-5 h-5 text-brand-primary"></i> Verification</h3>
-              <button id="close-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
+              <h3 class="font-bold text-brand-darkest flex items-center gap-2">
+                <i data-lucide="scan-face" class="w-5 h-5 text-brand-primary"></i>
+                Verification
+              </h3>
+              <button id="close-modal-btn" class="modal-close-btn">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
             </div>
 
             <div class="modal-content-photo">
@@ -183,34 +211,51 @@
 
             <div class="modal-footer">
               <div>
-                <p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">Employee Name</p>
-                <p class="text-xs text-gray-500" id="modal-photo-time">Time</p>
+                <p class="text-sm font-bold text-brand-darkest" id="modal-emp-name">
+                  Employee Name
+                </p>
+                <p class="text-xs text-gray-500" id="modal-photo-time">
+                  Time
+                </p>
               </div>
-              <button id="close-modal-btn-2" class="btn-secondary">Close</button>
+              <button id="close-modal-btn-2" class="btn-secondary">
+                Close
+              </button>
             </div>
           </div>
         </div>
 
         <div id="map-modal" class="hidden modal-overlay">
-          <div class="modal-box" style="max-width: 32rem;">
+          <div class="modal-box" style="max-width: 32rem">
             <div class="modal-header">
-              <h3 class="font-bold text-brand-darkest flex items-center gap-2"><i data-lucide="map-pin"
-                  class="w-5 h-5 text-brand-primary"></i> Historical Location</h3>
-              <button id="close-map-modal-btn" class="modal-close-btn"><i data-lucide="x" class="w-5 h-5"></i></button>
+              <h3 class="font-bold text-brand-darkest flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-5 h-5 text-brand-primary"></i>
+                Historical Location
+              </h3>
+              <button id="close-map-modal-btn" class="modal-close-btn">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
             </div>
             <div class="p-4 bg-brand-grayBg">
               <div id="log-map-container"
                 class="w-full h-64 sm:h-80 rounded-xl border border-brand-grayLight overflow-hidden shadow-inner relative z-0">
-                <div class="w-full h-full flex items-center justify-center text-gray-400"><i data-lucide="loader"
-                    class="w-6 h-6 animate-spin"></i></div>
+                <div class="w-full h-full flex items-center justify-center text-gray-400">
+                  <i data-lucide="loader" class="w-6 h-6 animate-spin"></i>
+                </div>
               </div>
             </div>
             <div class="modal-footer">
               <div>
-                <p class="text-sm font-bold text-brand-darkest" id="modal-map-emp-name">Employee Name</p>
-                <p class="text-xs text-gray-500 font-medium mt-0.5" id="modal-map-address">Fetching address...</p>
+                <p class="text-sm font-bold text-brand-darkest" id="modal-map-emp-name">
+                  Employee Name
+                </p>
+                <p class="text-xs text-gray-500 font-medium mt-0.5" id="modal-map-address">
+                  Fetching address...
+                </p>
               </div>
-              <button id="close-map-modal-btn-2" class="btn-secondary">Close</button>
+              <button id="close-map-modal-btn-2" class="btn-secondary">
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -220,4 +265,5 @@
   <script src="scripts/layout.js"></script>
   <script src="scripts/attendance.js"></script>
 </body>
+
 </html>

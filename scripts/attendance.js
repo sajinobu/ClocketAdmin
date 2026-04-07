@@ -10,7 +10,9 @@
     let activeDate = new Date(todayDate);
     let displayedMonth = new Date(todayDate);
     let activeStatus = 'all';
-    let activeDept = 'all'; 
+    let activeDept = 'all';
+    let isAllTimeMode = false;
+    let allTimeSearchTimeout;
 
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
@@ -119,59 +121,163 @@
             }
 
             const targetDateStr = formatDate(activeDate); 
-            const attQuery = query(collection(window.db, "attendance"), where("date", "==", targetDateStr));
-            const attSnapshot = await getDocs(attQuery);
-            
-            const attendanceRecordMap = {};
-            attSnapshot.forEach(doc => {
-                attendanceRecordMap[doc.data().employee_id] = { ...doc.data(), docId: doc.id };
-            });
-            
-            const loader = document.getElementById('att-loading-row');
-            if (loader) loader.remove();
+            const searchVal = document.getElementById('search-input') ? document.getElementById('search-input').value.toLowerCase().trim() : '';
 
-            document.querySelectorAll('#attendance-table-body .attendance-row').forEach(row => row.remove());
-
-            if (Object.keys(employeeMap).length === 0) {
-                if (noResultsRow) { noResultsRow.querySelector('td').setAttribute('colspan', '6'); noResultsRow.style.display = ''; }
-                return;
-            } else {
-                if (noResultsRow) noResultsRow.style.display = 'none';
-            }
-
-            const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
-            const locationFetchQueue = [];
-
+            // Sorted Employees setup
             const sortedEmployees = Object.values(employeeMap).sort((a, b) => {
                 const nameA = (a.full_name || "").toLowerCase();
                 const nameB = (b.full_name || "").toLowerCase();
                 return nameA.localeCompare(nameB);
             });
 
-            // Time variables for status logic
-            const isToday = (targetDateStr === todayStr);
-            const isFuture = (targetDateStr > todayStr);
+            let attSnapshot;
+
+            // 1. Branching Query Logic
+            if (isAllTimeMode && searchVal) {
+                const matchedEmails = sortedEmployees
+                    .filter(emp => (emp.full_name || "").toLowerCase().includes(searchVal))
+                    .map(emp => emp.email)
+                    .slice(0, 10); // Firestore 'in' query limit is 10
+
+                if (matchedEmails.length > 0) {
+                    const attQuery = query(collection(window.db, "attendance"), where("employee_id", "in", matchedEmails));
+                    attSnapshot = await getDocs(attQuery);
+                } else {
+                    attSnapshot = { forEach: () => {} }; // Mock empty snapshot
+                }
+            } else {
+                const attQuery = query(collection(window.db, "attendance"), where("date", "==", targetDateStr));
+                attSnapshot = await getDocs(attQuery);
+            }
+
+            // 2. Structuring the Records
+            let recordsToRender = [];
+
+            if (isAllTimeMode) {
+                // Collect all records across all dates for the searched employee
+                attSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const empData = employeeMap[data.employee_id];
+                    if (empData) {
+                        recordsToRender.push({ empData, att: { ...data, docId: doc.id }, dateStr: data.date });
+                    }
+                });
+                // Sort newest to oldest
+                recordsToRender.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+            } else {
+                // Normal daily behavior
+                const attendanceRecordMap = {};
+                attSnapshot.forEach(doc => {
+                    attendanceRecordMap[doc.data().employee_id] = { ...doc.data(), docId: doc.id };
+                });
+                sortedEmployees.forEach(empData => {
+                    const att = attendanceRecordMap[empData.email] || null;
+                    recordsToRender.push({ empData, att, dateStr: targetDateStr });
+                });
+            }
+
+            const loader = document.getElementById('att-loading-row');
+            if (loader) loader.remove();
+
+            document.querySelectorAll('#attendance-table-body .attendance-row').forEach(row => row.remove());
+
+            if (recordsToRender.length === 0) {
+                if (noResultsRow) { noResultsRow.querySelector('td').setAttribute('colspan', '6'); noResultsRow.style.display = ''; }
+                return;
+            } else {
+                if (noResultsRow) noResultsRow.style.display = 'none';
+                // ==========================================
+                // UI LOCK & DATE RANGE LOGIC
+                // ==========================================
+                const dateText = document.getElementById('date-text');
+                const dateDropdown = document.getElementById('date-dropdown');
+                const dateTriggerIcon = dateDropdown ? dateDropdown.querySelector('.dropdown-trigger i:first-child') : null;
+
+                if (isAllTimeMode) {
+                    // 1. Calculate Date Range
+                    if (recordsToRender.length > 0) {
+                        const newestStr = recordsToRender[0].dateStr;
+                        const oldestStr = recordsToRender[recordsToRender.length - 1].dateStr;
+                        const currentYear = new Date().getFullYear();
+                        
+                        if (newestStr === oldestStr) {
+                            const dSingle = new Date(newestStr);
+                            // Hide year if it's the current year
+                            if (dSingle.getFullYear() === currentYear) {
+                                if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            } else {
+                                if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                            }
+                        } else {
+                            const dOld = new Date(oldestStr);
+                            const dNew = new Date(newestStr);
+                            const oldFmt = dOld.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            const newFmt = dNew.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            
+                            // Handle cross-year date ranges
+                            if (dOld.getFullYear() !== dNew.getFullYear()) {
+                                // Example: Dec 28 '25 - Jan 4 '26
+                                if (dateText) dateText.innerHTML = `${oldFmt} '${dOld.getFullYear().toString().slice(2)} - ${newFmt} '${dNew.getFullYear().toString().slice(2)}`;
+                            } else {
+                                // Same year range. If it's the current year, drop the year entirely!
+                                if (dNew.getFullYear() === currentYear) {
+                                    if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}`;
+                                } else {
+                                    if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}, ${dNew.getFullYear()}`;
+                                }
+                            }
+                        }
+                    } else {
+                        if (dateText) dateText.innerHTML = `No Records`;
+                    }
+                    
+                    // 2. Visually Lock the Dropdown
+                    if (dateDropdown) {
+                        dateDropdown.classList.add('opacity-60', 'pointer-events-none');
+                        if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'lock');
+                    }
+                } else {
+                    // 3. Restore Standard Daily View
+                    if (dateText) {
+                        if (formatDate(activeDate) === todayStr) {
+                            dateText.textContent = "Today";
+                        } else {
+                            dateText.textContent = `${monthNames[activeDate.getMonth()].substring(0,3)} ${activeDate.getDate()}, ${activeDate.getFullYear()}`;
+                        }
+                    }
+                    
+                    // 4. Unlock the Dropdown
+                    if (dateDropdown) {
+                        dateDropdown.classList.remove('opacity-60', 'pointer-events-none');
+                        if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'calendar');
+                    }
+                }
+            }
+
+            const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+            const locationFetchQueue = [];
             const now = new Date();
             const currentMin = (now.getHours() * 60) + now.getMinutes();
 
-            sortedEmployees.forEach((empData) => {
-                const att = attendanceRecordMap[empData.email];
+            // 3. Render the Records
+            recordsToRender.forEach(({ empData, att, dateStr }) => {
                 const employeeName = empData.full_name;
                 const empDepartment = empData.department || "Unassigned";
                 const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") ? empData.profile_picture : defaultAvatar;
 
                 let clockIn = "--:--";
                 let clockOut = "--:--";
-                
                 let statusText = "Absent";
                 let statusClass = "bg-red-100 text-red-600 border-red-200";
                 
                 let inPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
                 let outPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
-                
                 let locationDisplay = `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
 
                 const expectedStartMin = timeStringToMinutes(empData.work_start_time);
+                
+                const isTodayForRecord = (dateStr === todayStr);
+                const isFutureForRecord = (dateStr > todayStr);
 
                 if (att && att.clock_in_time) {
                     const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
@@ -204,12 +310,11 @@
                                 data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
                                 <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
                                 <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
-                           </button>`;
+                        </button>`;
                         locationFetchQueue.push({ locId: locId, lat: att.clock_in_lat, lng: att.clock_in_long });
                     }
                 } else {
-                    // FIX 2: Check if the shift actually started before marking them absent
-                    if (isFuture || (isToday && currentMin < expectedStartMin)) {
+                    if (isFutureForRecord || (isTodayForRecord && currentMin < expectedStartMin)) {
                         statusText = "Not Started";
                         statusClass = "bg-slate-100 text-slate-600 border-slate-200"; 
                     }
@@ -220,15 +325,19 @@
                 tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
                 tr.setAttribute('data-department', empDepartment);
 
+                // If in All-Time mode, prepend the Date to the department text below the employee name
+                const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const displayDept = isAllTimeMode ? `<span class="text-brand-primary font-bold">${formattedDate}</span> &bull; ${empDepartment}` : empDepartment;
+
                 tr.innerHTML = `
                     <td class="table-td">
-                      <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3">
                         <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
                         <div>
-                          <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
-                          <p class="text-xs text-gray-500">${empDepartment}</p>
+                        <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
+                        <p class="text-xs text-gray-500">${displayDept}</p>
                         </div>
-                      </div>
+                    </div>
                     </td>
                     <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
                     <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
@@ -338,22 +447,42 @@
     let lastScrollTop = 0;
     window._ignoreScrollClose = false; 
 
-    window._attScrollListener = (e) => {
-        if (window._ignoreScrollClose) return;
+    window._attInputListener = (e) => {
+        if (e.target.id === 'search-input') {
+            const val = e.target.value.trim();
+            const toggleContainer = document.getElementById('all-time-toggle-container');
+            const checkbox = document.getElementById('all-time-checkbox');
 
-        const currentScroll = e.target.scrollTop;
-        if (currentScroll > lastScrollTop + 20 && currentScroll > 80) {
-            const container = document.getElementById('filter-container');
-            if (container && container.classList.contains('expanded')) {
-                container.classList.remove('expanded');
+            if (val.length > 0) {
+                if (toggleContainer.classList.contains('hidden')) {
+                    toggleContainer.classList.remove('hidden');
+                    toggleContainer.classList.add('flex');
+                    void toggleContainer.offsetWidth; // Trigger DOM reflow for transition
+                    toggleContainer.classList.remove('opacity-0');
+                }
+            } else {
+                toggleContainer.classList.add('opacity-0');
+                setTimeout(() => {
+                    toggleContainer.classList.add('hidden');
+                    toggleContainer.classList.remove('flex');
+                }, 300); // Wait for fade out
                 
-                const icon = document.getElementById('filter-toggle-icon');
-                if (icon) icon.style.transform = 'rotate(0deg)';
-                
-                document.querySelectorAll('#filter-container .custom-dropdown.open').forEach(d => d.classList.remove('open'));
+                // If search is cleared while filter is active, reset to daily view
+                if (isAllTimeMode) {
+                    isAllTimeMode = false;
+                    if (checkbox) checkbox.checked = false;
+                    loadAttendanceData(); 
+                    return; 
+                }
+            }
+
+            if (isAllTimeMode) {
+                clearTimeout(allTimeSearchTimeout);
+                allTimeSearchTimeout = setTimeout(() => { loadAttendanceData(); }, 500);
+            } else {
+                filterAttendanceTable(); 
             }
         }
-        lastScrollTop = currentScroll <= 0 ? 0 : currentScroll; 
     };
 
     const mainScrollArea = document.getElementById('main-scroll-area');
@@ -431,6 +560,8 @@
             deptDropdown.classList.remove('open');
             filterAttendanceTable();
         }
+
+        
 
         if (e.target.closest('#cal-prev')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() - 1); renderCalendar(); }
         if (e.target.closest('#cal-next')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() + 1); renderCalendar(); }
@@ -549,11 +680,16 @@
         }
     };
 
-    window._attInputListener = (e) => {
-        if (e.target.id === 'search-input') filterAttendanceTable();
+    if (window._attChangeListener) document.body.removeEventListener('change', window._attChangeListener);
+    
+    window._attChangeListener = (e) => {
+        if (e.target.id === 'all-time-checkbox') {
+            isAllTimeMode = e.target.checked;
+            loadAttendanceData();
+        }
     };
 
     document.body.addEventListener('click', window._attClickListener);
     document.body.addEventListener('input', window._attInputListener);
-
+    document.body.addEventListener('change', window._attChangeListener);
 })();
