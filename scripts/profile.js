@@ -29,8 +29,17 @@
                 const data = docSnap.data();
 
                 // 1. Hero & Avatar
-                const initials = (data.first_name?.charAt(0) || "") + (data.last_name?.charAt(0) || "");
-                document.getElementById('hero-avatar').textContent = initials.toUpperCase() || "??";
+                const avatarContainer = document.getElementById('hero-avatar');
+                if (data.profile_picture && data.profile_picture !== "coming soon") {
+                    avatarContainer.innerHTML = `<img src="${data.profile_picture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;">`;
+                    avatarContainer.style.backgroundColor = 'transparent'; // Hide default background circle if any
+                } else {
+                    const initials = (data.first_name?.charAt(0) || "") + (data.last_name?.charAt(0) || "");
+                    avatarContainer.innerHTML = ''; // Clear just in case
+                    avatarContainer.textContent = initials.toUpperCase() || "??";
+                    avatarContainer.style.backgroundColor = ''; // Restore default CSS background
+                }
+
                 document.getElementById('hero-name').textContent = data.full_name || "Admin";
                 document.getElementById('hero-role').textContent = data.role || "Administrator";
                 document.getElementById('hero-email').textContent = data.email;
@@ -221,5 +230,4 @@
         }, 3000);
     }
 
-    
 })();

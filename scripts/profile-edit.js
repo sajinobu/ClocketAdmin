@@ -1,6 +1,11 @@
+// scripts/profile-edit.js
+
 (() => {
     // 1. RUN EVERY TIME (UI Initialization)
     if (window.lucide) lucide.createIcons();
+
+    // Variable to hold the new profile picture base64 string
+    let newProfilePictureBase64 = null;
 
     // --- FIREBASE: LOAD CURRENT DATA INTO FORM ---
     async function loadAdminDataForEdit() {
@@ -79,13 +84,23 @@
         }
     });
 
-    // --- Avatar File Selection Logic (Local Preview) ---
+    // --- Avatar File Selection Logic (Local Preview & Memory Storage) ---
     document.body.addEventListener('change', (e) => {
         if (e.target.id === 'avatar-upload') {
             const file = e.target.files[0];
             if (file) {
+                // Strict Firestore Limit: Prevent files larger than 500KB
+                if (file.size > 500 * 1024) {
+                    alert("❌ Image is too large. Please select an image under 500KB.");
+                    e.target.value = ''; // Reset input
+                    return;
+                }
+
                 const reader = new FileReader();
                 reader.onload = (event) => {
+                    // Save the base64 string to our variable so we can push it to Firebase later
+                    newProfilePictureBase64 = event.target.result;
+
                     const avatarPreview = document.getElementById('avatar-preview');
                     if (avatarPreview) {
                         avatarPreview.innerHTML = ''; 
@@ -122,13 +137,21 @@
                 const firstName = names[0];
                 const lastName = names.length > 1 ? names.slice(1).join(" ") : "";
 
-                // Update Firestore
-                await updateDoc(docRef, {
+                // Build the data object
+                const updatePayload = {
                     full_name: newFullName,
                     first_name: firstName,
                     last_name: lastName,
                     contact_number: document.getElementById('admin-phone').value.trim()
-                });
+                };
+
+                // If the user selected a new profile picture, add it to the payload
+                if (newProfilePictureBase64) {
+                    updatePayload.profile_picture = newProfilePictureBase64;
+                }
+
+                // Update Firestore
+                await updateDoc(docRef, updatePayload);
 
                 // Trigger the restored Toast function!
                 showSuccessToast("Your profile details have been updated.");
