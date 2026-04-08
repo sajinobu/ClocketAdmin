@@ -84,7 +84,10 @@
         
         filteredLogs = [];
 
-        if (currentFilter === 'This Month') {
+        // Add the 'All Time' check here
+        if (currentFilter === 'All Time') {
+            filteredLogs = [...allAttendanceData];
+        } else if (currentFilter === 'This Month') {
             filteredLogs = allAttendanceData.filter(log => log.date.startsWith(currentMonthPrefix));
         } else if (currentFilter === 'This Week') {
             const bounds = getWeekBoundaries(today, 0);
