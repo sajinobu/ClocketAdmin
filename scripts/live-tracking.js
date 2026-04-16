@@ -124,8 +124,16 @@
         try {
             const empSnap = await getDocs(collection(window.db, "employees"));
             const allEmployees = [];
+            
             empSnap.forEach(doc => {
-                allEmployees.push({ email: doc.id, ...doc.data() });
+                const data = doc.data();
+                
+                // --- CORRECTED: Filter using account_status from Firestore ---
+                if (data.account_status && String(data.account_status).toLowerCase() === 'inactive') {
+                    return; // Skip adding this employee
+                }
+                
+                allEmployees.push({ email: doc.id, ...data });
             });
 
             const locationsRef = ref(window.rtdb, 'active_locations');
@@ -136,7 +144,7 @@
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 const rtdbDataArray = Object.values(activeLocations);
 
-                // --- NEW: Calculate the start of today (midnight) in ms ---
+                // Calculate the start of today (midnight) in ms
                 const startOfToday = new Date().setHours(0, 0, 0, 0);
 
                 Object.values(window._liveMapMarkers).forEach(m => {
@@ -152,8 +160,7 @@
                 allEmployees.forEach(emp => {
                     let liveData = rtdbDataArray.find(loc => loc.email === emp.email);
                     
-                    // --- NEW: Filter out stale data ---
-                    // If the user's timestamp is from yesterday or earlier, discard the data
+                    // Filter out stale data from previous days
                     if (liveData && liveData.timestamp < startOfToday) {
                         liveData = undefined;
                     }
@@ -178,7 +185,7 @@
                 }
                 
                 if (allEmployees.length === 0 && staffList) {
-                    staffList.innerHTML = '<div class="p-6 text-center text-gray-500 text-sm">No employees found in database.</div>';
+                    staffList.innerHTML = '<div class="p-6 text-center text-gray-500 text-sm">No active employees found.</div>';
                 }
             });
 
