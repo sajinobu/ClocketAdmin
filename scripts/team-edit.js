@@ -1,9 +1,11 @@
+// scripts/team-edit.js
+
 (() => {
     if (window.lucide) lucide.createIcons();
 
-    let allEmployeesData = [];
-    let currentTeamId = null;
-    let currentTeamNameGlobal = "";
+    // FIX 1: Attach these to the global window object to prevent stale closures
+    window.allEmployeesData = window.allEmployeesData || [];
+    window.currentTeamNameGlobal = window.currentTeamNameGlobal || "";
 
     setTimeout(() => {
         let fromPage = 'management';
@@ -26,7 +28,7 @@
             const employeesRef = collection(window.db, "employees");
             const snapshot = await getDocs(employeesRef);
 
-            allEmployeesData = [];
+            window.allEmployeesData = [];
 
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
@@ -35,7 +37,7 @@
                 const assignedTeam = data.assigned_team || 'Unassigned';
                 
                 if (employeeName) {
-                    allEmployeesData.push({ 
+                    window.allEmployeesData.push({ 
                         name: employeeName, 
                         department: department,
                         assigned_team: assignedTeam 
@@ -64,10 +66,10 @@
         leadDropdown.classList.remove('disabled');
         memberDropdown.classList.remove('disabled');
 
-        // NEW LOGIC: Only show employees who are Unassigned, OR already belong to THIS team
-        const filteredPool = allEmployeesData.filter(emp => {
+        // Use global window variables
+        const filteredPool = window.allEmployeesData.filter(emp => {
             return emp.department === dept &&
-                   (emp.assigned_team === 'Unassigned' || emp.assigned_team === '' || emp.assigned_team === currentTeamNameGlobal);
+                   (emp.assigned_team === 'Unassigned' || emp.assigned_team === '' || emp.assigned_team === window.currentTeamNameGlobal);
         });
 
         let leadHtml = `<div class="dropdown-item active" data-value="">Select Team Lead</div>`;
@@ -88,7 +90,6 @@
         document.querySelector('#team-lead-custom-dropdown .dropdown-menu').innerHTML = leadHtml;
         document.getElementById('new-member-name-list').innerHTML = memberHtml;
 
-        // ONLY wipe existing selections if the user manually changes the department
         if (isUserChange) {
             document.getElementById('team-lead').value = '';
             document.getElementById('team-lead-text').textContent = 'Select Team Lead';
@@ -105,9 +106,9 @@
     // --- FIREBASE: LOAD EXISTING TEAM DATA ---
     async function loadTeamData() {
         const urlParams = new URLSearchParams(window.location.search);
-        currentTeamId = urlParams.get('id');
+        const activeTeamId = urlParams.get('id');
 
-        if (!currentTeamId) {
+        if (!activeTeamId) {
             showCustomAlert('Error', "No team ID found. Redirecting to management.");
             setTimeout(() => window.location.href = 'management.html?tab=teams', 1500);
             return;
@@ -115,12 +116,12 @@
 
         try {
             const { doc, getDoc } = window.firebaseUtils;
-            const teamRef = doc(window.db, "teams", currentTeamId);
+            const teamRef = doc(window.db, "teams", activeTeamId);
             const teamSnap = await getDoc(teamRef);
 
             if (teamSnap.exists()) {
                 const team = teamSnap.data();
-                currentTeamNameGlobal = team.team_name || ""; // Store globally for the filter logic
+                window.currentTeamNameGlobal = team.team_name || ""; 
 
                 // 1. Populate Text Info
                 document.getElementById('team-name').value = team.team_name || '';
@@ -195,6 +196,7 @@
         }
     }, 50);
 
+    // SPA GUARD
     if (window.teamEditSPAInitialized) return;
     window.teamEditSPAInitialized = true;
 
@@ -206,12 +208,15 @@
         const routeBtn = e.target.closest('#dynamic-back-btn, #dynamic-cancel-btn');
         if (routeBtn) {
             e.preventDefault();
+            // FIX 2: Dynamically grab the ID here as well
             const currentParams = new URLSearchParams(window.location.search);
             const currentFrom = currentParams.get('from') || 'management';
+            const safeTeamId = currentParams.get('id'); 
+            
             let finalUrl = 'management.html?tab=teams';
             
             if (currentFrom === 'team-details') {
-                finalUrl = `team-details.html?id=${currentTeamId}`;
+                finalUrl = `team-details.html?id=${safeTeamId}`;
             } else if (currentFrom !== 'management') {
                 finalUrl = `${currentFrom}.html`;
             }
@@ -252,17 +257,14 @@
             if (hiddenInput && hiddenInput.tagName === 'INPUT') {
                 hiddenInput.value = value;
                 
-                // If Department changes manually, filter dropdowns AND wipe member list
                 if (hiddenInput.id === 'team-department') {
                     syncDropdownsToDepartment(value, true);
                 }
                 
-                // Enable Add Member button
                 if (hiddenInput.id === 'new-member-name') {
                     document.getElementById('add-member-btn').disabled = !value;
                 }
 
-                // If Team Lead is selected, remove them from the member list if they exist there
                 if (hiddenInput.id === 'team-lead') {
                     const container = document.getElementById('added-members-container');
                     const existingNames = Array.from(container.querySelectorAll('.member-item-name')).map(el => el.textContent);
@@ -290,13 +292,11 @@
             const container = document.getElementById('added-members-container');
             const currentLead = document.getElementById('team-lead').value;
 
-            // Prevent adding Team Lead
             if (name === currentLead) {
                 showCustomAlert('Cannot Add Member', `${name} is already the Team Lead and cannot be added as a regular member.`);
                 return;
             }
 
-            // Prevent duplicates
             const existingNames = Array.from(container.querySelectorAll('.member-item-name')).map(el => el.textContent);
             if (existingNames.includes(name)) {
                 showCustomAlert('Duplicate Member', `${name} is already added to the team.`);
@@ -348,6 +348,9 @@
     document.body.addEventListener('submit', async (e) => {
         if (e.target.id === 'edit-team-form') {
             e.preventDefault();
+            
+            // FIX 3: Dynamically grab the ID from the URL right when the button is clicked!
+            const currentTeamId = new URLSearchParams(window.location.search).get('id');
             if (!currentTeamId) return;
 
             const submitBtn = document.querySelector('button[form="edit-team-form"]');
@@ -434,10 +437,13 @@
                 setTimeout(() => {
                     const currentParams = new URLSearchParams(window.location.search);
                     const currentFrom = currentParams.get('from') || 'management';
+                    // FIX 4: Fetch fresh ID for the redirect URL
+                    const safeTeamId = currentParams.get('id');
+                    
                     let finalUrl = 'management.html?tab=teams';
                     
                     if (currentFrom === 'team-details') {
-                        finalUrl = `team-details.html?id=${currentTeamId}`;
+                        finalUrl = `team-details.html?id=${safeTeamId}`;
                     } else if (currentFrom !== 'management') {
                         finalUrl = `${currentFrom}.html`;
                     }

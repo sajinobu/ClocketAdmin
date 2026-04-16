@@ -1,9 +1,13 @@
+// scripts/management.js
+
 (() => {
     // ==========================================
     // 1. RUN EVERY TIME (UI & Fetch Initialization)
     // ==========================================
     if (window.lucide) lucide.createIcons();
-    window.activeTeamDept = ""; 
+    
+    // FIX 1: Preserve this variable so it doesn't get wiped out when routing back and forth
+    window.activeTeamDept = window.activeTeamDept || ""; 
 
     function switchTab(tabName, updateUrl = true) {
         if (updateUrl) {
@@ -44,10 +48,6 @@
     }
 
     initializeTabsFromURL();
-    
-    window.addEventListener('popstate', () => {
-        initializeTabsFromURL();
-    });
 
     const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
@@ -96,8 +96,6 @@
                     isInactive = true;
                 }
 
-                // --- NEW: Only show the Delete button if the employee is NOT inactive ---
-                // --- NEW: Toggle between Delete and Reactivate based on status ---
                 let dynamicActionBtnHtml = "";
                 if (isInactive) {
                     dynamicActionBtnHtml = `
@@ -168,7 +166,6 @@
 
             const { collection, getDocs } = window.firebaseUtils;
 
-            // 1. Fetch Employees & Map Statuses
             const empSnapshot = await getDocs(collection(window.db, "employees"));
             const employeeDataMap = {};
             
@@ -178,12 +175,11 @@
                 if (fullName) {
                     employeeDataMap[fullName] = {
                         picture: (data.profile_picture && data.profile_picture !== "coming soon") ? data.profile_picture : defaultAvatar,
-                        status: data.account_status || "active" // Default to active if missing
+                        status: data.account_status || "active" 
                     };
                 }
             });
 
-            // 2. Fetch Teams
             const querySnapshot = await getDocs(collection(window.db, "teams"));
             
             const loader = document.getElementById('teams-loading-row');
@@ -203,15 +199,12 @@
                 const leadData = employeeDataMap[leadName];
                 const leadAvatar = leadData ? leadData.picture : defaultAvatar;
 
-                // --- NEW: Calculate Active Members (Deduplicates Leader & Excludes Inactive) ---
                 const activeMembersSet = new Set();
                 
-                // Add leader if they exist and are not inactive
                 if (leadName !== "Unassigned" && (!leadData || leadData.status !== "inactive")) {
                     activeMembersSet.add(leadName);
                 }
                 
-                // Add members if they are not inactive
                 if (team.members && Array.isArray(team.members)) {
                     team.members.forEach(m => {
                         const mData = employeeDataMap[m.name];
@@ -221,9 +214,7 @@
                     });
                 }
                 
-                // Final pristine count!
                 const memberCount = activeMembersSet.size;
-                // -----------------------------------------------------------------------------
 
                 const tr = document.createElement('tr');
                 tr.className = 'data-row';
@@ -280,6 +271,11 @@
     if (window._mgmtEventsBound) return;
     window._mgmtEventsBound = true;
 
+    // FIX 2: Popstate moved INSIDE the guard so it doesn't duplicate and leak memory
+    window.addEventListener('popstate', () => {
+        initializeTabsFromURL();
+    });
+
     window.addEventListener('scroll', (e) => {
         if (e.target.closest && e.target.closest('.dropdown-menu')) return;
         
@@ -320,19 +316,16 @@
                     
                     const rect = actionBtn.getBoundingClientRect();
                     const menuWidth = menu.offsetWidth || 160; 
-                    const menuHeight = menu.offsetHeight || 130; // NEW: Track the height
+                    const menuHeight = menu.offsetHeight || 130; 
                     
                     menu.style.position = 'fixed';
                     
-                    // --- NEW: SMART Y POSITIONING ---
-                    // If the menu drops below the bottom of the window, flip it UP!
                     if (rect.bottom + menuHeight + 20 > window.innerHeight) {
                         menu.style.top = `${rect.top - menuHeight - 4}px`;
                     } else {
                         menu.style.top = `${rect.bottom + 4}px`;
                     }
                     
-                    // --- SMART X POSITIONING ---
                     let idealLeft = rect.right - menuWidth; 
                     
                     if (idealLeft + menuWidth > window.innerWidth - 16) {
@@ -452,13 +445,11 @@
             applyTeamFilters();
         }
 
-        // --- REACTIVATE EMPLOYEE ---
         const restoreBtn = e.target.closest('.restore-employee-btn');
         if (restoreBtn) {
             const empId = restoreBtn.getAttribute('data-id');
             const empName = restoreBtn.getAttribute('data-name');
             
-            // Show loading spinner on the button
             const originalText = restoreBtn.innerHTML;
             restoreBtn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Reactivating...`;
             if (window.lucide) lucide.createIcons();
@@ -467,14 +458,11 @@
                 const { doc, updateDoc } = window.firebaseUtils;
                 const employeeRef = doc(window.db, "employees", empId);
                 
-                // Update Firestore
                 await updateDoc(employeeRef, {
                     account_status: "active"
                 });
                 
                 showManagementToast(`Successfully reactivated "${empName}"`);
-                
-                // Reload the table so their row turns back to normal
                 loadEmployeesFromFirebase(); 
                 
             } catch (error) {
@@ -485,7 +473,6 @@
             }
         }
 
-        // --- OPEN DELETE MODAL ---
         const deleteBtn = e.target.closest('.delete-employee-btn, .disband-btn');
         if (deleteBtn) {
             const dm = document.getElementById('delete-modal');
@@ -502,7 +489,6 @@
             }
         }
         
-        // --- CANCEL DELETE ---
         if (e.target.closest('#cancel-delete') || e.target.id === 'delete-modal') {
             const dm = document.getElementById('delete-modal');
             if (dm) dm.classList.add('hidden');
@@ -513,8 +499,6 @@
             window.deleteItemType = null;
         }
 
-        // --- CONFIRM DELETE (FIREBASE BATCH EXECUTION) ---
-        // --- CONFIRM DELETE (FIREBASE BATCH EXECUTION) ---
         const confirmDeleteBtn = e.target.closest('#confirm-delete');
         if (confirmDeleteBtn) {
             const dm = document.getElementById('delete-modal');
@@ -531,24 +515,19 @@
                 if(window.lucide) lucide.createIcons();
 
                 try {
-                    // Make sure to include updateDoc in the destructured utils!
                     const { doc, deleteDoc, updateDoc, getDoc, collection, query, where, getDocs, writeBatch } = window.firebaseUtils;
 
                     if (type === 'team') {
-                        // 1. Fetch team data before deleting to know who was inside it
                         const teamRef = doc(window.db, "teams", itemId);
                         const teamSnap = await getDoc(teamRef);
                         const batch = writeBatch(window.db);
 
                         if (teamSnap.exists()) {
                             const teamData = teamSnap.data();
-                            
-                            // Compile list of names to unassign (Team Lead + All Members)
                             const membersToUnassign = [];
                             if (teamData.team_lead && teamData.team_lead !== "Unassigned") membersToUnassign.push(teamData.team_lead);
                             if (teamData.members) teamData.members.forEach(m => membersToUnassign.push(m.name));
 
-                            // 2. Unassign them all via Batch
                             for (const empName of membersToUnassign) {
                                 const q = query(collection(window.db, "employees"), where("full_name", "==", empName));
                                 const qSnap = await getDocs(q);
@@ -558,26 +537,20 @@
                             }
                         }
 
-                        // 3. Delete the team itself
                         batch.delete(teamRef);
-                        await batch.commit(); // Execute everything simultaneously!
+                        await batch.commit(); 
                     } else {
-                        // --- NEW: SOF-DELETE LOGIC FOR EMPLOYEES ---
-                        // Instead of deleting the document entirely, we update the status field.
                         const employeeRef = doc(window.db, "employees", itemId);
                         await updateDoc(employeeRef, {
                             account_status: "inactive"
                         });
                     }
 
-                    // Animate row disappearance
                     row.style.transition = 'all 0.3s ease';
                     row.style.opacity = '0';
                     row.style.transform = 'translateX(20px)';
                     
                     setTimeout(() => {
-                        // Instead of totally removing the row from the DOM, we can reload 
-                        // the table to ensure the newly "inactive" user renders correctly with greyed-out styles
                         if (type === 'employee') {
                             loadEmployeesFromFirebase();
                         } else {
@@ -611,8 +584,10 @@
         if (e.target.id === 'teams-search-input') applyTeamFilters();
     });
 
-    // --- NEW: Listen for the toggle switch click ---
-    document.getElementById('toggle-inactive-emp')?.addEventListener('change', applyEmployeeFilters);
+    // FIX 3: Moved the switch event into event delegation so it is never dropped when the DOM is destroyed!
+    document.body.addEventListener('change', (e) => {
+        if (e.target.id === 'toggle-inactive-emp') applyEmployeeFilters();
+    });
 
     // ==========================================
     // 4. CORE FILTER FUNCTIONS
@@ -628,11 +603,8 @@
 
         const searchText = empSearch.value.toLowerCase().trim();
         const deptValue = filterDeptInput ? filterDeptInput.value : "";
-        
-        // This now perfectly matches "active" or "inactive" from the dropdown
         const statusValue = filterStatusInput ? filterStatusInput.value.toLowerCase() : "";
         
-        // Hide inactive by default UNLESS the user explicitly selects "All Statuses" or "Inactive"
         const isFiltered = searchText !== "" || deptValue !== "" || statusValue !== "";
 
         const rows = document.querySelectorAll('#employee-table-body .data-row:not(#no-results-row)');
@@ -642,12 +614,11 @@
             const name = row.querySelector('.font-bold')?.textContent.toLowerCase() || '';
             const email = row.querySelectorAll('.table-td')[2]?.textContent.toLowerCase() || '';
             const rowDept = row.querySelectorAll('.table-td')[1]?.textContent.trim();
-            const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim(); // "active" or "inactive"
+            const rowStatus = row.querySelector('.status-badge')?.textContent.toLowerCase().trim(); 
 
             const matchesSearch = name.includes(searchText) || email.includes(searchText);
             const matchesDept = deptValue === "" || rowDept === deptValue;
             
-            // Fixed logic: "All Statuses" shows absolutely everyone
             let matchesStatus = false;
             if (statusValue === "") {
                 matchesStatus = true; 
