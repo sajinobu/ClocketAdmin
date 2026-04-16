@@ -319,68 +319,6 @@
         }
     }, 50);
 
-    // ==========================================
-    // MASS DELETE (KEEP ONLY ONE USER)
-    // ==========================================
-    // ==========================================
-    // MASS UPDATE: ENGINEERING TO IT
-    // ==========================================
-    window.updateDepartments = async function() {
-        if (!window.db || !window.firebaseUtils) {
-            console.error("Firebase not initialized yet.");
-            return;
-        }
-
-        const { collection, getDocs, doc, updateDoc } = window.firebaseUtils;
-        
-        if (!collection || !getDocs || !doc || !updateDoc) {
-            console.error("Missing required Firebase functions! Please export 'updateDoc' in your Firebase init file.");
-            return;
-        }
-
-        try {
-            console.log("Fetching all employee records...");
-            
-            // 1. Fetch all documents in the 'employees' collection
-            const querySnapshot = await getDocs(collection(window.db, 'employees'));
-
-            if (querySnapshot.empty) {
-                alert("No employees found in the database.");
-                return;
-            }
-
-            let updateCount = 0;
-            let skipCount = 0;
-
-            // 2. Loop through every employee
-            for (const documentSnapshot of querySnapshot.docs) {
-                const data = documentSnapshot.data();
-                const docId = documentSnapshot.id; // This is the employee's email
-
-                // 3. Check if their department is Engineering
-                if (data.department === "Engineering") {
-                    
-                    // 4. Update ONLY the department field
-                    await updateDoc(doc(window.db, 'employees', docId), {
-                        department: "Information Technology"
-                    });
-                    
-                    console.log(`Updated department for: ${docId}`);
-                    updateCount++;
-                } else {
-                    skipCount++;
-                }
-            }
-
-            console.log(`Finished! Updated ${updateCount} records. Skipped ${skipCount} records.`);
-            alert(`Update Complete!\nChanged ${updateCount} employees from 'Engineering' to 'Information Technology'.`);
-
-        } catch (error) {
-            console.error("Error updating departments: ", error);
-            alert("An error occurred while updating. Check the browser console.");
-        }
-    };
-
     // GUARD: Ensure scripts don't run duplicates, but listeners stay fresh!
     if (window.dashboardSPAInitialized) return;
     window.dashboardSPAInitialized = true;
