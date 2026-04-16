@@ -3,9 +3,9 @@
 (() => {
     if (window.lucide) lucide.createIcons();
 
-    let currentEmpId = null;
-    let dynamicTeamsData = {}; 
-    let originalTeamName = ""; 
+    // FIX 1: Attach these to the global window object so they don't get trapped in a stale closure
+    window.dynamicTeamsData = {}; 
+    window.originalTeamName = ""; 
     
     const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
@@ -55,12 +55,13 @@
 
         teamMenu.innerHTML = ''; 
 
-        if (selectedDept && dynamicTeamsData[selectedDept] && dynamicTeamsData[selectedDept].length > 0) {
+        // Use global window.dynamicTeamsData
+        if (selectedDept && window.dynamicTeamsData[selectedDept] && window.dynamicTeamsData[selectedDept].length > 0) {
             teamDropdown.classList.remove('disabled');
             
             teamMenu.innerHTML += `<div class="dropdown-item ${!preselectedTeam ? 'active' : ''}" data-value="">Unassigned</div>`;
 
-            dynamicTeamsData[selectedDept].forEach((teamData) => {
+            window.dynamicTeamsData[selectedDept].forEach((teamData) => {
                 const teamName = teamData.team_name;
                 const isActive = teamName === preselectedTeam ? 'active' : '';
                 
@@ -104,31 +105,27 @@
         if (!window.db || !window.firebaseUtils) return;
 
         const urlParams = new URLSearchParams(window.location.search);
-        currentEmpId = urlParams.get('id');
+        const activeEmpId = urlParams.get('id'); // Local variable for this function
         const fromPage = urlParams.get('from') || 'management';
         const teamId = urlParams.get('teamId');
 
-        if (!currentEmpId) {
+        if (!activeEmpId) {
             alert("No employee ID provided.");
             window.location.href = 'management.html?tab=employees'; 
             return;
         }
 
-        // =========================================================================
-        // FIX: Pre-populate the href attributes so the SPA Router handles them natively
-        // =========================================================================
         const backBtn = document.getElementById('dynamic-back-btn');
         const cancelBtn = document.getElementById('dynamic-cancel-btn');
         
         let returnUrl = 'management.html?tab=employees';
-        if (currentEmpId) {
-            returnUrl = `employee-profile.html?id=${currentEmpId}&from=${fromPage}`;
+        if (activeEmpId) {
+            returnUrl = `employee-profile.html?id=${activeEmpId}&from=${fromPage}`;
             if (teamId) returnUrl += `&teamId=${teamId}`;
         }
         
         if (backBtn) backBtn.href = returnUrl;
         if (cancelBtn) cancelBtn.href = returnUrl;
-        // =========================================================================
 
         try {
             const { doc, getDoc, collection, getDocs } = window.firebaseUtils;
@@ -136,21 +133,22 @@
             const teamsRef = collection(window.db, "teams");
             const teamsSnap = await getDocs(teamsRef);
             
-            dynamicTeamsData = {};
+            window.dynamicTeamsData = {};
             teamsSnap.forEach(tDoc => {
                 const tData = tDoc.data();
                 const dept = tData.department || "Unassigned";
-                if (!dynamicTeamsData[dept]) dynamicTeamsData[dept] = [];
-                dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
+                if (!window.dynamicTeamsData[dept]) window.dynamicTeamsData[dept] = [];
+                window.dynamicTeamsData[dept].push({ team_name: tData.team_name, team_id: tDoc.id });
             });
 
-            const empRef = doc(window.db, "employees", currentEmpId);
+            const empRef = doc(window.db, "employees", activeEmpId);
             const empSnap = await getDoc(empRef);
 
             if (empSnap.exists()) {
                 const emp = empSnap.data();
 
-                originalTeamName = emp.assigned_team || "";
+                // Save to global window object
+                window.originalTeamName = emp.assigned_team || "";
 
                 document.getElementById('display-emp-name').textContent = emp.full_name || "Unknown";
                 document.getElementById('display-emp-id').textContent = emp.employee_id || "N/A";
@@ -231,6 +229,7 @@
         }
     }, 50);
 
+    // SPA GUARD
     if (window.editEmployeeSPAInitialized) return;
     window.editEmployeeSPAInitialized = true;
 
@@ -310,6 +309,8 @@
         if (e.target.id === 'edit-employee-form') {
             e.preventDefault();
             
+            // FIX 2: Dynamically grab the ID from the URL right when the button is clicked!
+            const currentEmpId = new URLSearchParams(window.location.search).get('id');
             if (!currentEmpId) return;
 
             const submitBtn = document.querySelector('button[form="edit-employee-form"]');
@@ -343,7 +344,6 @@
                 const { doc, writeBatch, collection, query, where, getDocs, getDoc } = window.firebaseUtils;
                 const batch = writeBatch(window.db);
 
-                // 1. Update the Employee Document
                 const empRef = doc(window.db, "employees", currentEmpId);
                 batch.update(empRef, {
                     first_name: firstName,
@@ -362,11 +362,11 @@
                     working_days: workingDaysArray
                 });
 
-                // 2. Cross-reference Sync: Did they change teams?
-                if (assignedTeam !== originalTeamName) {
+                // FIX 3: Check against the global window.originalTeamName
+                if (assignedTeam !== window.originalTeamName) {
                     
-                    if (originalTeamName && originalTeamName !== "Unassigned") {
-                        const oldTeamQuery = query(collection(window.db, "teams"), where("team_name", "==", originalTeamName));
+                    if (window.originalTeamName && window.originalTeamName !== "Unassigned") {
+                        const oldTeamQuery = query(collection(window.db, "teams"), where("team_name", "==", window.originalTeamName));
                         const oldTeamSnap = await getDocs(oldTeamQuery);
                         
                         if (!oldTeamSnap.empty) {
