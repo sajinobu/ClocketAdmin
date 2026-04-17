@@ -42,11 +42,6 @@
   transition: border-color 0.3s ease;
 }
 
-/* THE MAGIC TRICK: Perfect Leaflet Dark Mode! */
-html.dark .leaflet-tile-pane {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-}
-
 .map-controls {
   position: absolute;
   right: 1.5rem;

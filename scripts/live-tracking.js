@@ -27,11 +27,13 @@
     // ==========================================
     // MAP INIT (LEAFLET - SPA SAFE)
     // ==========================================
+    // ==========================================
+    // MAP INIT (LEAFLET - SPA SAFE)
+    // ==========================================
     window.initMap = function() {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
 
-        // Destroy previous instance if navigating back via SPA
         if (window._liveMapInstance) {
             window._liveMapInstance.remove();
         }
@@ -46,12 +48,39 @@
             attributionControl: false 
         }).setView(hqCoords, 15);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 20,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        }).addTo(window._liveMapInstance);
+        // --- NEW: Define Map Style Dictionary ---
+        window._mapStyles = {
+            light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+            street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })
+        };
 
-        // Fade in map and force resize calculation
+        // --- NEW: Detect App Theme for Default Map Style ---
+        const mapStyleInput = document.getElementById('filter-map-style');
+        const isAppDarkMode = document.documentElement.classList.contains('dark');
+        
+        // If the input is empty (first load), set it based on the app's theme
+        if (!mapStyleInput.value) {
+            mapStyleInput.value = isAppDarkMode ? 'dark' : 'light';
+        }
+        
+        const startingStyle = mapStyleInput.value;
+        window._currentMapStyle = window._mapStyles[startingStyle];
+        window._currentMapStyle.addTo(window._liveMapInstance);
+
+        // Update the Dropdown UI to match the detected style
+        const styleLabel = document.querySelector('#dropdown-map-style .dropdown-label');
+        const styleOptions = document.querySelectorAll('#menu-map-style .dropdown-option');
+        
+        styleOptions.forEach(opt => {
+            opt.classList.remove('active');
+            if (opt.dataset.value === startingStyle) {
+                opt.classList.add('active');
+                if (styleLabel) styleLabel.textContent = opt.textContent;
+            }
+        });
+
         window._liveMapInstance.whenReady(() => {
             setTimeout(() => {
                 window._liveMapInstance.invalidateSize();
@@ -62,6 +91,43 @@
         startLiveTracking();
     };
 
+    // ==========================================
+    // THEME SYNC WATCHER
+    // ==========================================
+    // Watch the HTML tag to see if the user clicks the global Light/Dark mode button
+    const themeObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class' && window._liveMapInstance) {
+                const isNowDark = document.documentElement.classList.contains('dark');
+                const currentMapValue = document.getElementById('filter-map-style').value;
+                
+                // Only auto-switch the map if the user is currently using the standard Light/Dark maps
+                // (We don't want to override them if they specifically chose 'Satellite' or 'Street')
+                if (currentMapValue === 'light' || currentMapValue === 'dark') {
+                    const newAutoStyle = isNowDark ? 'dark' : 'light';
+                    
+                    if (currentMapValue !== newAutoStyle) {
+                        // 1. Update the Map
+                        window._liveMapInstance.removeLayer(window._currentMapStyle);
+                        window._currentMapStyle = window._mapStyles[newAutoStyle];
+                        window._currentMapStyle.addTo(window._liveMapInstance);
+                        
+                        // 2. Update the Dropdown UI behind the scenes
+                        document.getElementById('filter-map-style').value = newAutoStyle;
+                        document.querySelector('#dropdown-map-style .dropdown-label').textContent = isNowDark ? 'Dark Map' : 'Light Map';
+                        
+                        document.querySelectorAll('#menu-map-style .dropdown-option').forEach(opt => {
+                            opt.classList.toggle('active', opt.dataset.value === newAutoStyle);
+                        });
+                    }
+                }
+            }
+        });
+    });
+
+    // Start watching the <html> tag for class changes
+    themeObserver.observe(document.documentElement, { attributes: true });
+    
     // ==========================================
     // BULLETPROOF SPA INITIALIZATION
     // ==========================================
@@ -212,18 +278,28 @@
             const hiddenInput = dropdown.querySelector('input[type="hidden"]');
             const label = dropdown.querySelector('.dropdown-label');
             
-            // Update styling
             dropdown.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('active'));
             option.classList.add('active');
             
-            // Update values
             label.textContent = option.textContent;
-            hiddenInput.value = option.dataset.value;
+            const newValue = option.dataset.value;
+            hiddenInput.value = newValue;
             
-            // Close menu
             dropdown.classList.remove('open');
             
-            // Trigger the filtering logic you already wrote
+            // --- NEW: Check if the clicked dropdown was the Map Style switcher ---
+            if (dropdown.id === 'dropdown-map-style' && window._liveMapInstance) {
+                // Remove the old map layer
+                if (window._currentMapStyle) {
+                    window._liveMapInstance.removeLayer(window._currentMapStyle);
+                }
+                // Add the newly selected map layer
+                window._currentMapStyle = window._mapStyles[newValue];
+                window._currentMapStyle.addTo(window._liveMapInstance);
+                return; // Stop here, no need to re-render all the employee data
+            }
+
+            // If it wasn't the map style dropdown, trigger the normal data filtering
             if (typeof renderFilteredData === 'function') {
                 renderFilteredData();
             }
