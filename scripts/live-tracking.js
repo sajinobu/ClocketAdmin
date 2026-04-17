@@ -48,10 +48,17 @@
             attributionControl: false 
         }).setView(hqCoords, 15);
 
-        // --- NEW: Define Map Style Dictionary ---
+        // --- NEW: Define Map Style Dictionary --- 
         window._mapStyles = {
             light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
             dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+            
+            // The Midnight Blue theme uses the Light map + your custom CSS filter!
+            midnight: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
+                maxZoom: 20,
+                className: 'map-theme-midnight' 
+            }),
+            
             street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
             satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })
         };
@@ -62,7 +69,7 @@
         
         // If the input is empty (first load), set it based on the app's theme
         if (!mapStyleInput.value) {
-            mapStyleInput.value = isAppDarkMode ? 'dark' : 'light';
+            mapStyleInput.value = isAppDarkMode ? 'midnight' : 'light';
         }
         
         const startingStyle = mapStyleInput.value;
@@ -101,10 +108,9 @@
                 const isNowDark = document.documentElement.classList.contains('dark');
                 const currentMapValue = document.getElementById('filter-map-style').value;
                 
-                // Only auto-switch the map if the user is currently using the standard Light/Dark maps
-                // (We don't want to override them if they specifically chose 'Satellite' or 'Street')
-                if (currentMapValue === 'light' || currentMapValue === 'dark') {
-                    const newAutoStyle = isNowDark ? 'dark' : 'light';
+                if (currentMapValue === 'light' || currentMapValue === 'dark' || currentMapValue === 'midnight') {
+                    // Use 'midnight' instead of 'dark' as the default dark theme
+                    const newAutoStyle = isNowDark ? 'midnight' : 'light';
                     
                     if (currentMapValue !== newAutoStyle) {
                         // 1. Update the Map

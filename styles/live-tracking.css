@@ -440,3 +440,7 @@
   background-color: var(--brand-gray-light);
   border-radius: 10px;
 }
+
+.map-theme-midnight {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
