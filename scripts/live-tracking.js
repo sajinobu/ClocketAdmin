@@ -113,6 +113,10 @@
     // ==========================================
     // CORE LOGIC: FETCH & RENDER
     // ==========================================
+
+    // Global state cache to allow instant client-side filtering
+    window._trackingData = { employees: [], activeLocations: [] };
+
     async function startLiveTracking() {
         if (!window.db || !window.firebaseUtils || !window.rtdb) {
             setTimeout(startLiveTracking, 100);
@@ -122,71 +126,29 @@
         const { collection, getDocs, ref, onValue } = window.firebaseUtils;
 
         try {
+            // 1. Fetch Employees once
             const empSnap = await getDocs(collection(window.db, "employees"));
             const allEmployees = [];
             
             empSnap.forEach(doc => {
                 const data = doc.data();
-                
-                // --- CORRECTED: Filter using account_status from Firestore ---
-                if (data.account_status && String(data.account_status).toLowerCase() === 'inactive') {
-                    return; // Skip adding this employee
-                }
-                
+                if (data.account_status && String(data.account_status).toLowerCase() === 'inactive') return;
                 allEmployees.push({ email: doc.id, ...data });
             });
 
+            window._trackingData.employees = allEmployees;
+            populateFilterOptions(allEmployees); // Fill department/team dropdowns
+
+            // 2. Listen to RTDB
             const locationsRef = ref(window.rtdb, 'active_locations');
-            
             if (window._liveTrackingUnsubscribe) window._liveTrackingUnsubscribe();
 
             window._liveTrackingUnsubscribe = onValue(locationsRef, (snapshot) => {
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
-                const rtdbDataArray = Object.values(activeLocations);
-
-                // Calculate the start of today (midnight) in ms
-                const startOfToday = new Date().setHours(0, 0, 0, 0);
-
-                Object.values(window._liveMapMarkers).forEach(m => {
-                    if (window._liveMapInstance) window._liveMapInstance.removeLayer(m);
-                });
-                window._liveMapMarkers = {};
-
-                const staffList = document.getElementById('staff-list');
-                if (staffList) staffList.innerHTML = '';
-
-                let onlineCount = 0;
-
-                allEmployees.forEach(emp => {
-                    let liveData = rtdbDataArray.find(loc => loc.email === emp.email);
-                    
-                    // Filter out stale data from previous days
-                    if (liveData && liveData.timestamp < startOfToday) {
-                        liveData = undefined;
-                    }
-
-                    let status = "offline";
-                    let lat = null;
-                    let lng = null;
-
-                    if (liveData) {
-                        status = liveData.status || "offline";
-                        lat = liveData.latitude;
-                        lng = liveData.longitude;
-                    }
-
-                    if (status === "online") onlineCount++;
-                    renderEmployeeRecord(emp, status, lat, lng, liveData);
-                });
-
-                const subtitle = document.querySelector('.page-subtitle');
-                if (subtitle) {
-                    subtitle.textContent = `Monitoring ${onlineCount} active sessions`;
-                }
+                window._trackingData.activeLocations = Object.values(activeLocations);
                 
-                if (allEmployees.length === 0 && staffList) {
-                    staffList.innerHTML = '<div class="p-6 text-center text-gray-500 text-sm">No active employees found.</div>';
-                }
+                // Trigger a render whenever location data updates
+                renderFilteredData();
             });
 
         } catch (err) {
@@ -195,9 +157,165 @@
         }
     }
 
-    function renderEmployeeRecord(emp, status, lat, lng, liveData) {
+    // ==========================================
+    // CUSTOM DROPDOWN LOGIC
+    // ==========================================
+
+    function populateFilterOptions(employees) {
+        const menuDept = document.getElementById('menu-dept');
+        const menuTeam = document.getElementById('menu-team');
+        if (!menuDept || !menuTeam) return;
+
+        const depts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
+        const teams = [...new Set(employees.map(e => e.assigned_team).filter(Boolean))].sort();
+
+        // Preserve current selection if any
+        const currentDept = document.getElementById('filter-department').value;
+        const currentTeam = document.getElementById('filter-team').value;
+
+        // Build Department HTML
+        let deptHtml = `<div class="dropdown-option ${currentDept === 'all' ? 'active' : ''}" data-value="all">All Departments</div>`;
+        depts.forEach(d => {
+            deptHtml += `<div class="dropdown-option ${currentDept === d ? 'active' : ''}" data-value="${d}">${d}</div>`;
+        });
+        menuDept.innerHTML = deptHtml;
+
+        // Build Team HTML
+        let teamHtml = `<div class="dropdown-option ${currentTeam === 'all' ? 'active' : ''}" data-value="all">All Teams</div>`;
+        teams.forEach(t => {
+            teamHtml += `<div class="dropdown-option ${currentTeam === t ? 'active' : ''}" data-value="${t}">${t}</div>`;
+        });
+        menuTeam.innerHTML = teamHtml;
+    }
+
+    // Handle Dropdown Interactions
+    document.addEventListener('click', (e) => {
+        // 1. Handle clicking on a trigger button
+        const trigger = e.target.closest('.dropdown-trigger');
+        if (trigger) {
+            const dropdown = trigger.closest('.custom-dropdown');
+            
+            // Close other open dropdowns
+            document.querySelectorAll('.custom-dropdown.open').forEach(el => {
+                if (el !== dropdown) el.classList.remove('open');
+            });
+            
+            // Toggle current dropdown
+            dropdown.classList.toggle('open');
+            return; // Stop execution here
+        }
+
+        // 2. Handle clicking on an option inside the menu
+        const option = e.target.closest('.dropdown-option');
+        if (option) {
+            const dropdown = option.closest('.custom-dropdown');
+            const hiddenInput = dropdown.querySelector('input[type="hidden"]');
+            const label = dropdown.querySelector('.dropdown-label');
+            
+            // Update styling
+            dropdown.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('active'));
+            option.classList.add('active');
+            
+            // Update values
+            label.textContent = option.textContent;
+            hiddenInput.value = option.dataset.value;
+            
+            // Close menu
+            dropdown.classList.remove('open');
+            
+            // Trigger the filtering logic you already wrote
+            if (typeof renderFilteredData === 'function') {
+                renderFilteredData();
+            }
+            return;
+        }
+
+        // 3. Clicked outside - close all dropdowns
+        document.querySelectorAll('.custom-dropdown.open').forEach(el => el.classList.remove('open'));
+    });
+    
+    // The core rendering loop that respects filters
+    function renderFilteredData() {
+        const { employees, activeLocations } = window._trackingData;
+        const startOfToday = new Date().setHours(0, 0, 0, 0);
+
+        // Get active filter values
+        const activeDept = document.getElementById('filter-department')?.value || 'all';
+        const activeTeam = document.getElementById('filter-team')?.value || 'all';
+        const activeStatus = document.getElementById('filter-status')?.value || 'all';
+        const searchTerm = document.getElementById('staff-search')?.value.toLowerCase().trim() || '';
+
+        // Clear Map
+        Object.values(window._liveMapMarkers).forEach(m => {
+            if (window._liveMapInstance) window._liveMapInstance.removeLayer(m);
+        });
+        window._liveMapMarkers = {};
+
+        // Clear Sidebar
+        const staffList = document.getElementById('staff-list');
+        if (staffList) staffList.innerHTML = '';
+
+        let onlineCount = 0;
+        let renderedCount = 0;
+        
+        // --- NEW: Array to collect coordinates of all filtered users ---
+        let visibleCoords = []; 
+
+        employees.forEach(emp => {
+            let liveData = activeLocations.find(loc => loc.email === emp.email);
+            if (liveData && liveData.timestamp < startOfToday) liveData = undefined;
+
+            let status = liveData?.status || "offline";
+            if (status === "online") onlineCount++;
+
+            // --- FILTER LOGIC ---
+            if (activeDept !== 'all' && emp.department !== activeDept) return;
+            if (activeTeam !== 'all' && emp.assigned_team !== activeTeam) return;
+            if (activeStatus !== 'all' && status !== activeStatus) return;
+            
+            if (searchTerm) {
+                const nameMatch = (emp.full_name || '').toLowerCase().includes(searchTerm);
+                const teamMatch = (emp.assigned_team || '').toLowerCase().includes(searchTerm);
+                if (!nameMatch && !teamMatch) return;
+            }
+
+            // --- NEW: If the user passes the filter and has location data, save their coordinates ---
+            if (liveData?.latitude && liveData?.longitude) {
+                visibleCoords.push(L.latLng(liveData.latitude, liveData.longitude));
+            }
+
+            // If it passes all filters, render it
+            renderEmployeeRecord(emp, status, liveData?.latitude, liveData?.longitude);
+            renderedCount++;
+        });
+
+        const subtitle = document.querySelector('.page-subtitle');
+        if (subtitle) {
+            subtitle.textContent = `Monitoring ${onlineCount} active sessions`;
+        }
+        
+        if (renderedCount === 0 && staffList) {
+            staffList.innerHTML = '<div class="p-6 text-center text-gray-500 text-sm">No employees match your filters.</div>';
+        }
+
+        // --- NEW: Adjust Map to fit all visible coordinates ---
+        if (visibleCoords.length > 0 && window._liveMapInstance) {
+            // Create a bounding box out of all collected coordinates
+            const bounds = L.latLngBounds(visibleCoords);
+            
+            window._liveMapInstance.flyToBounds(bounds, {
+                padding: [50, 50], // Adds 50px of padding so markers aren't cut off at the edges
+                maxZoom: 16,       // Prevents zooming in too uncomfortably close if only 1 person is filtered
+                duration: 0.8      // The speed of the smooth pan/zoom animation
+            });
+        }
+    }
+
+    // Updated render function to handle profile pictures
+    function renderEmployeeRecord(emp, status, lat, lng) {
         const name = emp.full_name || "Unknown Employee";
         const team = emp.assigned_team || "Unassigned";
+        const profilePic = emp.profile_picture || null;
         
         let statusColorHex = "475569"; 
         let displayStatus = "Offline";
@@ -224,6 +342,7 @@
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
             : nameParts[0].substring(0, 2).toUpperCase();
 
+        // Setup Map Marker
         if (lat && lng && window._liveMapInstance) {
             const marker = L.circleMarker([lat, lng], {
                 radius: markerScale,
@@ -248,24 +367,31 @@
             window._liveMapMarkers[emp.email] = marker;
         }
 
+        // Determine Avatar HTML
+        let avatarHtml = `<div class="avatar-circle ${bgClass}">${initials}</div>`;
+        if (profilePic) {
+            // If image fails to load, fallback to the initial circle via the onerror event
+            const safeInitialsHtml = avatarHtml.replace(/"/g, '&quot;');
+            avatarHtml = `<img src="${profilePic}" alt="${name}" class="avatar-img" onerror="this.onerror=null; this.outerHTML='${safeInitialsHtml}'">`;
+        }
+
+        // Setup List Card
         const staffList = document.getElementById('staff-list');
         if (!staffList) return;
 
         const card = document.createElement('div');
         card.className = 'staff-card group cursor-pointer';
-        card.dataset.email = emp.email;
-        card.dataset.name = name;
         
         const opacityClass = status === "offline" ? 'opacity-60' : '';
 
         card.innerHTML = `
-            <div class="avatar-circle ${bgClass}">${initials}</div>
+            ${avatarHtml}
             <div class="flex-1 min-w-0 ${opacityClass}">
-              <p class="staff-card-name">${name}</p>
-              <div class="flex items-center gap-1 mt-0.5">
+            <p class="staff-card-name">${name}</p>
+            <div class="flex items-center gap-1 mt-0.5">
                 <span class="w-1.5 h-1.5 ${dotColorClass} rounded-full flex-shrink-0"></span>
                 <span class="text-[11px] text-brand-dark font-medium truncate transition-colors">${displayStatus} • ${team}</span>
-              </div>
+            </div>
             </div>
             <i data-lucide="map-pin" class="staff-card-arrow opacity-0 group-hover:opacity-100 transition-opacity w-4 h-4 text-brand-dark"></i>
         `;
@@ -288,6 +414,34 @@
         
         if (window.lucide) lucide.createIcons();
     }
+
+    // 4. Attach Listeners for the Dropdowns
+    ['filter-department', 'filter-team', 'filter-status'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', renderFilteredData);
+    });
+
+    // Remove your old manual string-matching search listener and replace with this:
+    if (window._liveTrackingInputHandler) {
+        document.body.removeEventListener('input', window._liveTrackingInputHandler);
+    }
+
+    let searchTimeout;
+
+    window._liveTrackingInputHandler = (e) => {
+        if (e.target && e.target.id === 'staff-search') {
+            // Clear the previous timer if the user is still typing
+            clearTimeout(searchTimeout);
+            
+            // Set a new timer. The map will only update 300ms AFTER they stop typing.
+            searchTimeout = setTimeout(() => {
+                if (typeof renderFilteredData === 'function') {
+                    renderFilteredData();
+                }
+            }, 300);
+        }
+    };
+
+    document.body.addEventListener('input', window._liveTrackingInputHandler);
 
     // ==========================================
     // EVENT LISTENERS & UI
@@ -360,30 +514,6 @@
         }
     };
     document.body.addEventListener('click', window._liveTrackingClickHandler);
-
-    if (window._liveTrackingInputHandler) {
-        document.body.removeEventListener('input', window._liveTrackingInputHandler);
-    }
-    
-    window._liveTrackingInputHandler = (e) => {
-        if (e.target.id === 'staff-search') {
-            const term = e.target.value.toLowerCase().trim();
-            const staffCards = document.querySelectorAll('.staff-card');
-            
-            staffCards.forEach(card => {
-                const name = card.getAttribute('data-name').toLowerCase();
-                const siteNode = card.querySelector('.truncate');
-                const site = siteNode ? siteNode.textContent.toLowerCase() : '';
-                
-                if (name.includes(term) || site.includes(term)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-    };
-    document.body.addEventListener('input', window._liveTrackingInputHandler);
 
     function showToast(message, isSuccess = true) {
         const existingToast = document.querySelector('.live-track-toast');

@@ -65,19 +65,42 @@
           <p class="page-subtitle text-sm text-brand-dark transition-colors">Connecting to tracker...</p>
         </div>
 
-        <div class="px-8 py-4 flex gap-4 overflow-x-auto no-scrollbar flex-shrink-0">
-          <div class="stat-pill">
-            <div class="w-2 h-2 rounded-full" style="background-color: var(--brand-accent); box-shadow: 0 0 8px var(--brand-accent);"></div>
-            <span>You</span>
+        <div class="px-8 py-4 flex gap-4 flex-wrap flex-shrink-0 relative z-[1050]" id="filter-container">
+  
+          <div class="custom-dropdown" id="dropdown-dept">
+            <input type="hidden" id="filter-department" value="all">
+            <button class="dropdown-trigger">
+              <span class="dropdown-label">All Departments</span>
+              <i data-lucide="chevron-down" class="dropdown-icon w-4 h-4"></i>
+            </button>
+            <div class="dropdown-menu" id="menu-dept">
+              </div>
           </div>
-          <div class="stat-pill">
-            <div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
-            <span>Active</span>
+
+          <div class="custom-dropdown" id="dropdown-team">
+            <input type="hidden" id="filter-team" value="all">
+            <button class="dropdown-trigger">
+              <span class="dropdown-label">All Teams</span>
+              <i data-lucide="chevron-down" class="dropdown-icon w-4 h-4"></i>
+            </button>
+            <div class="dropdown-menu" id="menu-team">
+              </div>
           </div>
-          <div class="stat-pill">
-            <div class="w-2 h-2 bg-slate-500 rounded-full"></div>
-            <span>Inactive</span>
+
+          <div class="custom-dropdown" id="dropdown-status">
+            <input type="hidden" id="filter-status" value="all">
+            <button class="dropdown-trigger">
+              <span class="dropdown-label">All Statuses</span>
+              <i data-lucide="chevron-down" class="dropdown-icon w-4 h-4"></i>
+            </button>
+            <div class="dropdown-menu" id="menu-status">
+              <div class="dropdown-option active" data-value="all">All Statuses</div>
+              <div class="dropdown-option" data-value="online">Active</div>
+              <div class="dropdown-option" data-value="break">On Break</div>
+              <div class="dropdown-option" data-value="offline">Offline</div>
+            </div>
           </div>
+
         </div>
 
         <div class="tracking-container">
