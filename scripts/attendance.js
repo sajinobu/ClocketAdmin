@@ -600,7 +600,14 @@
             
             if (photoPlaceholder) {
                 if (photoData && photoData !== "null") {
-                    photoPlaceholder.innerHTML = `<img src="${photoData}" class="w-full h-full object-cover rounded-lg shadow-sm">`;
+                    
+                    // Check if the string already has the data URI scheme. If not, prepend it.
+                    const imageSrc = photoData.startsWith('data:image') 
+                        ? photoData 
+                        : `data:image/jpeg;base64,${photoData}`;
+
+                    photoPlaceholder.innerHTML = `<img src="${imageSrc}" class="w-full h-full object-cover rounded-lg shadow-sm">`;
+                    
                 } else {
                     photoPlaceholder.innerHTML = `<div class="text-center py-6"><i data-lucide="image" class="w-12 h-12 mx-auto mb-2 opacity-50"></i><p class="text-sm font-medium mt-2 text-brand-darkest">No photo available</p></div>`;
                     if (window.lucide) lucide.createIcons();

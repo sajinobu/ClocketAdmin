@@ -101,6 +101,36 @@
         }
     }
 
+    async function checkAndGenerateIdForPending(empData) {
+        const idInput = document.getElementById('edit-employee-id');
+        // If the account is pending and has no ID or has "PENDING"
+        if (empData.account_status === "pending" && (!empData.employee_id || empData.employee_id === "PENDING")) {
+            try {
+                idInput.placeholder = "Generating ID...";
+                const { collection, getDocs } = window.firebaseUtils;
+                const empSnapshot = await getDocs(collection(window.db, "employees"));
+                
+                let maxIdNum = 0;
+                empSnapshot.forEach(doc => {
+                    const d = doc.data();
+                    if (d.employee_id && d.employee_id.startsWith('EMP-')) {
+                        const numPart = parseInt(d.employee_id.split('-')[1], 10);
+                        if (!isNaN(numPart) && numPart > maxIdNum) maxIdNum = numPart;
+                    }
+                });
+
+                const nextIdNum = maxIdNum + 1;
+                const nextIdString = `EMP-${String(nextIdNum).padStart(3, '0')}`;
+                
+                if (idInput) {
+                    idInput.value = nextIdString;
+                }
+            } catch (error) {
+                console.error("Error generating ID for pending user:", error);
+            }
+        }
+    }
+
     async function loadEmployeeData() {
         if (!window.db || !window.firebaseUtils) return;
 
@@ -146,6 +176,8 @@
 
             if (empSnap.exists()) {
                 const emp = empSnap.data();
+
+                await checkAndGenerateIdForPending(emp);
 
                 // Save to global window object
                 window.originalTeamName = emp.assigned_team || "";
@@ -341,11 +373,18 @@
                 const checkedDaysNodes = document.querySelectorAll('input[name="edit-work-days"]:checked');
                 const workingDaysArray = Array.from(checkedDaysNodes).map(node => node.value);
 
+                // --- NEW: Grab the Employee ID ---
+                const employeeId = document.getElementById('edit-employee-id').value.trim();
+
                 const { doc, writeBatch, collection, query, where, getDocs, getDoc } = window.firebaseUtils;
                 const batch = writeBatch(window.db);
 
                 const empRef = doc(window.db, "employees", currentEmpId);
+                
+                // --- NEW: Add account_status and employee_id to the update ---
                 batch.update(empRef, {
+                    account_status: "active", // <--- Forces account to active upon save
+                    employee_id: employeeId,  // <--- Saves the new ID
                     first_name: firstName,
                     middle_name: middleName,
                     last_name: lastName,

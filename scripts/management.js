@@ -49,6 +49,63 @@
 
     initializeTabsFromURL();
 
+    let pendingUsers = [];
+
+    // Real-time listener for pending employees
+    function listenForPendingRequests() {
+        // Ensure these are exported from your firebase-config.js!
+        const { collection, query, where, onSnapshot } = window.firebaseUtils;
+        
+        const q = query(collection(window.db, "employees"), where("account_status", "==", "pending"));
+        
+        onSnapshot(q, (snapshot) => {
+            pendingUsers = [];
+            snapshot.forEach(doc => {
+                pendingUsers.push({ id: doc.id, ...doc.data() });
+            });
+            updatePendingUI();
+        });
+    }
+
+    function updatePendingUI() {
+        const btn = document.getElementById('open-pending-modal');
+        const badge = document.getElementById('pending-badge');
+        const listContainer = document.getElementById('pending-list-container');
+        const noState = document.getElementById('no-pending-state');
+        
+        if (!btn || !listContainer) return;
+
+        if (pendingUsers.length > 0) {
+            btn.classList.remove('hidden');
+            badge.textContent = pendingUsers.length;
+            
+            listContainer.classList.remove('hidden');
+            noState.classList.add('hidden');
+            
+            listContainer.innerHTML = pendingUsers.map(user => `
+                <div class="flex items-center justify-between p-4 bg-brand-surface border border-brand-grayLight rounded-xl hover:border-brand-primary transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-[rgba(99,102,241,0.1)] text-brand-primary flex items-center justify-center font-bold text-sm">
+                            ${user.first_name?.[0] || ''}${user.last_name?.[0] || ''}
+                        </div>
+                        <div>
+                            <p class="font-bold text-brand-darkest text-sm">${user.full_name}</p>
+                            <p class="text-xs text-brand-dark">${user.email}</p>
+                        </div>
+                    </div>
+                    <button class="review-pending-btn btn-primary text-sm px-4 py-2" data-id="${user.id}">
+                        Review
+                    </button>
+                </div>
+            `).join('');
+            
+        } else {
+            btn.classList.add('hidden'); // Hide button if 0
+            listContainer.classList.add('hidden');
+            noState.classList.remove('hidden');
+        }
+    }
+
     const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
 
     // --- FIREBASE FETCH: EMPLOYEES ---
@@ -262,6 +319,7 @@
             clearInterval(waitForFirebase);
             loadEmployeesFromFirebase();
             loadTeamsFromFirebase(); 
+            listenForPendingRequests();
         }
     }, 50);
     
@@ -577,6 +635,137 @@
                 }
             }
         }
+
+        // --- ADD EMPLOYEE MODAL ROUTING ---
+        // 1. Open the selection modal
+        if (e.target.closest('#open-add-employee-modal')) {
+            const addModal = document.getElementById('add-employee-modal');
+            if (addModal) addModal.classList.remove('hidden');
+        }
+
+        // 2. Close the selection modal
+        if (e.target.closest('#close-add-modal') || e.target.id === 'add-employee-modal') {
+            const addModal = document.getElementById('add-employee-modal');
+            if (addModal) addModal.classList.add('hidden');
+        }
+
+        // 3. Option: Manual Addition (Redirects to your old page)
+        if (e.target.closest('#btn-add-manually')) {
+            window.location.href = 'add-employee.html?from=management';
+        }
+
+        // 4. Option: Generate Invite Code
+        const generateBtn = e.target.closest('#btn-generate-code');
+        if (generateBtn) {
+            // Prevent spam clicking
+            if (generateBtn.disabled) return;
+
+            const originalHtml = generateBtn.innerHTML;
+            
+            // 1. Show loading animation on the button
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `
+                <div class="w-full flex justify-center items-center py-4">
+                    <i data-lucide="loader" class="w-6 h-6 animate-spin text-brand-primary"></i>
+                    <span class="ml-2 font-bold text-brand-primary">Generating...</span>
+                </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                // 2. Generate a random code
+                const code = "CLK-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+                
+                // 3. Save to Firestore
+                const { doc, setDoc } = window.firebaseUtils; 
+                await setDoc(doc(window.db, "invite_codes", code), {
+                    created_at: new Date().toISOString(),
+                    is_used: false,
+                    used_by: ""
+                });
+
+                // 4. Auto-copy to clipboard and show toast
+                await navigator.clipboard.writeText(code);
+                showManagementToast("Invite code copied to clipboard!");
+
+                // 5. Close the selection modal
+                const addModal = document.getElementById('add-employee-modal');
+                if (addModal) addModal.classList.add('hidden');
+
+                // 6. Build a sleek UI for the alert modal
+                const messageHtml = `
+                    <p class="mb-3 text-brand-dark">Give this code to the new employee:</p>
+                    <div class="bg-brand-grayBg border border-brand-grayLight rounded-lg p-3 flex items-center justify-between">
+                        <span class="font-mono font-bold text-lg tracking-wider text-brand-primary ml-2">${code}</span>
+                        <button id="modal-copy-btn" data-code="${code}" class="btn-icon text-brand-dark hover:text-brand-primary bg-brand-surface border border-brand-grayLight shadow-sm rounded-md p-1.5 transition-colors">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+
+                // 7. Show success alert
+                showCustomAlert("Invite Code Ready", messageHtml, 'success', true);
+
+            } catch (error) {
+                console.error("Error generating code:", error);
+                showCustomAlert("Error", "Failed to generate invite code. Please check your connection or console.");
+            } finally {
+                // 6. Reset the button back to normal
+                generateBtn.innerHTML = originalHtml;
+                generateBtn.disabled = false;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        // Handle the Copy Button inside the Custom Alert Modal
+        if (e.target.closest('#modal-copy-btn')) {
+            const copyBtn = e.target.closest('#modal-copy-btn');
+            const codeToCopy = copyBtn.getAttribute('data-code');
+            
+            navigator.clipboard.writeText(codeToCopy);
+            showManagementToast("Invite code copied!");
+            
+            // Visual feedback on the button itself
+            copyBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`;
+            if (window.lucide) lucide.createIcons();
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = `<i data-lucide="copy" class="w-4 h-4"></i>`;
+                if (window.lucide) lucide.createIcons();
+            }, 2000);
+        }
+
+        // --- PENDING MODAL ROUTING ---
+        if (e.target.closest('#open-pending-modal')) {
+            const modal = document.getElementById('pending-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        if (e.target.closest('#close-pending-modal') || e.target.id === 'pending-modal') {
+            const modal = document.getElementById('pending-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Handle clicking "Review" on a pending user
+        const reviewBtn = e.target.closest('.review-pending-btn');
+        if (reviewBtn) {
+            const empId = reviewBtn.getAttribute('data-id');
+            
+            // Explicitly close the pending modal
+            const pendingModal = document.getElementById('pending-modal');
+            if (pendingModal) {
+                pendingModal.classList.add('hidden');
+            }
+
+            // Route to the edit profile page
+            const targetUrl = `employee-edit-profile.html?from=management&id=${empId}`;
+            
+            if (typeof navigateTo === 'function') {
+                navigateTo(targetUrl);
+            } else {
+                window.location.href = targetUrl;
+            }
+        }
     });
 
     document.body.addEventListener('input', (e) => {
@@ -718,15 +907,43 @@
     // ==========================================
     // 5. CUSTOM ALERT MODAL
     // ==========================================
-    function showCustomAlert(title, message) {
+    // ==========================================
+    // 5. CUSTOM ALERT MODAL
+    // ==========================================
+    function showCustomAlert(title, message, type = 'error', isHtml = false) {
         const modal = document.getElementById('custom-alert-modal');
         const box = document.getElementById('custom-alert-box');
         const titleEl = document.getElementById('custom-alert-title');
         const messageEl = document.getElementById('custom-alert-message');
         
+        // Grab the icon container to change its colors
+        const iconContainer = box.querySelector('.rounded-full');
+        
         if (!modal) return;
+        
         titleEl.textContent = title;
-        messageEl.textContent = message;
+
+        // Allow rendering HTML for the copy button, otherwise use normal text
+        if (isHtml) {
+            messageEl.innerHTML = message;
+        } else {
+            messageEl.textContent = message;
+        }
+
+        // Apply theme based on the 'type'
+        if (type === 'success') {
+            iconContainer.className = 'w-12 h-12 rounded-full bg-[rgba(16,185,129,0.1)] text-emerald-500 flex items-center justify-center mb-4';
+            iconContainer.innerHTML = `<i data-lucide="check-circle" class="w-6 h-6"></i>`;
+        } else if (type === 'info') {
+            iconContainer.className = 'w-12 h-12 rounded-full bg-[rgba(99,102,241,0.1)] text-brand-primary flex items-center justify-center mb-4';
+            iconContainer.innerHTML = `<i data-lucide="info" class="w-6 h-6"></i>`;
+        } else {
+            // Default Error Theme
+            iconContainer.className = 'w-12 h-12 rounded-full bg-[rgba(239,68,68,0.1)] text-red-500 flex items-center justify-center mb-4';
+            iconContainer.innerHTML = `<i data-lucide="alert-circle" class="w-6 h-6"></i>`;
+        }
+        
+        if (window.lucide) lucide.createIcons();
 
         modal.classList.remove('hidden');
         requestAnimationFrame(() => {
