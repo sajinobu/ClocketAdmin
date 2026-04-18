@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
 // FIXED: Added getDocs, getDoc, updateDoc, deleteDoc, setDoc, writeBatch to the imports
-import { getFirestore, collection, getDocs, query, where, doc, getDoc, onSnapshot, updateDoc, deleteDoc, setDoc, writeBatch, deleteField } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc, onSnapshot, updateDoc, deleteDoc, setDoc, writeBatch, deleteField, limit } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // FIXED: Added sendPasswordResetEmail to the imports
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
@@ -48,7 +48,8 @@ window.firebaseUtils = {
     ref,      
     onValue,  
     get,       
-    onSnapshot
+    onSnapshot,
+    limit
 };
 
 console.log("Firebase loaded globally via CDN! Ready for SPA.");

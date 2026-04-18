@@ -12,6 +12,12 @@
     let isAllTimeMode = false;
     let allTimeSearchTimeout;
 
+    // --- NEW: PAGINATION STATE ---
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    window.currentRawRecords = [];
+    window.currentFilteredRecords = [];
+
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
     const formatDate = (dateObj) => {
@@ -26,7 +32,6 @@
 
     const todayStr = formatDate(todayDate);
 
-    // Leaflet Globals
     window._logMapInstance = null;
     window._logMapMarker = null;
 
@@ -82,7 +87,6 @@
 
     async function loadAttendanceData() {
         const tableBody = document.getElementById('attendance-table-body');
-        const noResultsRow = document.getElementById('no-results-row');
         if (!tableBody || !window.firebaseUtils) return;
 
         try {
@@ -97,8 +101,6 @@
             let employeeMap = {};
             const departmentSet = new Set();
 
-            // --- FIX: ISOLATED CACHE KEY ---
-            // Changed from 'cachedEmployees' to 'cachedEmployees_Full'
             const cachedEmployees = sessionStorage.getItem('cachedEmployees_Full');
             if (cachedEmployees) {
                 employeeMap = JSON.parse(cachedEmployees);
@@ -164,7 +166,7 @@
                 attSnapshot = await getDocs(attQuery);
             }
 
-            let recordsToRender = [];
+            window.currentRawRecords = [];
 
             if (isAllTimeMode) {
                 attSnapshot.forEach(doc => {
@@ -172,10 +174,10 @@
                     const data = doc.data();
                     const empData = employeeMap[data.employee_id];
                     if (empData) {
-                        recordsToRender.push({ empData, att: { ...data, docId: doc.id }, dateStr: data.date });
+                        window.currentRawRecords.push({ empData, att: { ...data, docId: doc.id }, dateStr: data.date });
                     }
                 });
-                recordsToRender.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+                window.currentRawRecords.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
             } else {
                 const attendanceRecordMap = {};
                 attSnapshot.forEach(doc => {
@@ -184,7 +186,7 @@
                 });
                 sortedEmployees.forEach(empData => {
                     const att = attendanceRecordMap[empData.email] || null;
-                    recordsToRender.push({ empData, att, dateStr: targetDateStr });
+                    window.currentRawRecords.push({ empData, att, dateStr: targetDateStr });
                 });
             }
 
@@ -192,175 +194,241 @@
             console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
             console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
 
-            const loader = document.getElementById('att-loading-row');
-            if (loader) loader.remove();
+            const dateText = document.getElementById('date-text');
+            const dateDropdown = document.getElementById('date-dropdown');
+            const dateTriggerIcon = dateDropdown ? dateDropdown.querySelector('.dropdown-trigger i:first-child') : null;
 
-            document.querySelectorAll('#attendance-table-body .attendance-row').forEach(row => row.remove());
-
-            if (recordsToRender.length === 0) {
-                if (noResultsRow) { noResultsRow.querySelector('td').setAttribute('colspan', '6'); noResultsRow.style.display = ''; }
-                return;
-            } else {
-                if (noResultsRow) noResultsRow.style.display = 'none';
-                
-                const dateText = document.getElementById('date-text');
-                const dateDropdown = document.getElementById('date-dropdown');
-                const dateTriggerIcon = dateDropdown ? dateDropdown.querySelector('.dropdown-trigger i:first-child') : null;
-
-                if (isAllTimeMode) {
-                    if (recordsToRender.length > 0) {
-                        const newestStr = recordsToRender[0].dateStr;
-                        const oldestStr = recordsToRender[recordsToRender.length - 1].dateStr;
-                        const currentYear = new Date().getFullYear();
-                        
-                        if (newestStr === oldestStr) {
-                            const dSingle = new Date(newestStr);
-                            if (dSingle.getFullYear() === currentYear) {
-                                if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                            } else {
-                                if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                            }
+            if (isAllTimeMode) {
+                if (window.currentRawRecords.length > 0) {
+                    const newestStr = window.currentRawRecords[0].dateStr;
+                    const oldestStr = window.currentRawRecords[window.currentRawRecords.length - 1].dateStr;
+                    const currentYear = new Date().getFullYear();
+                    
+                    if (newestStr === oldestStr) {
+                        const dSingle = new Date(newestStr);
+                        if (dSingle.getFullYear() === currentYear) {
+                            if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                         } else {
-                            const dOld = new Date(oldestStr);
-                            const dNew = new Date(newestStr);
-                            const oldFmt = dOld.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                            const newFmt = dNew.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                            
-                            if (dOld.getFullYear() !== dNew.getFullYear()) {
-                                if (dateText) dateText.innerHTML = `${oldFmt} '${dOld.getFullYear().toString().slice(2)} - ${newFmt} '${dNew.getFullYear().toString().slice(2)}`;
-                            } else {
-                                if (dNew.getFullYear() === currentYear) {
-                                    if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}`;
-                                } else {
-                                    if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}, ${dNew.getFullYear()}`;
-                                }
-                            }
+                            if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                         }
                     } else {
-                        if (dateText) dateText.innerHTML = `No Records`;
-                    }
-                    
-                    if (dateDropdown) {
-                        dateDropdown.classList.add('opacity-60', 'pointer-events-none');
-                        if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'lock');
+                        const dOld = new Date(oldestStr);
+                        const dNew = new Date(newestStr);
+                        const oldFmt = dOld.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        const newFmt = dNew.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        
+                        if (dOld.getFullYear() !== dNew.getFullYear()) {
+                            if (dateText) dateText.innerHTML = `${oldFmt} '${dOld.getFullYear().toString().slice(2)} - ${newFmt} '${dNew.getFullYear().toString().slice(2)}`;
+                        } else {
+                            if (dNew.getFullYear() === currentYear) {
+                                if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}`;
+                            } else {
+                                if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}, ${dNew.getFullYear()}`;
+                            }
+                        }
                     }
                 } else {
-                    if (dateText) {
-                        if (formatDate(activeDate) === todayStr) {
-                            dateText.textContent = "Today";
-                        } else {
-                            dateText.textContent = `${monthNames[activeDate.getMonth()].substring(0,3)} ${activeDate.getDate()}, ${activeDate.getFullYear()}`;
-                        }
-                    }
-                    
-                    if (dateDropdown) {
-                        dateDropdown.classList.remove('opacity-60', 'pointer-events-none');
-                        if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'calendar');
+                    if (dateText) dateText.innerHTML = `No Records`;
+                }
+                
+                if (dateDropdown) {
+                    dateDropdown.classList.add('opacity-60', 'pointer-events-none');
+                    if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'lock');
+                }
+            } else {
+                if (dateText) {
+                    if (formatDate(activeDate) === todayStr) {
+                        dateText.textContent = "Today";
+                    } else {
+                        dateText.textContent = `${monthNames[activeDate.getMonth()].substring(0,3)} ${activeDate.getDate()}, ${activeDate.getFullYear()}`;
                     }
                 }
-
-                const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
-                const locationFetchQueue = [];
-                const now = new Date();
-                const currentMin = (now.getHours() * 60) + now.getMinutes();
-
-                recordsToRender.forEach(({ empData, att, dateStr }) => {
-                    // --- FIX: ROBUST FALLBACKS FOR NAME & DEPT ---
-                    const employeeName = empData.full_name || `${empData.first_name || ''} ${empData.last_name || ''}`.trim() || empData.name || "Unknown";
-                    const empDepartment = empData.department || empData.dept || "Unassigned";
-                    const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") ? empData.profile_picture : defaultAvatar;
-
-                    let clockIn = "--:--";
-                    let clockOut = "--:--";
-                    let statusText = "Absent";
-                    let statusClass = "bg-red-100 text-red-600 border-red-200";
-                    
-                    let inPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
-                    let outPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
-                    let locationDisplay = `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
-
-                    const expectedStartMin = timeStringToMinutes(empData.work_start_time);
-                    
-                    const isTodayForRecord = (dateStr === todayStr);
-                    const isFutureForRecord = (dateStr > todayStr);
-
-                    if (att && att.clock_in_time) {
-                        const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
-                        const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-
-                        if (actualMin > expectedStartMin) {
-                            statusText = "Late";
-                            statusClass = "status-late";
-                        } else {
-                            statusText = "On Time";
-                            statusClass = "status-on-time";
-                        }
-
-                        clockIn = actualDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        
-                        if (att.clock_out_time) {
-                            clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        }
-
-                        if (att.clock_in_photo) {
-                            inPhotoBtn = `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
-                        }
-                        if (att.clock_out_photo) {
-                            outPhotoBtn = `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
-                        }
-
-                        if (att.clock_in_lat && att.clock_in_long) {
-                            const locId = `loc-${att.docId || empData.id}`; 
-                            locationDisplay = `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
-                                    data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
-                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
-                                    <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
-                            </button>`;
-                            locationFetchQueue.push({ locId: locId, lat: att.clock_in_lat, lng: att.clock_in_long });
-                        }
-                    } else {
-                        if (isFutureForRecord || (isTodayForRecord && currentMin < expectedStartMin)) {
-                            statusText = "Not Started";
-                            statusClass = "bg-slate-100 text-slate-600 border-slate-200"; 
-                        }
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.className = 'attendance-row data-row';
-                    tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
-                    tr.setAttribute('data-department', empDepartment);
-
-                    const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    const displayDept = isAllTimeMode ? `<span class="text-brand-primary font-bold">${formattedDate}</span> &bull; ${empDepartment}` : empDepartment;
-
-                    tr.innerHTML = `
-                        <td class="table-td">
-                        <div class="flex items-center gap-3">
-                            <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
-                            <div>
-                            <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
-                            <p class="text-xs text-gray-500">${displayDept}</p>
-                            </div>
-                        </div>
-                        </td>
-                        <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
-                        <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
-                        <td class="table-td">${locationDisplay}</td>
-                        <td class="table-td"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                        <td class="table-td text-right"><a href="employee-logs.html?id=${empData.id}" class="link-action">View Log</a></td>
-                    `;
-                    
-                    tableBody.appendChild(tr);
-                });
-
-                if (window.lucide) lucide.createIcons();
-                filterAttendanceTable(); 
-                processLocationQueue(locationFetchQueue);
+                
+                if (dateDropdown) {
+                    dateDropdown.classList.remove('opacity-60', 'pointer-events-none');
+                    if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'calendar');
+                }
             }
+
+            // Immediately apply filters and render the first page
+            applyFiltersAndRender();
 
         } catch(error) {
             console.error("Error fetching attendance data: ", error);
         }
+    }
+
+    // --- NEW: IN-MEMORY FILTERING ---
+    function applyFiltersAndRender() {
+        const searchInput = document.getElementById('search-input');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        const now = new Date();
+        const currentMin = (now.getHours() * 60) + now.getMinutes();
+
+        window.currentFilteredRecords = [];
+
+        window.currentRawRecords.forEach(record => {
+            const { empData, att, dateStr } = record;
+            
+            const employeeName = empData.full_name || `${empData.first_name || ''} ${empData.last_name || ''}`.trim() || empData.name || "Unknown";
+            const empDepartment = empData.department || empData.dept || "Unassigned";
+            
+            let statusValue = "absent";
+            const expectedStartMin = timeStringToMinutes(empData.work_start_time);
+            const isTodayForRecord = (dateStr === todayStr);
+            const isFutureForRecord = (dateStr > todayStr);
+
+            if (att && att.clock_in_time) {
+                const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
+                const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
+
+                if (actualMin > expectedStartMin) {
+                    statusValue = "late";
+                } else {
+                    statusValue = "on-time";
+                }
+            } else {
+                if (isFutureForRecord || (isTodayForRecord && currentMin < expectedStartMin)) {
+                    statusValue = "not-started";
+                }
+            }
+
+            // Client-Side Filters
+            const nameMatch = employeeName.toLowerCase().includes(searchTerm);
+            const deptMatch = activeDept === 'all' || empDepartment === activeDept;
+            const statusMatch = activeStatus === 'all' || statusValue === activeStatus.toLowerCase();
+
+            if (nameMatch && deptMatch && statusMatch) {
+                // Save the calculated status so we don't have to recalculate it during render
+                window.currentFilteredRecords.push({ ...record, employeeName, empDepartment, statusValue });
+            }
+        });
+
+        // Reset to page 1 whenever filters change
+        currentPage = 1;
+        renderPaginatedTable();
+    }
+
+    // --- NEW: PAGINATED RENDERER ---
+    function renderPaginatedTable() {
+        const tableBody = document.getElementById('attendance-table-body');
+        const noResultsRow = document.getElementById('no-results-row');
+        const prevBtn = document.getElementById('prev-page-btn');
+        const nextBtn = document.getElementById('next-page-btn');
+        const pageInfo = document.getElementById('pagination-info');
+
+        if (!tableBody) return;
+
+        // Clear existing rows except the empty state
+        document.querySelectorAll('#attendance-table-body .attendance-row, #att-loading-row').forEach(row => row.remove());
+
+        if (window.currentFilteredRecords.length === 0) {
+            if (noResultsRow) { 
+                noResultsRow.querySelector('td').setAttribute('colspan', '6'); 
+                noResultsRow.style.display = ''; 
+            }
+            if (pageInfo) pageInfo.textContent = "Showing 0 of 0";
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            return;
+        }
+
+        if (noResultsRow) noResultsRow.style.display = 'none';
+
+        // Calculate Slices
+        const startIndex = (currentPage - 1) * rowsPerPage;
+        const endIndex = startIndex + rowsPerPage;
+        const paginatedSlice = window.currentFilteredRecords.slice(startIndex, endIndex);
+
+        const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+        const locationFetchQueue = [];
+
+        paginatedSlice.forEach(({ empData, att, dateStr, employeeName, empDepartment, statusValue }) => {
+            const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") ? empData.profile_picture : defaultAvatar;
+
+            let clockIn = "--:--";
+            let clockOut = "--:--";
+            let statusText = "Absent";
+            let statusClass = "bg-red-100 text-red-600 border-red-200";
+            
+            let inPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+            let outPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+            let locationDisplay = `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
+
+            if (statusValue === "late") {
+                statusText = "Late";
+                statusClass = "status-late";
+            } else if (statusValue === "on-time") {
+                statusText = "On Time";
+                statusClass = "status-on-time";
+            } else if (statusValue === "not-started") {
+                statusText = "Not Started";
+                statusClass = "bg-slate-100 text-slate-600 border-slate-200"; 
+            }
+
+            if (att && att.clock_in_time) {
+                const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
+                clockIn = actualDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                if (att.clock_out_time) {
+                    clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                }
+
+                if (att.clock_in_photo) {
+                    inPhotoBtn = `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
+                }
+                if (att.clock_out_photo) {
+                    outPhotoBtn = `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
+                }
+
+                if (att.clock_in_lat && att.clock_in_long) {
+                    const locId = `loc-${att.docId || empData.id}`; 
+                    locationDisplay = `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
+                            data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
+                            <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
+                    </button>`;
+                    locationFetchQueue.push({ locId: locId, lat: att.clock_in_lat, lng: att.clock_in_long });
+                }
+            }
+
+            const tr = document.createElement('tr');
+            tr.className = 'attendance-row data-row animate-fade-in';
+            tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
+            tr.setAttribute('data-department', empDepartment);
+
+            const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const displayDept = isAllTimeMode ? `<span class="text-brand-primary font-bold">${formattedDate}</span> &bull; ${empDepartment}` : empDepartment;
+
+            tr.innerHTML = `
+                <td class="table-td">
+                <div class="flex items-center gap-3">
+                    <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
+                    <div>
+                    <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
+                    <p class="text-xs text-gray-500">${displayDept}</p>
+                    </div>
+                </div>
+                </td>
+                <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
+                <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
+                <td class="table-td">${locationDisplay}</td>
+                <td class="table-td"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td class="table-td text-right"><a href="employee-logs.html?id=${empData.id}" class="link-action">View Log</a></td>
+            `;
+            
+            tableBody.appendChild(tr);
+        });
+
+        // Update Pagination Info & Buttons
+        if (pageInfo) {
+            pageInfo.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, window.currentFilteredRecords.length)} of ${window.currentFilteredRecords.length}`;
+        }
+        if (prevBtn) prevBtn.disabled = currentPage === 1;
+        if (nextBtn) nextBtn.disabled = endIndex >= window.currentFilteredRecords.length;
+
+        if (window.lucide) lucide.createIcons();
+        processLocationQueue(locationFetchQueue);
     }
 
     async function processLocationQueue(queue) {
@@ -398,35 +466,6 @@
             }
             await new Promise(resolve => setTimeout(resolve, 1200));
         }
-    }
-
-    function filterAttendanceTable() {
-        const searchInput = document.getElementById('search-input');
-        const tableRows = document.querySelectorAll('.attendance-row');
-        const noResultsRow = document.getElementById('no-results-row');
-        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-        let visibleCount = 0;
-
-        tableRows.forEach(row => {
-            const nameNode = row.querySelector('.employee-name');
-            const rowStatus = row.getAttribute('data-status');
-            const rowDept = row.getAttribute('data-department');
-            
-            if (!nameNode || !rowStatus) return;
-            
-            const name = nameNode.textContent.toLowerCase();
-            const matchesSearch = name.includes(searchTerm);
-            const matchesStatus = activeStatus === 'all' || rowStatus === activeStatus;
-            const matchesDept = activeDept === 'all' || rowDept === activeDept;
-
-            if (matchesSearch && matchesStatus && matchesDept) {
-                row.style.display = ''; visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        if (noResultsRow) noResultsRow.style.display = visibleCount > 0 ? 'none' : '';
     }
 
     renderCalendar();
@@ -484,7 +523,7 @@
                 clearTimeout(allTimeSearchTimeout);
                 allTimeSearchTimeout = setTimeout(() => { loadAttendanceData(); }, 500);
             } else {
-                filterAttendanceTable(); 
+                applyFiltersAndRender(); 
             }
         }
     };
@@ -496,6 +535,16 @@
 
     window._attClickListener = (e) => {
         if (!document.getElementById('calendar-grid')) return;
+
+        // --- NEW: Pagination Listeners ---
+        if (e.target.closest('#prev-page-btn') && !e.target.closest('#prev-page-btn').disabled) {
+            currentPage--;
+            renderPaginatedTable();
+        }
+        if (e.target.closest('#next-page-btn') && !e.target.closest('#next-page-btn').disabled) {
+            currentPage++;
+            renderPaginatedTable();
+        }
         
         const statusDropdown = document.getElementById('status-dropdown');
         const deptDropdown = document.getElementById('dept-dropdown');
@@ -551,7 +600,7 @@
             activeStatus = statusItem.getAttribute('data-value');
             document.getElementById('status-text').textContent = statusItem.textContent;
             statusDropdown.classList.remove('open');
-            filterAttendanceTable();
+            applyFiltersAndRender();
         }
 
         const deptItem = e.target.closest('#dept-menu .dropdown-item');
@@ -562,7 +611,7 @@
             activeDept = deptItem.getAttribute('data-value');
             document.getElementById('dept-text').textContent = deptItem.textContent;
             deptDropdown.classList.remove('open');
-            filterAttendanceTable();
+            applyFiltersAndRender();
         }
 
         if (e.target.closest('#cal-prev')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() - 1); renderCalendar(); }
