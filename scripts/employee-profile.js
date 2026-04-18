@@ -1,5 +1,3 @@
-// scripts/employee-profile.js
-
 (() => {
     if (window.lucide) lucide.createIcons();
 
@@ -61,6 +59,14 @@
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
+                // --- PROFILE READ TRACKER ---
+                console.log(`%c👤 Profile Load Report:`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+                if (!docSnap.metadata.fromCache) {
+                    console.log(`%cEmployee Data: 1 Server Read`, 'color: #ef4444; font-weight: bold;');
+                } else {
+                    console.log(`%cEmployee Data: 1 Cache Read (Free)`, 'color: #10b981; font-weight: bold;');
+                }
+
                 const emp = docSnap.data();
 
                 const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
@@ -106,7 +112,6 @@
                         : "Not assigned";
                 }
 
-                // --- NEW: Account Status Pill Check ---
                 const isInactiveAccount = emp.account_status === "inactive" || emp.account_status === "disabled";
                 const statusBadge = document.getElementById('profile-live-status');
                 const statusText = document.getElementById('profile-live-text');
@@ -116,11 +121,9 @@
                     statusText.textContent = "Inactive Account";
                     statusBadge.style.display = "inline-flex";
                 }
-                // --------------------------------------
                 
                 if (window.lucide) lucide.createIcons();
 
-                // Pass the inactive flag to prevent the attendance log from overwriting it
                 await loadRecentAttendance(emp.email, shiftStart, isInactiveAccount);
 
             } else {
@@ -144,7 +147,18 @@
             const attSnap = await getDocs(attQuery);
 
             let logs = [];
-            attSnap.forEach(doc => logs.push(doc.data()));
+            let serverReads = 0;
+            let cacheReads = 0;
+
+            attSnap.forEach(doc => {
+                if (!doc.metadata.fromCache) serverReads++; else cacheReads++; // Tracker
+                logs.push(doc.data());
+            });
+
+            // --- ATTENDANCE HISTORY TRACKER ---
+            console.log(`%c📜 Profile History Report:`, 'color: #f59e0b; font-weight: bold; font-size: 14px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
 
             let totalRenderedSeconds = 0;
             let lateCount = 0;
@@ -205,7 +219,6 @@
             const todayStr = new Date().toISOString().split('T')[0];
             const todayLog = logs.find(l => l.date === todayStr);
 
-            // --- NEW: Calculate Dynamic Live Status ---
             if (!isInactiveAccount) {
                 const statusBadge = document.getElementById('profile-live-status');
                 const statusText = document.getElementById('profile-live-text');
@@ -224,7 +237,6 @@
                     statusBadge.style.display = "inline-flex";
                 }
             }
-            // -----------------------------------------
 
             logs.sort((a, b) => new Date(b.date) - new Date(a.date));
             logs = logs.slice(0, 1);
@@ -297,7 +309,6 @@
     window.employeeProfileSPAInitialized = true;
 
     // --- BULLETPROOF ROUTING LISTENERS ---
-    // --- BULLETPROOF ROUTING LISTENERS ---
     document.body.addEventListener('click', (e) => {
         if (!document.getElementById('profile-name')) return;
         
@@ -318,7 +329,6 @@
                 returnUrl = `${fromPage}.html`;
             }
 
-            // Use SPA Router!
             if (typeof navigateTo === 'function') navigateTo(returnUrl);
             else window.location.href = returnUrl;
             return;
@@ -333,12 +343,10 @@
             const fromParam = currentParams.get('from') || 'management';
             const teamId = currentParams.get('teamId');
 
-            // Figure out base URL from the button's href attribute
             let targetUrl = forwardBtn.getAttribute('href').split('?')[0]; 
             targetUrl += `?id=${empId}&from=${fromParam}`;
             if (teamId) targetUrl += `&teamId=${teamId}`;
 
-            // Use SPA Router!
             if (typeof navigateTo === 'function') navigateTo(targetUrl);
             else window.location.href = targetUrl;
             return;
@@ -366,21 +374,17 @@
         if (!avatarImg) return;
 
         avatarImg.addEventListener('click', () => {
-            // Don't try to zoom if it's still loading
             if (!avatarImg.src) return;
 
-            // Create Overlay
             const overlay = document.createElement('div');
             overlay.className = 'fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-300';
             overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
             overlay.style.opacity = '0';
 
-            // Create Image
             const img = document.createElement('img');
             img.src = avatarImg.src;
             img.className = 'max-w-[90%] max-h-[90%] object-contain rounded-lg shadow-2xl transform scale-95 transition-transform duration-300';
             
-            // Create Close Button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '<i data-lucide="x" class="w-8 h-8 text-white"></i>';
             closeBtn.className = 'absolute top-6 right-6 text-white hover:text-gray-300 transition-colors p-2';
@@ -391,14 +395,12 @@
             
             if (window.lucide) window.lucide.createIcons();
 
-            // Animate In
             requestAnimationFrame(() => {
                 overlay.style.opacity = '1';
                 img.classList.remove('scale-95');
                 img.classList.add('scale-100');
             });
 
-            // Close Logic
             const closeViewer = () => {
                 overlay.style.opacity = '0';
                 img.classList.remove('scale-100');
@@ -406,7 +408,6 @@
                 setTimeout(() => overlay.remove(), 300);
             };
 
-            // Close when clicking outside the image or on the X
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeViewer();
             });
@@ -414,6 +415,5 @@
         });
     }
 
-    // Call the setup function when the script runs
     setupImageViewer();
 })();

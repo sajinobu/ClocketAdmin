@@ -1,5 +1,3 @@
-// scripts/attendance.js
-
 (() => {
     if (window.lucide) lucide.createIcons();
 
@@ -94,22 +92,31 @@
             tableBody.prepend(loadingRow);
             if (window.lucide) lucide.createIcons();
 
-            const { collection, getDocs, query, where } = window.firebaseUtils;
+            const { collection, getDocs, query, where, limit } = window.firebaseUtils;
             
-            const empSnapshot = await getDocs(collection(window.db, "employees"));
-            const employeeMap = {};
+            let employeeMap = {};
             const departmentSet = new Set();
 
-            empSnapshot.forEach(doc => {
-                const data = doc.data();
-                // FIX 1: Safely grab the email. If it's not a field, use the doc.id
-                const emailKey = data.email || doc.id;
-                
-                if (data.account_status === 'active') {
-                    employeeMap[emailKey] = { ...data, id: doc.id, email: emailKey };
-                    if (data.department) departmentSet.add(data.department);
-                }
-            });
+            // --- FIX: ISOLATED CACHE KEY ---
+            // Changed from 'cachedEmployees' to 'cachedEmployees_Full'
+            const cachedEmployees = sessionStorage.getItem('cachedEmployees_Full');
+            if (cachedEmployees) {
+                employeeMap = JSON.parse(cachedEmployees);
+                Object.values(employeeMap).forEach(emp => {
+                    if (emp.department) departmentSet.add(emp.department);
+                });
+            } else {
+                const empSnapshot = await getDocs(collection(window.db, "employees"));
+                empSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const emailKey = data.email || doc.id;
+                    if (data.account_status === 'active') {
+                        employeeMap[emailKey] = { ...data, id: doc.id, email: emailKey };
+                        if (data.department) departmentSet.add(data.department);
+                    }
+                });
+                sessionStorage.setItem('cachedEmployees_Full', JSON.stringify(employeeMap));
+            }
 
             const deptMenu = document.getElementById('dept-menu');
             if (deptMenu) {
@@ -123,7 +130,6 @@
             const targetDateStr = formatDate(activeDate); 
             const searchVal = document.getElementById('search-input') ? document.getElementById('search-input').value.toLowerCase().trim() : '';
 
-            // Sorted Employees setup
             const sortedEmployees = Object.values(employeeMap).sort((a, b) => {
                 const nameA = (a.full_name || "").toLowerCase();
                 const nameB = (b.full_name || "").toLowerCase();
@@ -131,43 +137,49 @@
             });
 
             let attSnapshot;
+            let serverReads = 0;
+            let cacheReads = 0;
 
-            // 1. Branching Query Logic
             if (isAllTimeMode && searchVal) {
                 const matchedEmails = sortedEmployees
-                    .filter(emp => (emp.full_name || "").toLowerCase().includes(searchVal))
+                    .filter(emp => {
+                        const searchName = emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`;
+                        return searchName.toLowerCase().includes(searchVal);
+                    })
                     .map(emp => emp.email)
-                    .slice(0, 10); // Firestore 'in' query limit is 10
+                    .slice(0, 10); 
 
                 if (matchedEmails.length > 0) {
-                    const attQuery = query(collection(window.db, "attendance"), where("employee_id", "in", matchedEmails));
+                    const attQuery = query(
+                        collection(window.db, "attendance"), 
+                        where("employee_id", "in", matchedEmails),
+                        limit(50) 
+                    );
                     attSnapshot = await getDocs(attQuery);
                 } else {
-                    attSnapshot = { forEach: () => {} }; // Mock empty snapshot
+                    attSnapshot = { forEach: () => {} }; 
                 }
             } else {
                 const attQuery = query(collection(window.db, "attendance"), where("date", "==", targetDateStr));
                 attSnapshot = await getDocs(attQuery);
             }
 
-            // 2. Structuring the Records
             let recordsToRender = [];
 
             if (isAllTimeMode) {
-                // Collect all records across all dates for the searched employee
                 attSnapshot.forEach(doc => {
+                    if (!doc.metadata.fromCache) serverReads++; else cacheReads++;
                     const data = doc.data();
                     const empData = employeeMap[data.employee_id];
                     if (empData) {
                         recordsToRender.push({ empData, att: { ...data, docId: doc.id }, dateStr: data.date });
                     }
                 });
-                // Sort newest to oldest
                 recordsToRender.sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
             } else {
-                // Normal daily behavior
                 const attendanceRecordMap = {};
                 attSnapshot.forEach(doc => {
+                    if (!doc.metadata.fromCache) serverReads++; else cacheReads++;
                     attendanceRecordMap[doc.data().employee_id] = { ...doc.data(), docId: doc.id };
                 });
                 sortedEmployees.forEach(empData => {
@@ -175,6 +187,10 @@
                     recordsToRender.push({ empData, att, dateStr: targetDateStr });
                 });
             }
+
+            console.log(`%c📅 Attendance Read Report (${targetDateStr}):`, 'color: #14b8a6; font-weight: bold; font-size: 14px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
 
             const loader = document.getElementById('att-loading-row');
             if (loader) loader.remove();
@@ -186,15 +202,12 @@
                 return;
             } else {
                 if (noResultsRow) noResultsRow.style.display = 'none';
-                // ==========================================
-                // UI LOCK & DATE RANGE LOGIC
-                // ==========================================
+                
                 const dateText = document.getElementById('date-text');
                 const dateDropdown = document.getElementById('date-dropdown');
                 const dateTriggerIcon = dateDropdown ? dateDropdown.querySelector('.dropdown-trigger i:first-child') : null;
 
                 if (isAllTimeMode) {
-                    // 1. Calculate Date Range
                     if (recordsToRender.length > 0) {
                         const newestStr = recordsToRender[0].dateStr;
                         const oldestStr = recordsToRender[recordsToRender.length - 1].dateStr;
@@ -202,7 +215,6 @@
                         
                         if (newestStr === oldestStr) {
                             const dSingle = new Date(newestStr);
-                            // Hide year if it's the current year
                             if (dSingle.getFullYear() === currentYear) {
                                 if (dateText) dateText.innerHTML = dSingle.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                             } else {
@@ -214,12 +226,9 @@
                             const oldFmt = dOld.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                             const newFmt = dNew.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                             
-                            // Handle cross-year date ranges
                             if (dOld.getFullYear() !== dNew.getFullYear()) {
-                                // Example: Dec 28 '25 - Jan 4 '26
                                 if (dateText) dateText.innerHTML = `${oldFmt} '${dOld.getFullYear().toString().slice(2)} - ${newFmt} '${dNew.getFullYear().toString().slice(2)}`;
                             } else {
-                                // Same year range. If it's the current year, drop the year entirely!
                                 if (dNew.getFullYear() === currentYear) {
                                     if (dateText) dateText.innerHTML = `${oldFmt} - ${newFmt}`;
                                 } else {
@@ -231,13 +240,11 @@
                         if (dateText) dateText.innerHTML = `No Records`;
                     }
                     
-                    // 2. Visually Lock the Dropdown
                     if (dateDropdown) {
                         dateDropdown.classList.add('opacity-60', 'pointer-events-none');
                         if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'lock');
                     }
                 } else {
-                    // 3. Restore Standard Daily View
                     if (dateText) {
                         if (formatDate(activeDate) === todayStr) {
                             dateText.textContent = "Today";
@@ -246,112 +253,110 @@
                         }
                     }
                     
-                    // 4. Unlock the Dropdown
                     if (dateDropdown) {
                         dateDropdown.classList.remove('opacity-60', 'pointer-events-none');
                         if (dateTriggerIcon) dateTriggerIcon.setAttribute('data-lucide', 'calendar');
                     }
                 }
-            }
 
-            const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
-            const locationFetchQueue = [];
-            const now = new Date();
-            const currentMin = (now.getHours() * 60) + now.getMinutes();
+                const defaultAvatar = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z'/%3E%3C/svg%3E";
+                const locationFetchQueue = [];
+                const now = new Date();
+                const currentMin = (now.getHours() * 60) + now.getMinutes();
 
-            // 3. Render the Records
-            recordsToRender.forEach(({ empData, att, dateStr }) => {
-                const employeeName = empData.full_name;
-                const empDepartment = empData.department || "Unassigned";
-                const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") ? empData.profile_picture : defaultAvatar;
+                recordsToRender.forEach(({ empData, att, dateStr }) => {
+                    // --- FIX: ROBUST FALLBACKS FOR NAME & DEPT ---
+                    const employeeName = empData.full_name || `${empData.first_name || ''} ${empData.last_name || ''}`.trim() || empData.name || "Unknown";
+                    const empDepartment = empData.department || empData.dept || "Unassigned";
+                    const avatarSrc = (empData.profile_picture && empData.profile_picture !== "coming soon") ? empData.profile_picture : defaultAvatar;
 
-                let clockIn = "--:--";
-                let clockOut = "--:--";
-                let statusText = "Absent";
-                let statusClass = "bg-red-100 text-red-600 border-red-200";
-                
-                let inPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
-                let outPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
-                let locationDisplay = `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
-
-                const expectedStartMin = timeStringToMinutes(empData.work_start_time);
-                
-                const isTodayForRecord = (dateStr === todayStr);
-                const isFutureForRecord = (dateStr > todayStr);
-
-                if (att && att.clock_in_time) {
-                    const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
-                    const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
-
-                    if (actualMin > expectedStartMin) {
-                        statusText = "Late";
-                        statusClass = "status-late";
-                    } else {
-                        statusText = "On Time";
-                        statusClass = "status-on-time";
-                    }
-
-                    clockIn = actualDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    let clockIn = "--:--";
+                    let clockOut = "--:--";
+                    let statusText = "Absent";
+                    let statusClass = "bg-red-100 text-red-600 border-red-200";
                     
-                    if (att.clock_out_time) {
-                        clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    let inPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+                    let outPhotoBtn = `<button class="p-1.5 opacity-40 cursor-not-allowed flex-shrink-0" disabled><i data-lucide="camera-off" class="w-4 h-4"></i></button>`;
+                    let locationDisplay = `<span class="text-xs text-gray-400 font-medium">N/A</span>`;
+
+                    const expectedStartMin = timeStringToMinutes(empData.work_start_time);
+                    
+                    const isTodayForRecord = (dateStr === todayStr);
+                    const isFutureForRecord = (dateStr > todayStr);
+
+                    if (att && att.clock_in_time) {
+                        const actualDate = new Date(att.clock_in_time.replace(/-/g, '/'));
+                        const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
+
+                        if (actualMin > expectedStartMin) {
+                            statusText = "Late";
+                            statusClass = "status-late";
+                        } else {
+                            statusText = "On Time";
+                            statusClass = "status-on-time";
+                        }
+
+                        clockIn = actualDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        
+                        if (att.clock_out_time) {
+                            clockOut = new Date(att.clock_out_time.replace(/-/g, "/")).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        }
+
+                        if (att.clock_in_photo) {
+                            inPhotoBtn = `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
+                        }
+                        if (att.clock_out_photo) {
+                            outPhotoBtn = `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
+                        }
+
+                        if (att.clock_in_lat && att.clock_in_long) {
+                            const locId = `loc-${att.docId || empData.id}`; 
+                            locationDisplay = `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
+                                    data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
+                                    <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
+                            </button>`;
+                            locationFetchQueue.push({ locId: locId, lat: att.clock_in_lat, lng: att.clock_in_long });
+                        }
+                    } else {
+                        if (isFutureForRecord || (isTodayForRecord && currentMin < expectedStartMin)) {
+                            statusText = "Not Started";
+                            statusClass = "bg-slate-100 text-slate-600 border-slate-200"; 
+                        }
                     }
 
-                    if (att.clock_in_photo) {
-                        inPhotoBtn = `<button class="view-photo-btn text-brand-primary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockIn}" data-photo="${att.clock_in_photo}" data-type="Clock In"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
-                    }
-                    if (att.clock_out_photo) {
-                        outPhotoBtn = `<button class="view-photo-btn text-brand-secondary hover:bg-brand-grayBg p-1.5 rounded transition-colors flex-shrink-0" data-name="${employeeName}" data-time="${clockOut}" data-photo="${att.clock_out_photo}" data-type="Clock Out"><i data-lucide="camera" class="w-4 h-4"></i></button>`;
-                    }
+                    const tr = document.createElement('tr');
+                    tr.className = 'attendance-row data-row';
+                    tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
+                    tr.setAttribute('data-department', empDepartment);
 
-                    if (att.clock_in_lat && att.clock_in_long) {
-                        const locId = `loc-${att.docId || empData.id}`; 
-                        locationDisplay = `<button class="view-map-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-surface border border-brand-grayLight hover:border-brand-primary/40 hover:bg-brand-primary/5 text-brand-darkest hover:text-brand-primary transition-all text-xs font-semibold whitespace-nowrap w-fit shadow-sm"
-                                data-lat="${att.clock_in_lat}" data-lng="${att.clock_in_long}" data-name="${employeeName}" data-locid="${locId}">
-                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-primary shrink-0"></i>
-                                <span id="${locId}" class="truncate max-w-[180px]"><i data-lucide="loader" class="w-3 h-3 animate-spin inline"></i> Fetching...</span>
-                        </button>`;
-                        locationFetchQueue.push({ locId: locId, lat: att.clock_in_lat, lng: att.clock_in_long });
-                    }
-                } else {
-                    if (isFutureForRecord || (isTodayForRecord && currentMin < expectedStartMin)) {
-                        statusText = "Not Started";
-                        statusClass = "bg-slate-100 text-slate-600 border-slate-200"; 
-                    }
-                }
+                    const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    const displayDept = isAllTimeMode ? `<span class="text-brand-primary font-bold">${formattedDate}</span> &bull; ${empDepartment}` : empDepartment;
 
-                const tr = document.createElement('tr');
-                tr.className = 'attendance-row data-row';
-                tr.setAttribute('data-status', statusText.toLowerCase().replace(' ', '-'));
-                tr.setAttribute('data-department', empDepartment);
-
-                // If in All-Time mode, prepend the Date to the department text below the employee name
-                const formattedDate = new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                const displayDept = isAllTimeMode ? `<span class="text-brand-primary font-bold">${formattedDate}</span> &bull; ${empDepartment}` : empDepartment;
-
-                tr.innerHTML = `
-                    <td class="table-td">
-                    <div class="flex items-center gap-3">
-                        <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
-                        <div>
-                        <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
-                        <p class="text-xs text-gray-500">${displayDept}</p>
+                    tr.innerHTML = `
+                        <td class="table-td">
+                        <div class="flex items-center gap-3">
+                            <img src="${avatarSrc}" class="w-10 h-10 rounded-full object-cover border border-brand-grayLight bg-transparent" alt="Avatar">
+                            <div>
+                            <p class="font-bold text-brand-darkest text-sm employee-name">${employeeName}</p>
+                            <p class="text-xs text-gray-500">${displayDept}</p>
+                            </div>
                         </div>
-                    </div>
-                    </td>
-                    <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
-                    <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
-                    <td class="table-td">${locationDisplay}</td>
-                    <td class="table-td"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td class="table-td text-right"><a href="employee-logs.html?id=${empData.id}" class="link-action">View Log</a></td>
-                `;
-                
-                tableBody.appendChild(tr);
-            });
+                        </td>
+                        <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-bold text-brand-darkest">${clockIn}</p>${inPhotoBtn}</div></td>
+                        <td class="table-td"><div class="flex items-center gap-2"><p class="text-sm font-medium text-brand-darkest">${clockOut}</p>${outPhotoBtn}</div></td>
+                        <td class="table-td">${locationDisplay}</td>
+                        <td class="table-td"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td class="table-td text-right"><a href="employee-logs.html?id=${empData.id}" class="link-action">View Log</a></td>
+                    `;
+                    
+                    tableBody.appendChild(tr);
+                });
 
-            if (window.lucide) lucide.createIcons();
-            filterAttendanceTable(); 
-            processLocationQueue(locationFetchQueue);
+                if (window.lucide) lucide.createIcons();
+                filterAttendanceTable(); 
+                processLocationQueue(locationFetchQueue);
+            }
 
         } catch(error) {
             console.error("Error fetching attendance data: ", error);
@@ -467,7 +472,6 @@
                     toggleContainer.classList.remove('flex');
                 }, 300); // Wait for fade out
                 
-                // If search is cleared while filter is active, reset to daily view
                 if (isAllTimeMode) {
                     isAllTimeMode = false;
                     if (checkbox) checkbox.checked = false;
@@ -561,8 +565,6 @@
             filterAttendanceTable();
         }
 
-        
-
         if (e.target.closest('#cal-prev')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() - 1); renderCalendar(); }
         if (e.target.closest('#cal-next')) { e.stopPropagation(); displayedMonth.setMonth(displayedMonth.getMonth() + 1); renderCalendar(); }
 
@@ -601,7 +603,6 @@
             if (photoPlaceholder) {
                 if (photoData && photoData !== "null") {
                     
-                    // Check if the string already has the data URI scheme. If not, prepend it.
                     const imageSrc = photoData.startsWith('data:image') 
                         ? photoData 
                         : `data:image/jpeg;base64,${photoData}`;
@@ -617,9 +618,6 @@
             photoModal.classList.remove('hidden');
         }
 
-        // ==========================================
-        // MODAL MAP FIX: RENDER LEAFLET MAPS
-        // ==========================================
         const mapModal = document.getElementById('map-modal');
         const viewMapBtn = e.target.closest('.view-map-btn');
         if (viewMapBtn && mapModal) {
@@ -639,46 +637,39 @@
                 const position = [lat, lng];
 
                 if (!window._logMapInstance) {
-                    // Initialize Leaflet Map
                     window._logMapInstance = L.map(mapContainer, {
                         zoomControl: true,
                         attributionControl: false
                     }).setView(position, 16);
 
-                    // CartoDB Positron Basemap (matches your clean dark/light mode setup)
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                         maxZoom: 20
                     }).addTo(window._logMapInstance);
 
-                    // Add Custom Marker
                     window._logMapMarker = L.circleMarker(position, {
                         radius: 8,
-                        fillColor: "#4f46e5", // Your brand primary color
+                        fillColor: "#4f46e5", 
                         fillOpacity: 1,
                         color: "#ffffff",
                         weight: 2
                     }).addTo(window._logMapInstance);
 
-                    // Add a tooltip for the employee name
                     window._logMapMarker.bindTooltip(empName, { 
                         direction: 'top', 
                         offset: [0, -8],
                         className: 'font-bold font-sans'
                     });
                 } else {
-                    // Update Existing Map
                     window._logMapInstance.setView(position, 16);
                     window._logMapMarker.setLatLng(position);
                     window._logMapMarker.setTooltipContent(empName);
                 }
 
-                // CRITICAL FIX: Leaflet glitches if initialized while display is hidden. 
-                // InvalidateSize forces the engine to recalculate container dimensions!
                 setTimeout(() => {
                     window._logMapInstance.invalidateSize();
                 }, 10);
 
-            }, 100); // 100ms lets the modal CSS animation execute before forcing map resize
+            }, 100); 
         }
 
         if (e.target.closest('.modal-close-btn, .btn-secondary') || e.target.classList.contains('modal-overlay')) {

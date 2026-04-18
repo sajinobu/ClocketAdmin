@@ -1,5 +1,3 @@
-// scripts/dashboard.js
-
 (() => {
     if (window.lucide) lucide.createIcons();
 
@@ -33,18 +31,37 @@
             const todayStr = now.toISOString().split('T')[0];
             const currentMins = (now.getHours() * 60) + now.getMinutes();
 
-            // 1. Fetch All Active Employees
-            const empSnapshot = await getDocs(collection(window.db, "employees"));
-            const employeeMap = {};
+            // --- READ TRACKER ---
+            let serverReads = 0;
+            let cacheReads = 0;
+
+            // 1. Fetch All Active Employees (FIXED: Using Cache)
+            let employeeMap = {};
             let totalActiveEmployees = 0;
+            const cachedMap = sessionStorage.getItem('cachedEmployees_Full');
             
-            empSnapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.account_status === 'active') {
-                    employeeMap[data.email] = data;
-                    totalActiveEmployees++;
-                }
-            });
+            if (cachedMap) {
+                const parsed = JSON.parse(cachedMap);
+                Object.values(parsed).forEach(emp => {
+                    if (emp.account_status === 'active') {
+                        employeeMap[emp.email] = emp;
+                        totalActiveEmployees++;
+                    }
+                });
+            } else {
+                const empSnapshot = await getDocs(collection(window.db, "employees"));
+                empSnapshot.forEach(doc => {
+                    if (!doc.metadata.fromCache) serverReads++; else cacheReads++; 
+                    
+                    const data = doc.data();
+                    const emailKey = data.email || doc.id;
+                    if (data.account_status === 'active') {
+                        employeeMap[emailKey] = { ...data, id: doc.id, email: emailKey };
+                        totalActiveEmployees++;
+                    }
+                });
+                sessionStorage.setItem('cachedEmployees_Full', JSON.stringify(employeeMap));
+            }
 
             // 2. Fetch Today's Attendance
             const attQuery = query(collection(window.db, "attendance"), where("date", "==", todayStr));
@@ -57,6 +74,8 @@
             let feedEvents = []; 
 
             attSnapshot.forEach(doc => {
+                if (!doc.metadata.fromCache) serverReads++; else cacheReads++; // Tracker
+
                 const att = doc.data();
                 if (!att.clock_in_time) return;
 
@@ -123,6 +142,11 @@
                 }
             });
 
+            // --- PRINT TRACKER TO CONSOLE ---
+            console.log(`%c🚀 Dashboard Read Report (Smart Polling Active):`, 'color: #8b5cf6; font-weight: bold; font-size: 14px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
+
             // 3. Calculate Absents
             Object.values(employeeMap).forEach(emp => {
                 if (!clockedInEmails.has(emp.email)) {
@@ -173,29 +197,28 @@
             let iconColor = 'text-brand-secondary group-hover:text-brand-primary';
             let avatarClass = 'avatar-brand';
             let textClass = 'text-brand-darkest';
-            let borderColor = 'var(--brand-primary)'; // For actual images
+            let borderColor = 'var(--brand-primary)'; 
 
             if (ev.type === 'late') {
                 icon = 'alert-circle';
                 iconColor = 'text-yellow-500 group-hover:text-yellow-600';
                 avatarClass = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
                 textClass = 'text-yellow-700 font-medium';
-                borderColor = '#eab308'; // yellow-500
+                borderColor = '#eab308'; 
             } else if (ev.type === 'break-start') {
                 icon = 'coffee';
                 avatarClass = 'bg-amber-100 text-amber-700 border border-amber-200';
-                borderColor = '#f59e0b'; // amber-500
+                borderColor = '#f59e0b'; 
             } else if (ev.type === 'break-end') {
                 icon = 'play-circle';
                 avatarClass = 'bg-blue-100 text-blue-700 border border-blue-200';
-                borderColor = '#3b82f6'; // blue-500
+                borderColor = '#3b82f6'; 
             } else if (ev.type === 'clock-out') {
                 icon = 'log-out';
                 avatarClass = 'bg-gray-100 text-gray-600 border border-gray-200';
-                borderColor = '#9ca3af'; // gray-400
+                borderColor = '#9ca3af'; 
             }
 
-            // Determine if we show Image or Initials
             let avatarHTML = '';
             if (ev.profilePic) {
                 avatarHTML = `<img src="${ev.profilePic}" alt="${ev.name}" class="w-10 h-10 rounded-full object-cover flex-shrink-0 bg-white shadow-sm" style="border: 2px solid ${borderColor};">`;
@@ -271,55 +294,57 @@
     // SPA SAFE EVENT DELEGATION
     // ==========================================
     
-    // 1. Purge any stale listeners from previous visits to the Dashboard
     if (window._dashboardClickListener) {
         document.body.removeEventListener('click', window._dashboardClickListener);
     }
 
-    // 2. Define the exact click logic
     window._dashboardClickListener = (e) => {
         const feedModal = document.getElementById('feed-modal');
         if (!feedModal) return;
 
-        // Open Modal
         if (e.target.closest('#view-more-feed-btn')) {
             e.preventDefault();
             feedModal.classList.remove('hidden');
             return;
         }
 
-        // Close Modal
         if (e.target.closest('#close-feed-modal') || e.target === feedModal) {
             e.preventDefault();
             feedModal.classList.add('hidden');
             return;
         }
 
-        // Handle links inside the modal
         const modalLink = e.target.closest('#feed-modal a');
         if (modalLink) {
             feedModal.classList.add('hidden');
         }
     };
 
-    // 3. Attach the fresh, single listener to the body
     document.body.addEventListener('click', window._dashboardClickListener);
 
     // ==========================================
-    // LIVE POLLING SYSTEM & SPA GUARD
+    // SMART POLLING SYSTEM (FIXED)
     // ==========================================
-    // Fetch data immediately on load, then silently refresh every 30 seconds
     const waitForFirebase = setInterval(() => {
         if (window.db && window.firebaseUtils) {
             clearInterval(waitForFirebase);
+            
+            // Initial fetch
             updateDashboardStats(); 
             
             if (window._dashboardInterval) clearInterval(window._dashboardInterval);
-            window._dashboardInterval = setInterval(updateDashboardStats, 30000); 
+            
+            // Smart Polling: Fetch every 2 minutes (120,000ms), but ONLY if the user is looking at the tab
+            window._dashboardInterval = setInterval(() => {
+                if (!document.hidden) {
+                    updateDashboardStats();
+                } else {
+                    console.log("%c💤 Tab hidden: Skipped dashboard background poll to save reads.", 'color: #9ca3af; font-style: italic;');
+                }
+            }, 120000); 
         }
     }, 50);
 
-    // GUARD: Ensure scripts don't run duplicates, but listeners stay fresh!
     if (window.dashboardSPAInitialized) return;
     window.dashboardSPAInitialized = true;
 

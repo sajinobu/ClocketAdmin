@@ -1,5 +1,3 @@
-// scripts/management.js
-
 (() => {
     // ==========================================
     // 1. RUN EVERY TIME (UI & Fetch Initialization)
@@ -59,10 +57,20 @@
         const q = query(collection(window.db, "employees"), where("account_status", "==", "pending"));
         
         onSnapshot(q, (snapshot) => {
+            let serverReads = 0;
+            let cacheReads = 0;
+
             pendingUsers = [];
             snapshot.forEach(doc => {
+                if (!doc.metadata.fromCache) serverReads++; else cacheReads++; // Tracker
+
                 pendingUsers.push({ id: doc.id, ...doc.data() });
             });
+
+            console.log(`%c👥 Pending Users Listener:`, 'color: #3b82f6; font-weight: bold; font-size: 12px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
+
             updatePendingUI();
         });
     }
@@ -135,7 +143,12 @@
                 return;
             }
 
+            let serverReads = 0;
+            let cacheReads = 0;
+
             querySnapshot.forEach((docSnap) => {
+                if (!docSnap.metadata.fromCache) serverReads++; else cacheReads++; // Tracker
+
                 const emp = docSnap.data();
                 
                 let avatarSrc = defaultAvatar;
@@ -199,6 +212,10 @@
                 tableBody.insertBefore(tr, noResultsRow);
             });
 
+            console.log(`%c🧑‍💼 Employee List Fetch:`, 'color: #8b5cf6; font-weight: bold; font-size: 12px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
+
             if (window.lucide) lucide.createIcons();
             applyEmployeeFilters();
 
@@ -223,10 +240,14 @@
 
             const { collection, getDocs } = window.firebaseUtils;
 
+            let empServerReads = 0;
+            let empCacheReads = 0;
             const empSnapshot = await getDocs(collection(window.db, "employees"));
             const employeeDataMap = {};
             
             empSnapshot.forEach(empDoc => {
+                if (!empDoc.metadata.fromCache) empServerReads++; else empCacheReads++; // Tracker
+
                 const data = empDoc.data();
                 const fullName = data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim();
                 if (fullName) {
@@ -237,6 +258,8 @@
                 }
             });
 
+            let teamServerReads = 0;
+            let teamCacheReads = 0;
             const querySnapshot = await getDocs(collection(window.db, "teams"));
             
             const loader = document.getElementById('teams-loading-row');
@@ -250,6 +273,8 @@
             }
 
             querySnapshot.forEach((docSnap) => {
+                if (!docSnap.metadata.fromCache) teamServerReads++; else teamCacheReads++; // Tracker
+
                 const team = docSnap.data();
                 
                 const leadName = team.team_lead && team.team_lead !== "Unassigned" ? team.team_lead : "Unassigned";
@@ -305,6 +330,10 @@
                 
                 tableBody.insertBefore(tr, noResultsRow);
             });
+
+            console.log(`%c🤝 Teams List Fetch (Includes Employee fetch for avatars):`, 'color: #f59e0b; font-weight: bold; font-size: 12px;');
+            console.log(`%cServer Reads (Billed): ${empServerReads + teamServerReads} (${empServerReads} emp + ${teamServerReads} teams)`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${empCacheReads + teamCacheReads}`, 'color: #10b981; font-weight: bold;');
 
             if (window.lucide) lucide.createIcons();
             applyTeamFilters();
@@ -904,9 +933,6 @@
         }, 3000);
     }
 
-    // ==========================================
-    // 5. CUSTOM ALERT MODAL
-    // ==========================================
     // ==========================================
     // 5. CUSTOM ALERT MODAL
     // ==========================================

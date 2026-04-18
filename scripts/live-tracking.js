@@ -1,5 +1,3 @@
-// scripts/live-tracking.js
-
 (() => {
     if (window.lucide) lucide.createIcons();
 
@@ -27,9 +25,6 @@
     // ==========================================
     // MAP INIT (LEAFLET - SPA SAFE)
     // ==========================================
-    // ==========================================
-    // MAP INIT (LEAFLET - SPA SAFE)
-    // ==========================================
     window.initMap = function() {
         const mapContainer = document.getElementById('map');
         if (!mapContainer) return;
@@ -48,26 +43,20 @@
             attributionControl: false 
         }).setView(hqCoords, 15);
 
-        // --- NEW: Define Map Style Dictionary --- 
         window._mapStyles = {
             light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
             dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
-            
-            // The Midnight Blue theme uses the Light map + your custom CSS filter!
             midnight: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { 
                 maxZoom: 20,
                 className: 'map-theme-midnight' 
             }),
-            
             street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
             satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 })
         };
 
-        // --- NEW: Detect App Theme for Default Map Style ---
         const mapStyleInput = document.getElementById('filter-map-style');
         const isAppDarkMode = document.documentElement.classList.contains('dark');
         
-        // If the input is empty (first load), set it based on the app's theme
         if (!mapStyleInput.value) {
             mapStyleInput.value = isAppDarkMode ? 'midnight' : 'light';
         }
@@ -76,7 +65,6 @@
         window._currentMapStyle = window._mapStyles[startingStyle];
         window._currentMapStyle.addTo(window._liveMapInstance);
 
-        // Update the Dropdown UI to match the detected style
         const styleLabel = document.querySelector('#dropdown-map-style .dropdown-label');
         const styleOptions = document.querySelectorAll('#menu-map-style .dropdown-option');
         
@@ -98,10 +86,6 @@
         startLiveTracking();
     };
 
-    // ==========================================
-    // THEME SYNC WATCHER
-    // ==========================================
-    // Watch the HTML tag to see if the user clicks the global Light/Dark mode button
     const themeObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'class' && window._liveMapInstance) {
@@ -109,16 +93,13 @@
                 const currentMapValue = document.getElementById('filter-map-style').value;
                 
                 if (currentMapValue === 'light' || currentMapValue === 'dark' || currentMapValue === 'midnight') {
-                    // Use 'midnight' instead of 'dark' as the default dark theme
                     const newAutoStyle = isNowDark ? 'midnight' : 'light';
                     
                     if (currentMapValue !== newAutoStyle) {
-                        // 1. Update the Map
                         window._liveMapInstance.removeLayer(window._currentMapStyle);
                         window._currentMapStyle = window._mapStyles[newAutoStyle];
                         window._currentMapStyle.addTo(window._liveMapInstance);
                         
-                        // 2. Update the Dropdown UI behind the scenes
                         document.getElementById('filter-map-style').value = newAutoStyle;
                         document.querySelector('#dropdown-map-style .dropdown-label').textContent = isNowDark ? 'Dark Map' : 'Light Map';
                         
@@ -131,20 +112,14 @@
         });
     });
 
-    // Start watching the <html> tag for class changes
     themeObserver.observe(document.documentElement, { attributes: true });
     
-    // ==========================================
-    // BULLETPROOF SPA INITIALIZATION
-    // ==========================================
     function loadLeafletAndInit() {
-        // If Leaflet is already loaded in memory, just wait for the DOM element
         if (window.L) {
             waitForMapElement();
             return;
         }
 
-        // Inject Leaflet CSS if it doesn't exist
         if (!document.querySelector('link[href*="leaflet.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -152,11 +127,10 @@
             document.head.appendChild(link);
         }
 
-        // Inject Leaflet JS and wait for it to finish downloading
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
         script.onload = () => {
-            waitForMapElement(); // Only look for the map AFTER the library is ready
+            waitForMapElement(); 
         };
         document.head.appendChild(script);
     }
@@ -164,14 +138,12 @@
     function waitForMapElement() {
         let mapCheckCount = 0;
         const waitForMap = setInterval(() => {
-            // Ensure BOTH the DOM element and the Leaflet library exist
             if (document.getElementById('map') && window.L) {
                 clearInterval(waitForMap);
                 window.initMap();
             }
             
             mapCheckCount++;
-            // Give up after 5 seconds (50 checks) to prevent infinite memory loops
             if (mapCheckCount > 50) {
                 clearInterval(waitForMap);
                 console.error("Map initialization failed: #map element not found in DOM.");
@@ -179,14 +151,8 @@
         }, 100);
     }
 
-    // Kick off the loading process
     loadLeafletAndInit();
 
-    // ==========================================
-    // CORE LOGIC: FETCH & RENDER
-    // ==========================================
-
-    // Global state cache to allow instant client-side filtering
     window._trackingData = { employees: [], activeLocations: [] };
 
     async function startLiveTracking() {
@@ -198,18 +164,29 @@
         const { collection, getDocs, ref, onValue } = window.firebaseUtils;
 
         try {
+            // --- READ TRACKER ---
+            let serverReads = 0;
+            let cacheReads = 0;
+
             // 1. Fetch Employees once
             const empSnap = await getDocs(collection(window.db, "employees"));
             const allEmployees = [];
             
             empSnap.forEach(doc => {
+                if (!doc.metadata.fromCache) serverReads++; else cacheReads++; // Tracker
+
                 const data = doc.data();
                 if (data.account_status && String(data.account_status).toLowerCase() === 'inactive') return;
                 allEmployees.push({ email: doc.id, ...data });
             });
 
+            console.log(`%c🗺️ Live Tracking Map Setup:`, 'color: #ec4899; font-weight: bold; font-size: 14px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
+            console.log(`%cNote: Live location pins use Realtime Database (RTDB), which does not cost Document Reads.`, 'color: #6b7280; font-style: italic;');
+
             window._trackingData.employees = allEmployees;
-            populateFilterOptions(allEmployees); // Fill department/team dropdowns
+            populateFilterOptions(allEmployees); 
 
             // 2. Listen to RTDB
             const locationsRef = ref(window.rtdb, 'active_locations');
@@ -219,7 +196,6 @@
                 const activeLocations = snapshot.exists() ? snapshot.val() : {};
                 window._trackingData.activeLocations = Object.values(activeLocations);
                 
-                // Trigger a render whenever location data updates
                 renderFilteredData();
             });
 
@@ -229,10 +205,7 @@
         }
     }
 
-    // ==========================================
-    // CUSTOM DROPDOWN LOGIC
-    // ==========================================
-
+    // ... [The rest of the file (dropdown logic, rendering, UI events) remains exactly the same] ...
     function populateFilterOptions(employees) {
         const menuDept = document.getElementById('menu-dept');
         const menuTeam = document.getElementById('menu-team');
@@ -241,18 +214,15 @@
         const depts = [...new Set(employees.map(e => e.department).filter(Boolean))].sort();
         const teams = [...new Set(employees.map(e => e.assigned_team).filter(Boolean))].sort();
 
-        // Preserve current selection if any
         const currentDept = document.getElementById('filter-department').value;
         const currentTeam = document.getElementById('filter-team').value;
 
-        // Build Department HTML
         let deptHtml = `<div class="dropdown-option ${currentDept === 'all' ? 'active' : ''}" data-value="all">All Departments</div>`;
         depts.forEach(d => {
             deptHtml += `<div class="dropdown-option ${currentDept === d ? 'active' : ''}" data-value="${d}">${d}</div>`;
         });
         menuDept.innerHTML = deptHtml;
 
-        // Build Team HTML
         let teamHtml = `<div class="dropdown-option ${currentTeam === 'all' ? 'active' : ''}" data-value="all">All Teams</div>`;
         teams.forEach(t => {
             teamHtml += `<div class="dropdown-option ${currentTeam === t ? 'active' : ''}" data-value="${t}">${t}</div>`;
@@ -260,24 +230,19 @@
         menuTeam.innerHTML = teamHtml;
     }
 
-    // Handle Dropdown Interactions
     document.addEventListener('click', (e) => {
-        // 1. Handle clicking on a trigger button
         const trigger = e.target.closest('.dropdown-trigger');
         if (trigger) {
             const dropdown = trigger.closest('.custom-dropdown');
             
-            // Close other open dropdowns
             document.querySelectorAll('.custom-dropdown.open').forEach(el => {
                 if (el !== dropdown) el.classList.remove('open');
             });
             
-            // Toggle current dropdown
             dropdown.classList.toggle('open');
-            return; // Stop execution here
+            return; 
         }
 
-        // 2. Handle clicking on an option inside the menu
         const option = e.target.closest('.dropdown-option');
         if (option) {
             const dropdown = option.closest('.custom-dropdown');
@@ -293,54 +258,44 @@
             
             dropdown.classList.remove('open');
             
-            // --- NEW: Check if the clicked dropdown was the Map Style switcher ---
             if (dropdown.id === 'dropdown-map-style' && window._liveMapInstance) {
-                // Remove the old map layer
                 if (window._currentMapStyle) {
                     window._liveMapInstance.removeLayer(window._currentMapStyle);
                 }
-                // Add the newly selected map layer
                 window._currentMapStyle = window._mapStyles[newValue];
                 window._currentMapStyle.addTo(window._liveMapInstance);
-                return; // Stop here, no need to re-render all the employee data
+                return; 
             }
 
-            // If it wasn't the map style dropdown, trigger the normal data filtering
             if (typeof renderFilteredData === 'function') {
                 renderFilteredData();
             }
             return;
         }
 
-        // 3. Clicked outside - close all dropdowns
         document.querySelectorAll('.custom-dropdown.open').forEach(el => el.classList.remove('open'));
     });
     
-    // The core rendering loop that respects filters
     function renderFilteredData() {
         const { employees, activeLocations } = window._trackingData;
         const startOfToday = new Date().setHours(0, 0, 0, 0);
 
-        // Get active filter values
         const activeDept = document.getElementById('filter-department')?.value || 'all';
         const activeTeam = document.getElementById('filter-team')?.value || 'all';
         const activeStatus = document.getElementById('filter-status')?.value || 'all';
         const searchTerm = document.getElementById('staff-search')?.value.toLowerCase().trim() || '';
 
-        // Clear Map
         Object.values(window._liveMapMarkers).forEach(m => {
             if (window._liveMapInstance) window._liveMapInstance.removeLayer(m);
         });
         window._liveMapMarkers = {};
 
-        // Clear Sidebar
         const staffList = document.getElementById('staff-list');
         if (staffList) staffList.innerHTML = '';
 
         let onlineCount = 0;
         let renderedCount = 0;
         
-        // --- NEW: Array to collect coordinates of all filtered users ---
         let visibleCoords = []; 
 
         employees.forEach(emp => {
@@ -350,7 +305,6 @@
             let status = liveData?.status || "offline";
             if (status === "online") onlineCount++;
 
-            // --- FILTER LOGIC ---
             if (activeDept !== 'all' && emp.department !== activeDept) return;
             if (activeTeam !== 'all' && emp.assigned_team !== activeTeam) return;
             if (activeStatus !== 'all' && status !== activeStatus) return;
@@ -361,12 +315,10 @@
                 if (!nameMatch && !teamMatch) return;
             }
 
-            // --- NEW: If the user passes the filter and has location data, save their coordinates ---
             if (liveData?.latitude && liveData?.longitude) {
                 visibleCoords.push(L.latLng(liveData.latitude, liveData.longitude));
             }
 
-            // If it passes all filters, render it
             renderEmployeeRecord(emp, status, liveData?.latitude, liveData?.longitude);
             renderedCount++;
         });
@@ -380,20 +332,17 @@
             staffList.innerHTML = '<div class="p-6 text-center text-gray-500 text-sm">No employees match your filters.</div>';
         }
 
-        // --- NEW: Adjust Map to fit all visible coordinates ---
         if (visibleCoords.length > 0 && window._liveMapInstance) {
-            // Create a bounding box out of all collected coordinates
             const bounds = L.latLngBounds(visibleCoords);
             
             window._liveMapInstance.flyToBounds(bounds, {
-                padding: [50, 50], // Adds 50px of padding so markers aren't cut off at the edges
-                maxZoom: 16,       // Prevents zooming in too uncomfortably close if only 1 person is filtered
-                duration: 0.8      // The speed of the smooth pan/zoom animation
+                padding: [50, 50], 
+                maxZoom: 16,       
+                duration: 0.8      
             });
         }
     }
 
-    // Updated render function to handle profile pictures
     function renderEmployeeRecord(emp, status, lat, lng) {
         const name = emp.full_name || "Unknown Employee";
         const team = emp.assigned_team || "Unassigned";
@@ -424,7 +373,6 @@
             ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
             : nameParts[0].substring(0, 2).toUpperCase();
 
-        // Setup Map Marker
         if (lat && lng && window._liveMapInstance) {
             const marker = L.circleMarker([lat, lng], {
                 radius: markerScale,
@@ -449,15 +397,12 @@
             window._liveMapMarkers[emp.email] = marker;
         }
 
-        // Determine Avatar HTML
         let avatarHtml = `<div class="avatar-circle ${bgClass}">${initials}</div>`;
         if (profilePic) {
-            // If image fails to load, fallback to the initial circle via the onerror event
             const safeInitialsHtml = avatarHtml.replace(/"/g, '&quot;');
             avatarHtml = `<img src="${profilePic}" alt="${name}" class="avatar-img" onerror="this.onerror=null; this.outerHTML='${safeInitialsHtml}'">`;
         }
 
-        // Setup List Card
         const staffList = document.getElementById('staff-list');
         if (!staffList) return;
 
@@ -497,12 +442,10 @@
         if (window.lucide) lucide.createIcons();
     }
 
-    // 4. Attach Listeners for the Dropdowns
     ['filter-department', 'filter-team', 'filter-status'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', renderFilteredData);
     });
 
-    // Remove your old manual string-matching search listener and replace with this:
     if (window._liveTrackingInputHandler) {
         document.body.removeEventListener('input', window._liveTrackingInputHandler);
     }
@@ -511,10 +454,8 @@
 
     window._liveTrackingInputHandler = (e) => {
         if (e.target && e.target.id === 'staff-search') {
-            // Clear the previous timer if the user is still typing
             clearTimeout(searchTimeout);
             
-            // Set a new timer. The map will only update 300ms AFTER they stop typing.
             searchTimeout = setTimeout(() => {
                 if (typeof renderFilteredData === 'function') {
                     renderFilteredData();
@@ -525,9 +466,6 @@
 
     document.body.addEventListener('input', window._liveTrackingInputHandler);
 
-    // ==========================================
-    // EVENT LISTENERS & UI
-    // ==========================================
     if (window._liveTrackingClickHandler) {
         document.body.removeEventListener('click', window._liveTrackingClickHandler);
     }

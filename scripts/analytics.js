@@ -1,5 +1,3 @@
-// scripts/analytics.js
-
 (() => {
     if (window.lucide) lucide.createIcons();
 
@@ -34,43 +32,72 @@
         return d.toISOString().split('T')[0];
     }
 
+    // NEW FUNCTION: Determines the absolute earliest date we need to fetch from Firestore
+    // to satisfy the main chart, Top Performers (start of month), and Weekly Trends (14 days).
+    function getEarliestRequiredDate(daysAgo) {
+        const d1 = new Date(); d1.setDate(d1.getDate() - daysAgo); // User selected range
+        const d2 = new Date(); d2.setDate(1); // 1st of current month
+        const d3 = new Date(); d3.setDate(d3.getDate() - 14); // 2 weeks ago
+        
+        const earliest = new Date(Math.min(d1, d2, d3));
+        return earliest.toISOString().split('T')[0];
+    }
+
     const CIRCUMFERENCE = 251.2;
 
     async function loadAnalyticsData() {
         if (!window.firebaseUtils || !window.db) return;
 
         try {
-            const { collection, getDocs } = window.firebaseUtils;
+            const { collection, getDocs, query, where } = window.firebaseUtils;
 
-            // 1. Fetch Employees & Filter Out Inactive
-            const empSnap = await getDocs(collection(window.db, "employees"));
-            employeeData = {};
+            // 1. Fetch Employees (With Session Caching to save reads!)
+            const cachedEmployees = sessionStorage.getItem('cachedEmployees');
+            if (cachedEmployees) {
+                employeeData = JSON.parse(cachedEmployees);
+            } else {
+                const empSnap = await getDocs(collection(window.db, "employees"));
+                employeeData = {};
+                empSnap.forEach(doc => {
+                    const data = doc.data();
+                    const status = data.account_status || "active";
+                    if (status !== 'inactive' && data.email) {
+                        employeeData[data.email] = {
+                            name: data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || "Unknown",
+                            expectedStartMin: timeStringToMinutes(data.work_start_time),
+                            dept: data.department || "Unassigned"
+                        };
+                    }
+                });
+                sessionStorage.setItem('cachedEmployees', JSON.stringify(employeeData));
+            }
+
+            // 2. Fetch Attendance (With Server-Side Date Filtering)
+            const fetchStartDateStr = getEarliestRequiredDate(currentDateRange);
+            const attQuery = query(collection(window.db, "attendance"), where("date", ">=", fetchStartDateStr));
+            const attSnap = await getDocs(attQuery);
             
-            empSnap.forEach(doc => {
-                const data = doc.data();
-                const status = data.account_status || "active"; // Default to active if missing
-                
-                // ONLY add them to our lookup if they are not explicitly inactive
-                if (status !== 'inactive' && data.email) {
-                    employeeData[data.email] = {
-                        name: data.full_name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || "Unknown",
-                        expectedStartMin: timeStringToMinutes(data.work_start_time),
-                        dept: data.department || "Unassigned"
-                    };
-                }
-            });
-
-            // 2. Fetch Attendance & Filter Out Inactive Records
-            const attSnap = await getDocs(collection(window.db, "attendance"));
             allAttendanceData = [];
+            
+            // --- READ TRACKER LOGIC ---
+            let serverReads = 0;
+            let cacheReads = 0;
 
             attSnap.forEach(doc => {
+                // If it's not from cache, Firebase billed you 1 read.
+                if (!doc.metadata.fromCache) serverReads++;
+                else cacheReads++;
+
                 const data = doc.data();
-                // --- FIX: Only push the attendance record if the employee is in our ACTIVE employee list! ---
                 if (data.clock_in_time && employeeData[data.employee_id]) {
                     allAttendanceData.push(data);
                 }
             });
+
+            console.log(`%c📊 Analytics Read Report:`, 'color: #4f46e5; font-weight: bold; font-size: 14px;');
+            console.log(`%cServer Reads (Billed): ${serverReads}`, 'color: #ef4444; font-weight: bold;');
+            console.log(`%cCache Reads (Free): ${cacheReads}`, 'color: #10b981; font-weight: bold;');
+            // ---------------------------
 
             const subtitle = document.getElementById('analytics-subtitle');
             if (subtitle) {
@@ -86,6 +113,7 @@
 
     function processAnalytics() {
         const startDateStr = getPastDateString(currentDateRange);
+        // We still filter here to isolate the specific range the user selected for the top KPIs
         const rangeData = allAttendanceData.filter(record => record.date >= startDateStr);
 
         calculateAndRenderKPIs(rangeData);
@@ -109,12 +137,11 @@
         let totalClockInMinutes = 0;
 
         dataSubset.forEach(record => {
-            const emp = employeeData[record.employee_id]; // Guaranteed to exist because of our new filter
-            
+            const emp = employeeData[record.employee_id];
             const actualDate = new Date(record.clock_in_time.replace(/-/g, "/"));
             const actualMin = (actualDate.getHours() * 60) + actualDate.getMinutes();
 
-            if (actualMin > emp.expectedStartMin + 5) lateCount++; // Added 5 min grace period
+            if (actualMin > emp.expectedStartMin + 5) lateCount++; 
 
             totalClockInMinutes += actualMin;
             totalRenderedSeconds += (record.rendered_seconds || 0);
@@ -282,7 +309,7 @@
         
         monthData.forEach(record => {
             const eid = record.employee_id;
-            const emp = employeeData[eid]; // Guaranteed to be active
+            const emp = employeeData[eid];
             
             if (!empStats[eid]) empStats[eid] = { total: 0, late: 0, name: emp.name, dept: emp.dept };
             
@@ -502,7 +529,8 @@
             if (range === '30d') currentDateRange = 30;
             if (range === '3m') currentDateRange = 90;
             
-            processAnalytics();
+            // CRITICAL FIX: Trigger a fresh database fetch, not just a memory filter
+            loadAnalyticsData(); 
         }
 
         // Export CSV
